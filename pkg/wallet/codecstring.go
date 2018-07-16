@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -15,9 +14,16 @@ import (
 )
 
 // KVToString converts a key/value pair a simple string format
-func (db *DB) KVToString(rec *[2][]byte) (d string) {
+func (db *DB) KVToString(rec [2][]byte) (d string) {
 	for i := range Prefix {
-		if bytes.HasPrefix(rec[0], Prefix[i]) {
+		hasprefix := true
+		for j := range Prefix[i] {
+			if rec[0][j] != Prefix[i][j] {
+				hasprefix = false
+				break
+			}
+		}
+		if hasprefix {
 			kv := db.KVToVars(rec[0], rec[1])
 			result := kv.([]interface{})
 			switch i {
@@ -136,6 +142,7 @@ func (db *DB) KVToString(rec *[2][]byte) (d string) {
 			default:
 				return
 			}
+			break
 		}
 	}
 	return

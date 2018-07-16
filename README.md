@@ -34,3 +34,5 @@ This will take care of creating a default data directory and configuration autom
 ## Progress status
 
 See [Checklist](checklist.md)
+
+Currently working on basic wallet I/O

@@ -150,13 +150,13 @@ func (db *DB) KVToVars(k, v []byte) (result interface{}) {
 }
 
 // VarsToKV converts a of set variables to a key/value byte slice pair. Can be used to construct the key half only for search and delete operations, by only passing the fields that go into the key.
-func (db *DB) VarsToKV(vars interface{}) (result *[2][]byte) {
+func (db *DB) VarsToKV(vars interface{}) (result [2][]byte) {
 	V := vars.([]interface{})
 	vType := V[0].(string)
 	result[0] = append([]byte{byte(len(vType))}, []byte(vType)...)
 	switch vType {
 	case "name":
-		result[0] = append(result[0], []byte(V[1].(string))...)
+		result[0] = append(result[0], append([]byte{byte(len(V[1].(string)))}, []byte(V[1].(string))...)...)
 		if len(V) > 2 {
 			result[1] = append([]byte{byte(len(V[2].(string)))}, []byte(V[2].(string))...)
 		}
@@ -295,7 +295,7 @@ func (db *DB) VarsToKV(vars interface{}) (result *[2][]byte) {
 			result[1] = minversionB.Bytes()
 		}
 	default:
-		return nil
+		return
 	}
 	return
 }

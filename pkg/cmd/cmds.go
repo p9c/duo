@@ -9,6 +9,7 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/algos"
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/key"
+	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"gitlab.com/parallelcoin/duo/pkg/net"
 	"gitlab.com/parallelcoin/duo/pkg/rpc"
 	"gitlab.com/parallelcoin/duo/pkg/server"
@@ -276,20 +277,25 @@ func init() {
 				if wallet.Db.Filename == "" {
 					wallet.Db.SetFilename(*args.DataDir + "/" + *args.Wallet)
 				}
-				dump, err := wallet.Db.Dump()
-				if err != nil {
+				logger.Debug(wallet.Db.Filename)
+				if db, err := wallet.NewDB(); err != nil {
+					return failure(mode, err, "unable to open wallet")
+				} else if err := db.Open(); err != nil {
 					return failure(mode, err, "")
-				}
-				r += dump + "\n"
-				if len(f) == 1 {
-					if wallet.Db.Filename == "" {
-						wallet.Db.SetFilename(*args.DataDir + "/" + *args.Wallet)
-						dumpfile, err := os.OpenFile(f[0], os.O_RDWR|os.O_CREATE, 0600)
-						if err != nil {
-							return failure(mode, err, "")
+				} else if dump, err := db.Dump(); err != nil {
+					return failure(mode, err, "")
+				} else {
+					r += dump + "\n"
+					if len(f) == 1 {
+						if wallet.Db.Filename == "" {
+							wallet.Db.SetFilename(*args.DataDir + "/" + *args.Wallet)
+							dumpfile, err := os.OpenFile(f[0], os.O_RDWR|os.O_CREATE, 0600)
+							if err != nil {
+								return failure(mode, err, "")
+							}
+							defer dumpfile.Close()
+							// Write r to dump file
 						}
-						defer dumpfile.Close()
-						// Write r to dump file
 					}
 				}
 			}

@@ -31,6 +31,7 @@ package bdb
 		return db->get_type(db, type);
 	}
 	int db_put(DB *db, DB_TXN *txn, DBT *key, DBT *data, u_int32_t flags) {
+
 		return db->put(db, txn, key, data, flags);
 	}
 	int db_get(DB *db, DB_TXN *txn, DBT *key, DBT *data, u_int32_t flags) {
@@ -374,11 +375,13 @@ func (db Database) Put(txn Transaction, append bool, recs ...[2][]byte) (err err
 	}
 	data.flags |= C.DB_DBT_READONLY
 	for rec := range recs {
-		key.size = C.u_int32_t(len(recs[0][rec]))
-		key.data = unsafe.Pointer(&recs[0][rec])
-		data.size = C.u_int32_t(len(recs[1][rec]))
-		data.data = unsafe.Pointer(&recs[1][rec])
-		err = check(C.db_put(db.ptr, txn.ptr, &key, &data, flags))
+		key.size = C.u_int32_t(len(recs[rec][0]))
+		key.data = unsafe.Pointer(C.CString(string(recs[rec][0])))
+		data.size = C.u_int32_t(len(recs[rec][1]))
+		data.data = unsafe.Pointer(C.CString(string(recs[rec][1])))
+		r := C.db_put(db.ptr, txn.ptr, &key, &data, flags)
+		err = check(r)
+
 		if err != nil {
 			return
 		}
@@ -400,9 +403,9 @@ func (db Database) Get(txn Transaction, consume bool, recs ...[2][]byte) (err er
 	defer C.free(data.data)
 	for rec := range recs {
 		key.size = C.u_int32_t(len(recs[0][rec]))
-		key.data = unsafe.Pointer(&recs[0][rec])
+		key.data = unsafe.Pointer(C.CString(string(recs[0][rec])))
 		data.size = C.u_int32_t(len(recs[1][rec]))
-		data.data = unsafe.Pointer(&recs[1][rec])
+		data.data = unsafe.Pointer(C.CString(string(recs[1][rec])))
 
 		err = check(C.db_get(db.ptr, txn.ptr, &key, &data, flags))
 		if err != nil {
@@ -417,7 +420,7 @@ func (db Database) Del(txn Transaction, recs ...[]byte) (err error) {
 	key.flags |= C.DB_DBT_READONLY
 	for rec := range recs {
 		key.size = C.u_int32_t(len(recs[rec]))
-		key.data = unsafe.Pointer(&recs[rec])
+		key.data = unsafe.Pointer(C.CString(string(recs[rec])))
 		err = check(C.db_del(db.ptr, txn.ptr, &key, 0))
 		if err != nil {
 			return
