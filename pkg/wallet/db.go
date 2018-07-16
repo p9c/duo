@@ -1,0 +1,461 @@
+package wallet
+
+import (
+	"encoding/hex"
+	"errors"
+	"os"
+	"strconv"
+	"sync"
+	"time"
+
+	"gitlab.com/parallelcoin/duo/pkg/Uint"
+	"gitlab.com/parallelcoin/duo/pkg/bdb"
+	"gitlab.com/parallelcoin/duo/pkg/block"
+	"gitlab.com/parallelcoin/duo/pkg/crypto"
+	"gitlab.com/parallelcoin/duo/pkg/key"
+	"gitlab.com/parallelcoin/duo/pkg/logger"
+	"gitlab.com/parallelcoin/duo/pkg/server/args"
+)
+
+var (
+	// Filename is the default filename being in the data directory for the wallet file
+	Filename = *args.DataDir + "/" + *args.Wallet
+	// Locktime is the time delay after which the wallet will automatically lock
+	Locktime = time.Minute * 15
+	// Db is a shared wallet for the typical application using one
+	Db DB
+	// WalletDBUpdated is a sequence counter that tracks how many updates have happened to the wallet database
+	WalletDBUpdated uint
+	// Prefix is loaded in init to contain KeyNames
+	Prefix map[string][]byte
+	// KeyNames is the list of key types stored in the wallet
+	KeyNames = []string{"name", "tx", "acentry", "key", "wkey", "mkey", "ckey", "keymeta", "defaultkey", "pool", "version", "cscript", "orderposnext", "account", "setting", "bestblock", "minversion"}
+)
+
+func init() {
+	Prefix = make(map[string][]byte)
+	for i := range KeyNames {
+		Prefix[KeyNames[i]] = append([]byte{byte(len(KeyNames[i]))}, []byte(KeyNames[i])...)
+	}
+}
+
+// DB is an interface to a wallet.dat file
+type DB struct {
+	bdb.Database
+	Filename      string
+	UnlockedUntil int64
+	mutex         sync.Mutex
+}
+
+type dB interface {
+	Flush()
+	SetFilename(string)
+	Open() error
+	Close() error
+	Verify() error
+	Encrypt() error
+	Unlock() error
+	KVToVars([]byte, []byte) interface{}
+	VarsToKV(interface{}) *[2][]byte
+	KVToString(*[2][]byte) (string, bool)
+	StringToVars(string) interface{}
+	Dump() (string, error)
+	Version() int
+	GetBalance() float64
+	GetOldestKeyPoolTime() int64
+	GetKeyPoolSize() int
+	WriteName(string, string) error
+	EraseName(string) error
+	WriteTx(Uint.U256, *Tx)
+	EraseTx(Uint.U256)
+	WriteKey(*key.Pub, *key.Priv, *KeyMetadata) error
+	WriteCryptedKey(*key.Pub, []byte, *KeyMetadata) error
+	WriteMasterKey(uint, *crypto.MasterKey) error
+	WriteScript(Uint.U160, *key.Script) error
+	WriteBestBlock(*block.Locator) error
+	ReadBestBlock(*block.Locator) error
+	WriteOrderPosNext(int64) error
+	WriteDefaultKey(*key.Pub) error
+	ReadPool(int64, KeyPool) error
+	WritePool(int64, KeyPool) error
+	ErasePool(int64) error
+	ReadSetting(string, interface{}) error
+	WriteSetting(string, interface{}) error
+	EraseSetting(string) error
+	WriteMinVersion(int) error
+	ReadAccount(string, *Account) error
+	WriteAccount(string, *Account) error
+	writeAccountingEntry(uint64, *AccountingEntry) error
+	WriteAccountingEntry(*AccountingEntry) error
+	GetAccountCreditDebit(string) int64
+	ListAccountCreditDebit(*string, *[]AccountingEntry)
+	ReorderTransactions(Wallet) DBErrors
+	LoadWallet(Wallet) DBErrors
+	RecoverOnlyKeys(*bdb.Environment, string) error
+	Recover(*bdb.Environment, string) error
+	Backup(*Wallet, string) error
+	Read(*interface{}, *interface{}) bool
+	Write(*interface{}, *interface{}, bool) bool
+	Erase(*interface{}) bool
+	Exists(*interface{})
+	GetCursor() *bdb.Cursor
+}
+
+// ScanState stores the state of a wallet
+type ScanState struct {
+	Keys, CKeys, KeyMeta      uint
+	IsEncrypted, AnyUnordered bool
+	FileVersion               int
+	WalletUpgrade             []*Uint.U256
+}
+
+// NewDB creates a new database file
+func NewDB(optfilename ...string) (db *DB, err error) {
+	var filename string
+	switch {
+	case len(optfilename) == 0:
+		filename = *args.DataDir + "/" + *args.Wallet
+	case len(optfilename) == 1:
+		filename = optfilename[0]
+	default:
+		return &DB{}, errors.New("Excess arguments")
+	}
+	dbenvconf := bdb.EnvironmentConfig{
+		Create:        true,
+		Mode:          0600,
+		Transactional: true,
+	}
+	dbenv, err := bdb.OpenEnvironment(*args.DataDir, &dbenvconf)
+	dbconfig := bdb.DatabaseConfig{
+		Create: true,
+		Mode:   0600,
+		Name:   "main",
+	}
+	db1, err := bdb.OpenDatabase(dbenv, bdb.NoTransaction, filename, &dbconfig)
+	if err == nil {
+		db.Database = db1
+		db.Filename = filename
+		db.UnlockedUntil = time.Now().Add(Locktime).Unix()
+	}
+	return
+}
+
+// SetFilename changes the name of the database we want to open
+func (db *DB) SetFilename(filename string) {
+	db.Filename = filename
+}
+
+// Open a wallet.dat file
+func (db *DB) Open() (err error) {
+	dbenvconf := bdb.EnvironmentConfig{
+		Create:        true,
+		Recover:       true,
+		Mode:          0600,
+		Transactional: true,
+	}
+	dbenv, err := bdb.OpenEnvironment(*args.DataDir, &dbenvconf)
+	if err != nil {
+		return
+	}
+	dbconfig := bdb.DatabaseConfig{
+		Create: false,
+		Mode:   0600,
+		Name:   "main",
+	}
+	db1, err := bdb.OpenDatabase(dbenv, bdb.NoTransaction, db.Filename, &dbconfig)
+	if err == nil {
+		db.Database = db1
+		db.UnlockedUntil = time.Now().Add(Locktime).Unix()
+	} else {
+		logger.Debug("Failed to open database")
+		return
+	}
+	return
+}
+
+// Close an wallet.dat file
+func (db *DB) Close() (err error) {
+	logger.Debug("Closing wallet ...")
+	err = db.Database.Close()
+	return
+}
+
+// Verify the consistency of a wallet.dat database
+func (db *DB) Verify() (err error) {
+	logger.Debug("Verifying wallet ...", "'"+db.Filename+"'")
+	if _, err = os.Stat(db.Filename); os.IsNotExist(err) {
+		logger.Debug(err)
+		return
+	}
+	return
+}
+
+// Encrypt a wallet.dat database
+func (db *DB) Encrypt() (err error) {
+	return
+}
+
+// Unlock a wallet.dat database
+func (db *DB) Unlock() (err error) {
+	return
+}
+
+// Dump the set of keys and current stats of the chain in a string
+func (db *DB) Dump() (dump string, err error) {
+	db.Open()
+	err = db.Verify()
+	if err != nil {
+		return "", err
+	}
+	cursor, err := db.Cursor(bdb.NoTransaction)
+	if err != nil {
+		return "", err
+	}
+	rec := &[2][]byte{}
+	err = cursor.First(rec)
+	if err != nil {
+		return "", err
+	}
+	for {
+		dump1 := db.KVToString(rec)
+		if dump1 != "" {
+			dump += dump1
+		} else {
+			dump += "key " + strconv.Itoa(len(rec[0])) + " " + hex.EncodeToString(rec[0]) +
+				" " + string(rec[0]) + "\n"
+			dump += "value " + strconv.Itoa(len(rec[1])) + " " + hex.EncodeToString(rec[1]) + "\n"
+		}
+		err = cursor.Next(rec)
+		if err != nil {
+			err = db.Close()
+			return
+		}
+	}
+}
+
+// Version returns the version of the wallet
+func (db *DB) Version() int {
+	return FeatureBase
+}
+
+// GetBalance gets the balance of the wallet
+func (db *DB) GetBalance() float64 {
+	return 0.0
+}
+
+// GetOldestKeyPoolTime gets the oldest keypool time
+func (db *DB) GetOldestKeyPoolTime() int64 {
+	return 0
+}
+
+// GetKeyPoolSize gets the keypool size
+func (db *DB) GetKeyPoolSize() int {
+	return 0
+}
+
+// Find returns a list of key/value pairs according to the key label and first part of the content of the key. This is iterative and will take on average the cost of visiting half the database. Fortunately they are generally small but this is not ideal.
+func (db *DB) Find(label string, content []byte) (result [][2][]byte) {
+	var cursor bdb.Cursor
+	var err error
+	if cursor, err = db.Cursor(bdb.NoTransaction); err != nil {
+		return
+	}
+	var rec [2][]byte
+	if err := cursor.First(&rec); err != nil {
+		return
+	}
+	matchfail, count := false, 0
+	for {
+		for i := 0; i < len(label) && !matchfail; i++ {
+			if rec[0][i+1] != label[i] {
+				matchfail = true
+			}
+		}
+		for i := 0; i < len(content) && !matchfail; i++ {
+			if rec[0][i+len(label)+2] != label[i] {
+				matchfail = true
+			}
+		}
+		result[count][0], result[count][1] = rec[0], rec[1]
+		count++
+		if err = cursor.Next(&rec); err != nil {
+			db.Close()
+			return
+		}
+	}
+}
+
+// WriteName writes a new name to the database associated with an address
+func (db *DB) WriteName(addr, name string) (err error) {
+	r := db.VarsToKV([]interface{}{"name", addr})
+	if err = db.Put(bdb.NoTransaction, false, *r); err != nil {
+		return
+	}
+	WalletDBUpdated++
+	return
+}
+
+// EraseName deletes a name from the wallet
+func (db *DB) EraseName(addr string) (err error) {
+	r := db.VarsToKV([]interface{}{"name", addr})
+	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
+		return err
+	}
+	WalletDBUpdated++
+	return
+}
+
+// WriteTx writes a transaction to the wallet
+func (db *DB) WriteTx(u Uint.U256, t *Tx) (err error) {
+	r := db.VarsToKV([]interface{}{"tx", u, t})
+	if err = db.Put(bdb.NoTransaction, false, *r); err != nil {
+		return
+	}
+	WalletDBUpdated++
+	return
+}
+
+// EraseTx deletes a transaction from the wallet
+func (db *DB) EraseTx(u Uint.U256) (err error) {
+	r := db.VarsToKV([]interface{}{"tx", u})
+	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
+		return err
+	}
+	WalletDBUpdated++
+	return
+}
+
+// WriteKey writes a new key to the wallet
+func (db *DB) WriteKey(*key.Pub, *key.Priv, *KeyMetadata) (err error) {
+	return
+}
+
+// WriteCryptedKey writes an encrypted key to the wallet
+func (db *DB) WriteCryptedKey(*key.Pub, []byte, *KeyMetadata) (err error) {
+	return
+}
+
+// WriteMasterKey writes a MasterKey to the wallet
+func (db *DB) WriteMasterKey(uint, *crypto.MasterKey) (err error) {
+	return
+}
+
+// WriteScript writes a script to the wallet
+func (db *DB) WriteScript(Uint.U160, *key.Script) (err error) {
+	return
+}
+
+// WriteBestBlock writes the best block to the wallet
+func (db *DB) WriteBestBlock(*block.Locator) (err error) {
+	return
+}
+
+// ReadBestBlock returns the best block stored in the wallet
+func (db *DB) ReadBestBlock(*block.Locator) (err error) {
+	return
+}
+
+// WriteOrderPosNext moves the write position to the next
+func (db *DB) WriteOrderPosNext(int64) (err error) {
+	return
+}
+
+// WriteDefaultKey writes the default key
+func (db *DB) WriteDefaultKey(*key.Pub) (err error) {
+	return
+}
+
+// ReadPool returns the KeyPool
+func (db *DB) ReadPool(int64, KeyPool) (err error) {
+	return
+}
+
+// WritePool writes to the KeyPool
+func (db *DB) WritePool(int64, KeyPool) (err error) {
+	return
+}
+
+// ErasePool erases a KeyPool
+func (db *DB) ErasePool(int64) (err error) {
+	return
+}
+
+// ReadSetting reads a setting (obsolete)
+func (db *DB) ReadSetting(string, interface{}) (err error) {
+	return
+}
+
+// WriteSetting writes a setting (obsolete)
+func (db *DB) WriteSetting(string, interface{}) (err error) {
+	return
+}
+
+// EraseSetting erases a setting (obsolete)
+func (db *DB) EraseSetting(string) (err error) {
+	return
+}
+
+// WriteMinVersion writes the MinVersion
+func (db *DB) WriteMinVersion(int) (err error) {
+	return
+}
+
+// ReadAccount returns the data of an Account
+func (db *DB) ReadAccount(accname string, acc *Account) (err error) {
+	return
+}
+
+// WriteAccount writes the data of an Account
+func (db *DB) WriteAccount(string, *Account) (err error) {
+	return
+}
+
+func (db *DB) writeAccountingEntry(uint64, *AccountingEntry) (err error) {
+	return
+}
+
+// WriteAccountingEntry writes an AccountingEntry to the wallet
+func (db *DB) WriteAccountingEntry(*AccountingEntry) (err error) {
+	return
+}
+
+// GetAccountCreditDebit gets the Account credit/debit
+func (db *DB) GetAccountCreditDebit(string) (err error) {
+	return
+}
+
+// ListAccountCreditDebit gets the list off accounts and their credit/debits
+func (db *DB) ListAccountCreditDebit(string, *[]AccountingEntry) (err error) {
+	return
+}
+
+// ReorderTransactions reorders transactions in the wallet
+func (db *DB) ReorderTransactions(*Wallet) (dberr DBErrors) {
+	return
+}
+
+// LoadWallet loads the wallet
+func (db *DB) LoadWallet(*Wallet) (dberr DBErrors) {
+	return
+}
+
+// RecoverOnlyKeys recovers only the keys from the wallet
+func (db *DB) RecoverOnlyKeys(*bdb.Environment, string) (err error) {
+	return
+}
+
+// Recover recovers the wallet if it is broken
+func (db *DB) Recover(*bdb.Environment, string) (err error) {
+	return
+}
+
+// Backup copies the current wallet to another location
+func (db *DB) Backup(*Wallet, string) (err error) {
+	return
+}
+
+// GetCursor returns a cursor to walk over the wallet database
+func (db *DB) GetCursor() *bdb.Cursor {
+	cursor, _ := db.Cursor(bdb.NoTransaction)
+	return &cursor
+}
