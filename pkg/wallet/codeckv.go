@@ -24,7 +24,7 @@ func (db *DB) KVToVars(k, v []byte) (result interface{}) {
 		hashB, _ := ser.GetPreLen(keyRem)
 		hashVal := Uint.Zero256().FromBytes(hashB)
 		tx := v
-		return []interface{}{id, &hashVal, tx}
+		return []interface{}{id, hashVal, tx}
 	case "acentry":
 		acc, numB := ser.GetPreLen(keyRem)
 		var num uint64

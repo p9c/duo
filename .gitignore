@@ -1,5 +1,4 @@
 duo
-
 debug
-
-pkg/wallet/debug\.test
+debug\.test
+config.ini

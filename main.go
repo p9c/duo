@@ -35,14 +35,14 @@ func PrintGitInfo() {
 		"       State  %s\n\n",
 		Version, BuildDate, GitBranch, GitCommit, GitState)
 }
-func PrintErr(format string, vars ...interface{}) {
+func printerr(format string, vars ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, vars...)
 }
-func PrintVersionInfo() {
+func printversioninfo() {
 	version.Print()
 	PrintGitInfo()
 }
-func CreateConf() {
+func createconf() {
 	var confFile *os.File
 	fmt.Println(*args.DataDir)
 	log.Println("Creating data dir at", *args.DataDir)
@@ -60,7 +60,7 @@ func CreateConf() {
 	})
 }
 
-func Server() {
+func startServer() {
 	if *args.Debug || *args.DebugNet {
 		file, err := os.OpenFile(*args.DataDir+"/debug.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
@@ -89,7 +89,7 @@ func cleanup() {
 func main() {
 	state.Init()
 	if _, err := os.Stat(*args.Conf); os.IsNotExist(err) {
-		CreateConf()
+		createconf()
 	}
 	iniflags.Parse()
 	c := make(chan os.Signal, 1)
@@ -101,7 +101,7 @@ func main() {
 	}()
 	switch {
 	case *args.Version:
-		PrintVersionInfo()
+		printversioninfo()
 		os.Exit(1)
 	case *args.Help:
 		version.Print()
@@ -110,11 +110,11 @@ func main() {
 		flag.Usage()
 		os.Exit(0)
 	case *args.TestNet && *args.RegTest:
-		PrintErr("Error: testnet and regtest cannot be set at the same time\n")
+		printerr("Error: testnet and regtest cannot be set at the same time\n")
 		os.Exit(1)
 	case *args.CreateConf:
 		fmt.Println(*args.CreateConf)
-		CreateConf()
+		createconf()
 	}
 	ctx := context.Background()
 	status := subcmd.Execute(ctx)
@@ -122,7 +122,7 @@ func main() {
 		os.Exit(0)
 	}
 	if len(os.Args) == 1 {
-		Server()
+		startServer()
 	}
 	os.Exit(int(status))
 }

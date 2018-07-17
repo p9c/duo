@@ -34,9 +34,9 @@ func (db *DB) KVToString(rec [2][]byte) (d string) {
 					name +
 					"\n"
 			case "tx":
-				txHash := result[1].(Uint.U256)
+				txHash := result[1].(*Uint.U256)
 				tx := result[2].([]byte)
-				d += "found tx\n" +
+				d += i + " " +
 					hex.EncodeToString(txHash.ToBytes()) + " " +
 					hex.EncodeToString(tx) + " " +
 					"\n"

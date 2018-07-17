@@ -270,9 +270,9 @@ func (db *DB) GetKeyPoolSize() int {
 }
 
 // Find returns a list of key/value pairs according to the key label and first part of the content of the key (it must be a complete first several values including length prefixes for strings and slices). This is iterative and will take on average the cost of visiting half the database. Fortunately they are generally small but this is not ideal.
-func (db *DB) Find(label string, content string) (result [][2][]byte, err error) {
+func (db *DB) Find(label string, content []byte) (result [][2][]byte, err error) {
 	labelB := append([]byte{byte(len(label))}, []byte(label)...)
-	contentB := append([]byte{byte(len(content))}, []byte(content)...)
+	contentB := append([]byte{byte(len(content))}, content...)
 	var cursor bdb.Cursor
 	if cursor, err = db.Cursor(bdb.NoTransaction); err != nil {
 		return
@@ -327,7 +327,7 @@ func (db *DB) EraseName(addr string) (err error) {
 }
 
 // WriteTx writes a transaction to the wallet
-func (db *DB) WriteTx(u Uint.U256, t *Tx) (err error) {
+func (db *DB) WriteTx(u Uint.U256, t []byte) (err error) {
 	r := db.VarsToKV([]interface{}{"tx", u, t})
 	if err = db.Put(bdb.NoTransaction, false, r); err != nil {
 		return
