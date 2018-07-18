@@ -64,8 +64,8 @@ type dB interface {
 	Verify() error
 	Encrypt() error
 	Unlock() error
-	KVToVars([]byte, []byte) interface{}
-	VarsToKV(interface{}) *[2][]byte
+	KVDec([]byte, []byte) interface{}
+	KVEnc(interface{}) *[2][]byte
 	KVToString(*[2][]byte) (string, bool)
 	StringToVars(string) interface{}
 	Dump() (string, error)
@@ -308,7 +308,7 @@ func (db *DB) Find(label string, content []byte) (result [][2][]byte, err error)
 
 // WriteName writes a new name to the database associated with an address
 func (db *DB) WriteName(addr, name string) (err error) {
-	r := db.VarsToKV([]interface{}{"name", addr, name})
+	r := db.KVEnc([]interface{}{"name", addr, name})
 	if err = db.Put(bdb.NoTransaction, true, r); err != nil {
 		return
 	}
@@ -318,7 +318,7 @@ func (db *DB) WriteName(addr, name string) (err error) {
 
 // EraseName deletes a name from the wallet
 func (db *DB) EraseName(addr string) (err error) {
-	r := db.VarsToKV([]interface{}{"name", addr})
+	r := db.KVEnc([]interface{}{"name", addr})
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return err
 	}
@@ -328,7 +328,7 @@ func (db *DB) EraseName(addr string) (err error) {
 
 // WriteTx writes a transaction to the wallet
 func (db *DB) WriteTx(u Uint.U256, t []byte) (err error) {
-	r := db.VarsToKV([]interface{}{"tx", u, t})
+	r := db.KVEnc([]interface{}{"tx", u, t})
 	if err = db.Put(bdb.NoTransaction, false, r); err != nil {
 		return
 	}
@@ -338,7 +338,7 @@ func (db *DB) WriteTx(u Uint.U256, t []byte) (err error) {
 
 // EraseTx deletes a transaction from the wallet
 func (db *DB) EraseTx(u Uint.U256) (err error) {
-	r := db.VarsToKV([]interface{}{"tx", u})
+	r := db.KVEnc([]interface{}{"tx", u})
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return err
 	}

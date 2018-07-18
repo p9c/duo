@@ -24,7 +24,7 @@ func (db *DB) KVToString(rec [2][]byte) (d string) {
 			}
 		}
 		if hasprefix {
-			kv := db.KVToVars(rec[0], rec[1])
+			kv := db.KVDec(rec[0], rec[1])
 			result := kv.([]interface{})
 			switch i {
 			case "name":

@@ -119,15 +119,19 @@ func (p *Priv) SignCompact(hash Uint.U256) ([]byte, error) {
 }
 
 // Verify a signature on a hash
-func (p *Priv) Verify(hash Uint.U256, S []byte) (key *ec.PublicKey, err error) {
-	sig, err := ec.ParseSignature(S, ec.S256())
-	if err == nil {
-		key, _, err = p.Recover(hash, S)
+func (p *Priv) Verify(hash Uint.U256, S []byte) (key *Pub, err error) {
+	var sig *ec.Signature
+	if sig, err = ec.ParseSignature(S, ec.S256()); err != nil {
+		return
+	} else {
+		var keyEC *ec.PublicKey
+		keyEC, _, err = p.Recover(hash, S)
+		if !ecdsa.Verify(keyEC.ToECDSA(), hash.Bytes(), sig.R, sig.S) {
+			key = nil
+		}
+		key.SetPub(keyEC)
+		return
 	}
-	if !ecdsa.Verify(key.ToECDSA(), hash.Bytes(), sig.R, sig.S) {
-		key = nil
-	}
-	return
 }
 
 // Recover public key from a signature, identify if it was compressed
