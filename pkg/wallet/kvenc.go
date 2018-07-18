@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
-	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 )
 
@@ -13,94 +12,66 @@ import (
 func (db *DB) KVEnc(vars interface{}) (result [2][]byte) {
 	V := vars.([]interface{})
 	vType := V[0].(string)
-	result[0] = PreLenString(vType)
+	result[0] = FormatString(vType)
 	switch vType {
 	case "name":
-		result[0] = append(result[0], PreLenString(V[1].(string))...)
+		Append(&result[0], FormatString(V[1].(string)))
 		if len(V) > 2 {
-			result[1] = PreLenString(V[2].(string))
+			result[1] = FormatString(V[2].(string))
 		}
 	case "tx":
-		result[0] = append(result[0], V[1].(*Uint.U256).ToBytes()...)
+		Append(&result[0], V[1].(*Uint.U256).ToBytes())
 		if len(V) > 2 {
-			result[1] = append([]byte{}, V[2].([]byte)...)
+			result[1] = V[2].([]byte)
 		}
 	case "acentry":
-		result[0] = append(result[0], []byte(PreLenString(V[1].(string)))...)
-		amount := make([]byte, 4)
-		binary.LittleEndian.PutUint64(amount, V[2].(uint64))
-		result[0] = append(result[0], amount...)
+		Append(&result[0], FormatString(V[1].(string)), Uint64ToBytes(V[2].(uint64)))
 	case "key":
-		pub := V[1].(*key.Pub).GetPub().SerializeUncompressed()
-		result[0] = append(result[0], PreLenBytes(pub)...)
+		Append(&result[0], FormatBytes(V[1].(*key.Pub).GetPub().SerializeUncompressed()))
 		if len(V) > 2 {
-			priv := V[2].(key.Priv)
-			result[1] = PreLenBytes(priv.Get())
+			result[1] = FormatBytes(V[2].(*key.Priv).Get())
 		}
 	case "wkey":
-		pubB := V[1].(*key.Pub).GetPub().SerializeUncompressed()
-		result[0] = append(result[0], PreLenBytes(pubB)...)
+		Append(&result[0], FormatBytes(V[1].(*key.Pub).GetPub().SerializeUncompressed()))
 		if len(V) > 2 {
-			privB := PreLenBytes(V[2].(*Key).PrivKey.Get())
-			createdB := Int64ToBytes(V[3].(int64))
-			expiresB := Int64ToBytes(V[4].(int64))
-			commentB := PreLenBytes([]byte(V[5].(string)))
-			result[1] = append(privB, append(createdB, append(expiresB, commentB...)...)...)
+			Append(&result[1], 
+				FormatBytes(V[2].(*Key).PrivKey.Get()), 
+				Int64ToBytes(V[3].(int64)), 
+				Int64ToBytes(V[4].(int64)), 
+				FormatString(V[5].(string)))
 		}
 	case "mkey":
-		id := V[1].(int64)
-		idB := bytes.NewBuffer(make([]byte, 8))
-		binary.Write(idB, binary.LittleEndian, id)
-		result[0] = append(result[0], PreLenBytes(idB.Bytes())...)
+		Append(&result[0], Int64ToBytes(V[1].(int64)))
 		if len(V) > 2 {
-			mk := V[2].(crypto.MasterKey)
-			result[1] = append(PreLenBytes(mk.EncryptedKey), PreLenBytes(mk.Salt)...)
-			methodB := bytes.NewBuffer(make([]byte, 4))
-			binary.Write(methodB, binary.LittleEndian, mk.DerivationMethod)
-			result[1] = append(result[1], methodB.Bytes()...)
-			iterationsB := bytes.NewBuffer(make([]byte, 4))
-			binary.Write(iterationsB, binary.LittleEndian, mk.DeriveIterations)
-			result[1] = append(result[1], iterationsB.Bytes()...)
-			result[1] = append(result[1], mk.OtherDerivationParameters...)
+			mk := V[2].(*crypto.MasterKey)
+			Append(&result[1], 
+				FormatBytes(mk.EncryptedKey), 
+				FormatBytes(mk.Salt),
+				Uint32ToBytes(mk.DerivationMethod), 
+				Uint32ToBytes(mk.DeriveIterations),
+				mk.OtherDerivationParameters)
 		}
 	case "ckey":
-		pub := V[1].(*ec.PublicKey)
-		pubB := pub.SerializeCompressed()
-		result[0] = append(result[0], append([]byte{byte(len(pubB))}, pubB...)...)
+		Append(&result[0], FormatBytes(V[1].(*key.Pub).GetPub().SerializeUncompressed()))
 		if len(V) > 2 {
-			priv := V[2].([]byte)
-			result[1] = append([]byte{byte(len(priv))}, priv...)
+			result[1] = FormatBytes(V[2].([]byte))
 		}
 	case "keymeta":
-		pub := V[1].(*ec.PublicKey)
-		pubB := pub.SerializeCompressed()
-		result[0] = append(result[0], append([]byte{byte(len(pubB))}, pubB...)...)
+		Append(&result[0], V[1].(*key.Pub).GetPub().SerializeUncompressed())
 		if len(V) > 2 {
-			versionB := bytes.NewBuffer(make([]byte, 4))
-			binary.Write(versionB, binary.LittleEndian, V[2].(uint32))
-			createtimeB := bytes.NewBuffer(make([]byte, 8))
-			binary.Write(createtimeB, binary.LittleEndian, V[3].(int64))
-			result[1] = append(versionB.Bytes(), createtimeB.Bytes()...)
+			Append(&result[1], Uint32ToBytes(V[2].(uint32)), Int64ToBytes(V[3].(int64)))
 		}
 	case "defaultkey":
 		if len(V) > 2 {
-			pub := V[1].(*ec.PublicKey)
-			pubB := pub.SerializeCompressed()
-			result[1] = append([]byte{byte(len(pubB))}, pubB...)
+			Append(&result[1], V[1].(*key.Pub).GetPub().SerializeUncompressed())
 		}
 	case "pool":
-		index := V[1].(uint64)
-		indexB := bytes.NewBuffer(make([]byte, 8))
-		binary.Write(indexB, binary.LittleEndian, index)
-		result[0] = append(result[0], indexB.Bytes()...)
+		Append(&result[0], Uint64ToBytes(V[1].(uint64)))
 		if len(V) > 2 {
-			versionB := bytes.NewBuffer(make([]byte, 4))
-			binary.Write(versionB, binary.LittleEndian, V[2].(uint32))
-			ptime := bytes.NewBuffer(make([]byte, 8))
-			binary.Write(ptime, binary.LittleEndian, V[3].(int64))
-			pubB := append([]byte{byte(len(V[4].([]byte)))}, V[4].([]byte)...)
-			result[1] = append(versionB.Bytes(), ptime.Bytes()...)
-			result[1] = append(result[1], pubB...)
+			Append(&result[1],
+				Uint32ToBytes(V[2].(uint32)),
+				Int64ToBytes(V[3].(int64)),
+				V[4].(*key.Pub).GetPub().SerializeUncompressed())
 		}
 	case "version":
 		if len(V) > 2 {
