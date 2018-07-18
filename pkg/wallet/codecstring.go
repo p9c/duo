@@ -147,7 +147,7 @@ func (db *DB) StringToVars(input string) (result interface{}) {
 	case "key":
 		if pubB, err := hex.DecodeString(s[1]); err != nil {
 			return err
-		} else if pub, err := ec.ParsePubKey(pubB, ec.S256()); err != nil {
+		} else if pub, err := ParsePub(pubB); err != nil {
 			return err
 		} else if privB, err := hex.DecodeString(s[2]); err != nil {
 			return err
@@ -159,7 +159,7 @@ func (db *DB) StringToVars(input string) (result interface{}) {
 	case "wkey":
 		if pubB, err := hex.DecodeString(s[1]); err != nil {
 			return err
-		} else if pub, err := ec.ParsePubKey(pubB, ec.S256()); err != nil {
+		} else if pub, err := ParsePub(pubB); err != nil {
 			return err
 		} else if privB, err := hex.DecodeString(s[2]); err != nil {
 			return err
@@ -192,7 +192,7 @@ func (db *DB) StringToVars(input string) (result interface{}) {
 	case "ckey":
 		if pubB, err := hex.DecodeString(s[1]); err != nil {
 			return err
-		} else if pub, err := ec.ParsePubKey(pubB, ec.S256()); err != nil {
+		} else if pub, err := ParsePub(pubB); err != nil {
 			return err
 		} else if encrypted, err := hex.DecodeString(s[2]); err != nil {
 			return err
@@ -202,7 +202,7 @@ func (db *DB) StringToVars(input string) (result interface{}) {
 	case "keymeta":
 		if pubB, err := hex.DecodeString(s[1]); err != nil {
 			return err
-		} else if pub, err := ec.ParsePubKey(pubB, ec.S256()); err != nil {
+		} else if pub, err := ParsePub(pubB); err != nil {
 			return err
 		} else if version, err := strconv.ParseUint(s[2], 10, 32); err != nil {
 			return err
@@ -228,7 +228,7 @@ func (db *DB) StringToVars(input string) (result interface{}) {
 			return err
 		} else if pubB, err := hex.DecodeString(s[1]); err != nil {
 			return err
-		} else if pub, err := ec.ParsePubKey(pubB, ec.S256()); err != nil {
+		} else if pub, err := ParsePub(pubB); err != nil {
 			return err
 		} else {
 			return []interface{}{id, index, uint32(version), t, pub}
