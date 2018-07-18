@@ -1,10 +1,12 @@
 package wallet
 
 import (
-	"gitlab.com/parallelcoin/duo/pkg/key"
-	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
+	"gitlab.com/parallelcoin/duo/pkg/ec"
+	"gitlab.com/parallelcoin/duo/pkg/key"
+	"strconv"
 )
 
 // FormatString prepends a byte with the length of a string for wire/storage formatting
@@ -24,7 +26,6 @@ func BytesToUint32(in []byte) (result uint32) {
 	binary.Read(resultB, binary.LittleEndian, &result)
 	return
 }
-
 
 func Uint32ToBytes(in uint32) (result []byte) {
 	resultB := bytes.NewBuffer([]byte{})
@@ -49,13 +50,11 @@ func BytesToUint64(in []byte) (result uint64) {
 	return
 }
 
-
 func Uint64ToBytes(in uint64) (result []byte) {
 	result = make([]byte, 8)
 	binary.LittleEndian.PutUint64(result, in)
 	return
 }
-
 
 // Append a byte slice to a byte slice in the caller's scope
 func Append(b *[]byte, B ...[]byte) {
@@ -78,4 +77,29 @@ func SetPriv(priv []byte) (result *key.Priv) {
 	result = &key.Priv{}
 	result.Set(priv)
 	return
+}
+
+func PubToHex(pub interface{}) string {
+	return hex.EncodeToString(pub.(*key.Pub).GetPub().SerializeUncompressed())
+}
+
+func PrivToHex(priv interface{}) string {
+	return hex.EncodeToString(priv.(*key.Priv).Get())
+}
+
+func BytesToHex(b []byte) string {
+	return hex.EncodeToString(b)
+}
+
+func StringToUint64(s string) (uint64, error) {
+	return strconv.ParseUint(s, 10, 64)
+}
+
+func StringToInt64(s string) (int64, error) {
+	return strconv.ParseInt(s, 10, 64)
+}
+
+func StringToUint32(s string) (uint32, error) {
+	u, err := strconv.ParseUint(s, 10, 32)
+	return uint32(u), err
 }
