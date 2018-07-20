@@ -38,10 +38,10 @@ func (db *DB) KVDec(k, v []byte) (result interface{}) {
 				commentLen := keyRem[16]
 				comment := string(keyRem[16 : commentLen+16])
 				wkey := &Key{
-					PrivKey: SetPriv(priv),
+					PrivKey:     SetPriv(priv),
 					TimeCreated: BytesToInt64(keyRem[:8]),
 					TimeExpires: BytesToInt64(keyRem[8:16]),
-					Comment: comment,
+					Comment:     comment,
 				}
 				return []interface{}{id, ToPub(pub), wkey}
 			}

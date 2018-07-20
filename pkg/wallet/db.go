@@ -327,7 +327,7 @@ func (db *DB) EraseName(addr string) (err error) {
 }
 
 // WriteTx writes a transaction to the wallet
-func (db *DB) WriteTx(u Uint.U256, t []byte) (err error) {
+func (db *DB) WriteTx(u *Uint.U256, t []byte) (err error) {
 	r := db.KVEnc([]interface{}{"tx", u, t})
 	if err = db.Put(bdb.NoTransaction, false, r); err != nil {
 		return
@@ -337,7 +337,7 @@ func (db *DB) WriteTx(u Uint.U256, t []byte) (err error) {
 }
 
 // EraseTx deletes a transaction from the wallet
-func (db *DB) EraseTx(u Uint.U256) (err error) {
+func (db *DB) EraseTx(u *Uint.U256) (err error) {
 	r := db.KVEnc([]interface{}{"tx", u})
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return err

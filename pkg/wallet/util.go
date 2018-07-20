@@ -58,7 +58,7 @@ func Uint64ToBytes(in uint64) (result []byte) {
 
 // Append a byte slice to a byte slice in the caller's scope
 func Append(b *[]byte, B ...[]byte) {
-	for i := range *b {
+	for i := range B {
 		*b = append(*b, B[i]...)
 	}
 }

@@ -34,20 +34,20 @@ func (db *DB) KVEnc(vars interface{}) (result [2][]byte) {
 	case "wkey":
 		Append(&result[0], FormatBytes(V[1].(*key.Pub).GetPub().SerializeUncompressed()))
 		if len(V) > 2 {
-			Append(&result[1], 
-				FormatBytes(V[2].(*Key).PrivKey.Get()), 
-				Int64ToBytes(V[3].(int64)), 
-				Int64ToBytes(V[4].(int64)), 
+			Append(&result[1],
+				FormatBytes(V[2].(*Key).PrivKey.Get()),
+				Int64ToBytes(V[3].(int64)),
+				Int64ToBytes(V[4].(int64)),
 				FormatString(V[5].(string)))
 		}
 	case "mkey":
 		Append(&result[0], Int64ToBytes(V[1].(int64)))
 		if len(V) > 2 {
 			mk := V[2].(*crypto.MasterKey)
-			Append(&result[1], 
-				FormatBytes(mk.EncryptedKey), 
+			Append(&result[1],
+				FormatBytes(mk.EncryptedKey),
 				FormatBytes(mk.Salt),
-				Uint32ToBytes(mk.DerivationMethod), 
+				Uint32ToBytes(mk.DerivationMethod),
 				Uint32ToBytes(mk.DeriveIterations),
 				mk.OtherDerivationParameters)
 		}

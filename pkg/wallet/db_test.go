@@ -61,7 +61,7 @@ func TestPutGetDelName(t *testing.T) {
 func TestPutGetDelTx(t *testing.T) {
 	keyType, thX, txX := "tx", "a4a6ffa9acc9fcf383f81215784b6b728099924c700e771f58347d11d7b24b1b", "60900f001d072693cf71df52074c7af8089fe4c6d9edeb8433a8e9b1c03000000000000000f13a4846cab468de79ea99ea2724e5d5fd639d53d858b4bf5000000000000000080621ef4aec21b770e9fcc145600f5507cb6e71b432fd87250000000000000097ff5e3be987fa9a86fb53591b38dfc6c6f48acc4d26ed1a0f0000000000000027bd7a34005d973a00cd862882384422669c3eb97aa2636630000000000000000"
 	thB, _ := hex.DecodeString(thX)
-	txHash := *Uint.Zero256()
+	txHash := Uint.Zero256()
 	txHash.SetBytes(thB)
 	tx, _ := hex.DecodeString(txX)
 	if db, err := NewDB(f); err != nil {
