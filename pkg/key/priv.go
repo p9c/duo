@@ -3,7 +3,6 @@ package key
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rand"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/ec"
 )
@@ -15,21 +14,7 @@ type Priv struct {
 	invalid, compressed bool
 }
 
-// New makes a new key pair
-func (p *Priv) New() {
-	bytes := make([]byte, 32)
-	for {
-		rand.Read(bytes)
-		if Check(bytes) {
-			break
-		}
-	}
-	p.Set(bytes)
-	return
-}
-
 type priv interface {
-	New()
 	Get() []byte
 	Set([]byte) *Priv
 	Size() int
@@ -51,11 +36,11 @@ func (p *Priv) Get() []byte {
 
 // Set changes the key to a new key if it is valid, or invalidates it
 func (p *Priv) Set(b []byte) (P *Priv) {
-	if Check(b) && len(b) == 32 {
-		p.priv, p.pub = ec.PrivKeyFromBytes(elliptic.P256(), b)
-	} else {
-		p.Invalidate()
-	}
+	// if Check(b) && len(b) == 32 {
+	p.priv, p.pub = ec.PrivKeyFromBytes(elliptic.P256(), b)
+	// } else {
+	// 	p.Invalidate()
+	// }
 	return p
 }
 
@@ -78,11 +63,11 @@ func (p *Priv) IsValid() bool {
 }
 
 // SetPriv sets the private key of a Priv
-func (p *Priv) SetPriv(P *Priv) {
-	p.priv = P.priv
-	p.pub = P.pub
-	p.compressed = P.compressed
-	p.invalid = P.invalid
+func (p *Priv) SetPriv(priv *ec.PrivateKey, pub *ec.PublicKey) {
+	p.priv = priv
+	p.pub = pub
+	p.compressed = false
+	p.invalid = false
 }
 
 // GetPriv returns a copy of private key

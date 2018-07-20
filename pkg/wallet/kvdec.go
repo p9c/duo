@@ -25,14 +25,23 @@ func (db *DB) KVDec(k, v []byte) (result interface{}) {
 		acc, numB := ser.GetPreLen(keyRem)
 		num := BytesToUint64(numB)
 		return []interface{}{id, string(acc), num}
+	case "keymeta":
+		keyB, _ := ser.GetPreLen(keyRem)
+		if pub, err := ec.ParsePubKey(keyB, ec.S256()); err != nil {
+			return err
+		} else {
+			version := BytesToUint32([]byte(string(v))[:4])
+			createtime := time.Unix(BytesToInt64([]byte(string(v))[4:]), 0)
+			return []interface{}{id, ToPub(pub), version, createtime}
+		}
 	case "key", "wkey":
 		pubB, _ := ser.GetPreLen(keyRem)
 		if pub, err := ParsePub(pubB); err != nil {
-			return nil
+			return err
 		} else {
 			if string(id) == "key" {
 				priv := SetPriv(v)
-				return []interface{}{id, ToPub(pub), priv}
+				return []interface{}{id, priv, ToPub(pub)}
 			} else {
 				priv, keyRem := ser.GetPreLen(v)
 				commentLen := keyRem[16]
@@ -43,7 +52,7 @@ func (db *DB) KVDec(k, v []byte) (result interface{}) {
 					TimeExpires: BytesToInt64(keyRem[8:16]),
 					Comment:     comment,
 				}
-				return []interface{}{id, ToPub(pub), wkey}
+				return []interface{}{id, wkey, ToPub(pub)}
 			}
 		}
 	case "mkey":
@@ -67,15 +76,6 @@ func (db *DB) KVDec(k, v []byte) (result interface{}) {
 			return err
 		} else {
 			return []interface{}{id, ToPub(pub), priv}
-		}
-	case "keymeta":
-		keyB, _ := ser.GetPreLen(keyRem)
-		if pub, err := ec.ParsePubKey(keyB, ec.S256()); err != nil {
-			return err
-		} else {
-			version := BytesToUint32([]byte(string(v))[:4])
-			createtime := time.Unix(BytesToInt64([]byte(string(v))[4:]), 0)
-			return []interface{}{id, ToPub(pub), version, createtime}
 		}
 	case "defaultkey":
 		pubB, _ := ser.GetPreLen(v)

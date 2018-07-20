@@ -1,12 +1,16 @@
 package wallet
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"errors"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
+	"gitlab.com/parallelcoin/duo/pkg/ec"
+	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"os"
 	"testing"
+	"time"
 )
 
 var (
@@ -82,6 +86,52 @@ func TestPutGetDelTx(t *testing.T) {
 			if _, err := db.Find(keyType, thB); err != nil {
 				t.Error(errors.New("Could not find key"))
 			} else if err := db.EraseTx(txHash); err != nil {
+				t.Error(err)
+			} else {
+				dump, _ := db.Dump()
+				logger.Debug(dump)
+				if err := db.Close(); err != nil {
+					t.Error(err)
+				} else if err = os.Remove(f); err != nil {
+					t.Error(err)
+				}
+			}
+		}
+	}
+}
+
+func TestPutGetDelKey(t *testing.T) {
+	os.Remove(f)
+	keyType := "key"
+	metaType := "keymeta"
+	bytes := make([]byte, 32)
+	rand.Read(bytes)
+	privKey, pubKey := ec.PrivKeyFromBytes(ec.S256(), bytes)
+	priv := key.Priv{}
+	priv.SetPriv(privKey, pubKey)
+	if db, err := NewDB(f); err != nil {
+		t.Error(err)
+	} else {
+		if _, err := db.Find(keyType, priv.GetPub().Key()); err == nil {
+			if err := db.EraseKey(priv.GetPub()); err != nil {
+				t.Error(err)
+			}
+		}
+		if _, err := db.Find(metaType, priv.GetPub().Key()); err == nil {
+			if err := db.EraseKey(priv.GetPub()); err != nil {
+				t.Error(err)
+			}
+		}
+		dump, _ := db.Dump()
+		logger.Debug(dump)
+		if err := db.WriteKey(priv.GetPub(), priv.GetPriv(), &KeyMetadata{CurrentVersion, time.Now().Unix()}); err != nil {
+			t.Error(err)
+		} else {
+			dump, _ := db.Dump()
+			logger.Debug(dump)
+			if _, err := db.Find(metaType, priv.GetPub().Key()); err != nil {
+				t.Error(errors.New("Could not find key"))
+			} else if err := db.EraseKey(priv.GetPub()); err != nil {
 				t.Error(err)
 			} else {
 				dump, _ := db.Dump()

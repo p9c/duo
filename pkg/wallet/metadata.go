@@ -7,7 +7,7 @@ import (
 
 // KeyMetadata is information about the key
 type KeyMetadata struct {
-	Version    int
+	Version    uint32
 	CreateTime int64
 }
 
@@ -30,10 +30,8 @@ func (m *KeyMetadata) FromBytes(b []byte) (err error) {
 	if len(b) != int(lengthC+lengthV) {
 		err = errors.New("Bytes were wrong length")
 	} else {
-		version, _ := binary.Varint(b[:lengthV])
-		m.Version = int(version)
-		createtime, _ := binary.Varint(b[lengthV:])
-		m.CreateTime = int64(createtime)
+		m.Version = BytesToUint32(b[:lengthV])
+		m.CreateTime = BytesToInt64(b[lengthV:])
 	}
 	return
 }

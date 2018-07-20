@@ -13,7 +13,7 @@ const (
 	FeatureBase = 10500
 	// FeatureWalletCrypt indicates if the wallet enables encrypted keys
 	FeatureWalletCrypt = 40000
-	// FeatureCompressedPubKey indicates if thte wallet enables compressed public keys
+	// FeatureCompressedPubKey indicates if the wallet enables compressed public keys
 	FeatureCompressedPubKey = 60000
 	// FeatureLatest is the newest version of the wallet
 	FeatureLatest = 60000

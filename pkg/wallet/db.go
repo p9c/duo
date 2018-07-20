@@ -347,7 +347,26 @@ func (db *DB) EraseTx(u *Uint.U256) (err error) {
 }
 
 // WriteKey writes a new key to the wallet
-func (db *DB) WriteKey(*key.Pub, *key.Priv, *KeyMetadata) (err error) {
+func (db *DB) WriteKey(pub *key.Pub, priv *key.Priv, meta *KeyMetadata) (err error) {
+	rKey := db.KVEnc([]interface{}{"key", pub, priv})
+	rMeta := db.KVEnc([]interface{}{"keymeta", pub, meta.Version, meta.CreateTime})
+	if err = db.Put(bdb.NoTransaction, false, rKey); err != nil {
+		return
+	} else if err = db.Put(bdb.NoTransaction, false, rMeta); err != nil {
+		return
+	}
+	WalletDBUpdated++
+	return
+}
+
+func (db *DB) EraseKey(pub *key.Pub) (err error) {
+	rKey := db.KVEnc([]interface{}{"key", pub})
+	rMeta := db.KVEnc([]interface{}{"keymeta", pub})
+	if err = db.Del(bdb.NoTransaction, rKey[0]); err != nil {
+		return
+	} else if err = db.Del(bdb.NoTransaction, rMeta[0]); err != nil {
+		return
+	}
 	return
 }
 

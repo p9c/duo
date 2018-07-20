@@ -8,6 +8,7 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
+	// "gitlab.com/parallelcoin/duo/pkg/logger"
 	"strconv"
 	"strings"
 	"time"
@@ -15,107 +16,101 @@ import (
 
 // KVToString converts a key/value pair a simple string format
 func (db *DB) KVToString(rec [2][]byte) (d string) {
-	for i := range Prefix {
-		hasprefix := true
-		for j := range Prefix[i] {
-			if rec[0][j] != Prefix[i][j] {
-				hasprefix = false
-				break
-			}
+	var result []interface{}
+	kv := db.KVDec(rec[0], rec[1])
+	switch kv.(type) {
+	case []interface{}:
+		result = kv.([]interface{})
+	default:
+		return
+	}
+	i := string(result[0].([]byte))
+	// logger.Debug(i)
+	switch i {
+	case "name":
+		address := result[1].(string)
+		name := result[2].(string)
+		d += i + " " + address + " " + name + "\n"
+	case "tx":
+		txHash := BytesToHex(result[1].(*Uint.U256).ToBytes())
+		tx := BytesToHex(result[2].([]byte))
+		d += i + " " + txHash + " " + tx + " " + "\n"
+	case "acentry":
+		account := result[1].(string)
+		amount := fmt.Sprint(result[2].(uint64))
+		d += i + " " + account + " " + amount + " " + "\n"
+	case "key":
+		priv := PrivToHex(result[1])
+		pub := PubToHex(result[2])
+		d += i + " " +
+			"pubkey " + pub + " " + "privkey " + priv + " " + "\n"
+	case "wkey":
+		pub := PubToHex(result[1])
+		wkey := BytesToHex(result[2].(*Key).PrivKey.Get())
+		created := time.Unix(result[2].(*Key).TimeCreated, 0).UTC().String()
+		expires := time.Unix(result[2].(*Key).TimeExpires, 0).UTC().String()
+		comment := result[2].(*Key).Comment
+		d += i + " " +
+			"pub" + pub + " " + "priv" + wkey + " " +
+			"created" + created + " " + "expires" + expires + " " +
+			"comment '" + comment + "'\n"
+	case "mkey":
+		mkeyID := fmt.Sprint(result[1].(int64))
+		mk := result[2].(*crypto.MasterKey)
+		d += i + " ID " + mkeyID + " " +
+			"key " + BytesToHex(mk.EncryptedKey) + " " +
+			"salt " + BytesToHex(mk.Salt) + " " +
+			"method " + fmt.Sprint(mk.DerivationMethod) + " " +
+			"iterations " + fmt.Sprint(mk.DeriveIterations) + " " +
+			"other " + BytesToHex(mk.OtherDerivationParameters) +
+			"\n"
+	case "ckey":
+		pubKey := PubToHex(result[1])
+		encrypted := BytesToHex(result[2].([]byte))
+		d += i + " " + pubKey + " " + encrypted + "\n"
+	case "keymeta":
+		key := PubToHex(result[1])
+		d += i + " " + key + " " +
+			"version " + fmt.Sprint(result[2].(uint32)) + " " +
+			"created '" + fmt.Sprint(result[3].(time.Time).UTC()) + "' " +
+			"\n"
+	case "defaultkey":
+		d += i + " " + PubToHex(result[1]) + "\n"
+	case "pool":
+		index := fmt.Sprint(result[1].(uint64))
+		version := fmt.Sprint(result[2].(uint32))
+		t := time.Unix(result[3].(int64), 0).String()
+		pub := PubToHex(result[4])
+		d += i + " " + "index " + index + " " +
+			"version " + version + " " + "time '" + t + "' " + "publickey " + pub + "\n"
+	case "version":
+		d += i + " " + fmt.Sprint(result[1].(uint32)) + "\n"
+	case "cscript":
+		hashID := BytesToHex(result[1].(*Uint.U160).ToBytes())
+		script := BytesToHex(result[2].([]byte))
+		d += i + " " + hashID + " " + script + "\n"
+	case "orderposnext":
+		d += i + " " + fmt.Sprint(result[1].(int64)) + "\n"
+	case "account":
+		d += i + " " + result[1].(string) + " " + "\n"
+	case "setting":
+		name := result[1].(string)
+		value := result[2].([]byte)
+		d += i + " " + name + " "
+		if string(name) == "addrIncoming" {
+			d += fmt.Sprint(value[0]) + "." +
+				fmt.Sprint(value[1]) + "." +
+				fmt.Sprint(value[2]) + "." +
+				fmt.Sprint(value[3])
+		} else {
+			d += BytesToHex(value)
 		}
-		if hasprefix {
-			kv := db.KVDec(rec[0], rec[1])
-			result := kv.([]interface{})
-			switch i {
-			case "name":
-				address := result[1].(string)
-				name := result[2].(string)
-				d += i + " " + address + " " + name + "\n"
-			case "tx":
-				txHash := BytesToHex(result[1].(*Uint.U256).ToBytes())
-				tx := BytesToHex(result[2].([]byte))
-				d += i + " " + txHash + " " + tx + " " + "\n"
-			case "acentry":
-				account := result[1].(string)
-				amount := fmt.Sprint(result[2].(uint64))
-				d += i + " " + account + " " + amount + " " + "\n"
-			case "key":
-				pub := PubToHex(result[1])
-				priv := PrivToHex(result[2])
-				d += i + " " +
-					"pubkey " + pub + " " + "privkey " + priv + " " + "\n"
-			case "wkey":
-				pub := PubToHex(result[1])
-				wkey := BytesToHex(result[2].(*Key).PrivKey.Get())
-				created := time.Unix(result[2].(*Key).TimeCreated, 0).UTC().String()
-				expires := time.Unix(result[2].(*Key).TimeExpires, 0).UTC().String()
-				comment := result[2].(*Key).Comment
-				d += i + " " +
-					"pub" + pub + " " + "priv" + wkey + " " +
-					"created" + created + " " + "expires" + expires + " " +
-					"comment '" + comment + "'\n"
-			case "mkey":
-				mkeyID := fmt.Sprint(result[1].(int64))
-				mk := result[2].(*crypto.MasterKey)
-				d += i + " ID " + mkeyID + " " +
-					"key " + BytesToHex(mk.EncryptedKey) + " " +
-					"salt " + BytesToHex(mk.Salt) + " " +
-					"method " + fmt.Sprint(mk.DerivationMethod) + " " +
-					"iterations " + fmt.Sprint(mk.DeriveIterations) + " " +
-					"other " + BytesToHex(mk.OtherDerivationParameters) +
-					"\n"
-			case "ckey":
-				pubKey := PubToHex(result[1])
-				encrypted := BytesToHex(result[2].([]byte))
-				d += i + " " + pubKey + " " + encrypted + "\n"
-			case "keymeta":
-				key := PubToHex(result[1])
-				d += i + " " + key + " " +
-					"version " + fmt.Sprint(result[2].(uint32)) + " " +
-					"created '" + fmt.Sprint(result[3].(time.Time).UTC()) + "' " +
-					"\n"
-			case "defaultkey":
-				d += i + " " + PubToHex(result[1]) + "\n"
-			case "pool":
-				index := fmt.Sprint(result[1].(uint64))
-				version := fmt.Sprint(result[2].(uint32))
-				t := time.Unix(result[3].(int64), 0).String()
-				pub := PubToHex(result[4])
-				d += i + " " + "index " + index + " " +
-					"version " + version + " " + "time '" + t + "' " + "publickey " + pub + "\n"
-			case "version":
-				d += i + " " + fmt.Sprint(result[1].(uint32)) + "\n"
-			case "cscript":
-				hashID := BytesToHex(result[1].(*Uint.U160).ToBytes())
-				script := BytesToHex(result[2].([]byte))
-				d += i + " " + hashID + " " + script + "\n"
-			case "orderposnext":
-				d += i + " " + fmt.Sprint(result[1].(int64)) + "\n"
-			case "account":
-				d += i + " " + result[1].(string) + " " + "\n"
-			case "setting":
-				name := result[1].(string)
-				value := result[2].([]byte)
-				d += i + " " + name + " "
-				if string(name) == "addrIncoming" {
-					d += fmt.Sprint(value[0]) + "." +
-						fmt.Sprint(value[1]) + "." +
-						fmt.Sprint(value[2]) + "." +
-						fmt.Sprint(value[3])
-				} else {
-					d += BytesToHex(value)
-				}
-				d += "\n"
-			case "bestblock":
-				d += i + " " + BytesToHex(result[1].([]byte)) + "\n"
-			case "minversion":
-				minversion := fmt.Sprint(result[1].(uint32))
-				d += i + " " + minversion + " " + "\n"
-			default:
-				return
-			}
-			break
-		}
+		d += "\n"
+	case "bestblock":
+		d += i + " " + BytesToHex(result[1].([]byte)) + "\n"
+	case "minversion":
+		minversion := fmt.Sprint(result[1].(uint32))
+		d += i + " " + minversion + " " + "\n"
 	}
 	return
 }
@@ -202,13 +197,15 @@ func (db *DB) StringToVars(input string) (result interface{}) {
 	case "keymeta":
 		if pubB, err := hex.DecodeString(s[1]); err != nil {
 			return err
-		} else if pub, err := ParsePub(pubB); err != nil {
+		} else if pubEC, err := ParsePub(pubB); err != nil {
 			return err
 		} else if version, err := StringToUint32(s[2]); err != nil {
 			return err
 		} else if created, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", s[3]); err != nil {
 			return err
 		} else {
+			pub := key.Pub{}
+			pub.SetPub(pubEC)
 			return []interface{}{id, pub, uint32(version), created}
 		}
 	case "defaultkey":

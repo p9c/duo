@@ -57,7 +57,7 @@ func (db *DB) KVEnc(vars interface{}) (result [2][]byte) {
 			result[1] = FormatBytes(V[2].([]byte))
 		}
 	case "keymeta":
-		Append(&result[0], V[1].(*key.Pub).GetPub().SerializeUncompressed())
+		Append(&result[0], FormatBytes(V[1].(*key.Pub).GetPub().SerializeUncompressed()))
 		if len(V) > 2 {
 			Append(&result[1], Uint32ToBytes(V[2].(uint32)), Int64ToBytes(V[3].(int64)))
 		}
@@ -75,9 +75,7 @@ func (db *DB) KVEnc(vars interface{}) (result [2][]byte) {
 		}
 	case "version":
 		if len(V) > 2 {
-			versionB := bytes.NewBuffer(make([]byte, 4))
-			binary.Write(versionB, binary.LittleEndian, V[1].(uint32))
-			result[1] = versionB.Bytes()
+			result[1] = Uint32ToBytes(V[1].(uint32))
 		}
 	case "cscript":
 		hashID := V[1].(Uint.U160)
