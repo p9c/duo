@@ -1,6 +1,7 @@
 package key
 
 import (
+	"github.com/anaskhan96/base58check"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/ec"
 )
@@ -25,6 +26,7 @@ type pub interface {
 	IsCompressed() bool
 	Check([]byte) bool
 	MakeNewKey(bool) *Pub
+	ToBase58Check() string
 }
 
 // SetPub sets the public key of a Priv
@@ -95,4 +97,13 @@ func (p *Pub) Compress() bool {
 // IsCompressed returns whether the serializing commands return compressed format
 func (p *Pub) IsCompressed() bool {
 	return p.compressed
+}
+
+// ToBase58Check returns a private key encoded in base58check with the network specified prefix
+func (p *Pub) ToBase58Check(net string) string {
+	b58, err := base58check.Encode(B58prefixes[net]["pubkey"], string(p.Key()))
+	if err != nil {
+		return "Base58check encoding failure"
+	}
+	return b58
 }

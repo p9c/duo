@@ -1,6 +1,7 @@
 package cmds
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"github.com/anaskhan96/base58check"
 	"gitlab.com/parallelcoin/duo/pkg/algos"
 	"gitlab.com/parallelcoin/duo/pkg/block"
+	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"gitlab.com/parallelcoin/duo/pkg/net"
@@ -1224,17 +1226,22 @@ func init() {
 				default:
 					return failure(mode, err, "Excess arguments")
 				}
-				newKey := key.Priv{}
-				newKey.New()
-				pubkey := newKey.GetPub()
-				privkey := newKey.GetPriv()
-				b58, err := base58check.Encode("B2", hex.EncodeToString(privkey.Get()))
+				bytes := make([]byte, 32)
+				rand.Read(bytes)
+				privKey, pubKey := ec.PrivKeyFromBytes(ec.S256(), bytes)
+				priv := key.Priv{}
+				priv.SetPriv(privKey, pubKey)
+				priv58, err := base58check.Encode("B2", hex.EncodeToString(priv.GetPriv().Get()))
 				if err != nil {
 					return failure(mode, err, "Base58check encoding failure")
 				}
+				pub := hex.EncodeToString(pubKey.SerializeUncompressed())
 				keymap := map[string]string{
-					"PublicKey":  hex.EncodeToString(pubkey.Key()),
-					"PrivateKey": b58,
+					"PublicKey":  pub,
+					"PrivateKey": priv58,
+				}
+				if err != nil {
+					return failure(mode, err, "Base58check encoding failure")
 				}
 				jsonbytes, _ := json.MarshalIndent(keymap, "", "  ")
 				fmt.Println(string(jsonbytes))

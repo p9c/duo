@@ -3,6 +3,8 @@ package key
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"encoding/hex"
+	"github.com/anaskhan96/base58check"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/ec"
 )
@@ -27,6 +29,7 @@ type priv interface {
 	Sign(Uint.U256, []byte) bool
 	SignCompact(Uint.U256, []byte) bool
 	Verify(hash Uint.U256, S []byte)
+	ToBase58Check() string
 }
 
 // Get - gets the full private key as a byte slice
@@ -123,4 +126,14 @@ func (p *Priv) Verify(hash Uint.U256, S []byte) (key *Pub, err error) {
 func (p *Priv) Recover(hash Uint.U256, S []byte) (key *ec.PublicKey, compressed bool, err error) {
 	key, compressed, err = ec.RecoverCompact(ec.S256(), S, hash.Bytes())
 	return
+}
+
+// ToBase58Check returns a private key encoded in base58check with the network specified prefix
+func (p *Priv) ToBase58Check(net string) string {
+	h := hex.EncodeToString(p.Get())
+	b58, err := base58check.Encode(B58prefixes[net]["privkey"], h)
+	if err != nil {
+		return "Base58check encoding failure " + h
+	}
+	return b58
 }

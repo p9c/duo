@@ -40,7 +40,7 @@ func (db *DB) KVToString(rec [2][]byte) (d string) {
 		amount := fmt.Sprint(result[2].(uint64))
 		d += i + " " + account + " " + amount + " " + "\n"
 	case "key":
-		priv := PrivToHex(result[1])
+		priv := PrivToHex(result[1].(*key.Priv))
 		pub := PubToHex(result[2])
 		d += i + " " +
 			"pubkey " + pub + " " + "privkey " + priv + " " + "\n"
@@ -65,7 +65,13 @@ func (db *DB) KVToString(rec [2][]byte) (d string) {
 			"other " + BytesToHex(mk.OtherDerivationParameters) +
 			"\n"
 	case "ckey":
-		pubKey := PubToHex(result[1])
+		// result[1].(*key.Pub).Compress()
+		// b58, err := base58check.Encode(key.B58prefixes["mainnet"]["pubkey"], hex.EncodeToString(result[1].(*key.Pub).Key()))
+		// if err != nil {
+		// 	return "Base58check encoding failure"
+		// }
+		// pubKey := b58
+		pubKey := hex.EncodeToString(result[1].(*key.Pub).Key())
 		encrypted := BytesToHex(result[2].([]byte))
 		d += i + " " + pubKey + " " + encrypted + "\n"
 	case "keymeta":
