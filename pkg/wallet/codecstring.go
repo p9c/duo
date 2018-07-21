@@ -93,7 +93,7 @@ func (db *DB) KVToString(rec [2][]byte) (d string) {
 		d += i + " " + fmt.Sprint(result[1].(uint32)) + "\n"
 	case "cscript":
 		hashID := BytesToHex(result[1].(*Uint.U160).ToBytes())
-		script := BytesToHex(result[2].([]byte))
+		script := BytesToHex([]byte(*result[2].(*key.Script)))
 		d += i + " " + hashID + " " + script + "\n"
 	case "orderposnext":
 		d += i + " " + fmt.Sprint(result[1].(int64)) + "\n"
@@ -245,11 +245,13 @@ func (db *DB) StringToVars(input string) (result interface{}) {
 	case "cscript":
 		if h, err := hex.DecodeString(s[1]); err != nil {
 			return err
-		} else if script, err := hex.DecodeString(s[2]); err != nil {
+		} else if scriptB, err := hex.DecodeString(s[2]); err != nil {
 			return err
 		} else {
-			hashID := Uint.Zero160().SetBytes(h)
-			return []interface{}{id, hashID, script}
+			hashID := Uint.Zero160()
+			hashID.SetBytes(h)
+			script := key.Script(scriptB)
+			return []interface{}{id, hashID, &script}
 		}
 	case "orderposnext":
 		if orderposnext, err := StringToInt64(s[1]); err != nil {

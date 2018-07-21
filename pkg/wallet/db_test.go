@@ -189,3 +189,46 @@ func TestPutGetDelMkey(t *testing.T) {
 		}
 	}
 }
+
+
+func TestPutGetDelCscript(t *testing.T) {
+	keyType:="cscript"
+	bytes := make([]byte, 20)
+	rand.Read(bytes)
+	hashID := Uint.Zero160()
+	hashID.SetBytes(bytes)
+	bytes = make([]byte, 100)
+	rand.Read(bytes)
+	s := key.Script(bytes)
+	script := &s
+		if db, err := NewDB(f); err != nil {
+		t.Error(err)
+	} else {
+		if _, err := db.Find(keyType, hashID.Bytes()); err == nil {
+			if err := db.eraseScript(hashID); err != nil {
+				t.Error(err)
+			}
+		}
+		dump, _ := db.Dump()
+		logger.Debug(dump)
+		if err := db.WriteScript(hashID, script); err != nil {
+			t.Error(err)
+		} else {
+			dump, _ := db.Dump()
+			logger.Debug(dump)
+			if _, err := db.Find(keyType, hashID.Bytes()); err != nil {
+				t.Error(errors.New("Could not find key"))
+			} else if err := db.eraseScript(hashID); err != nil {
+				t.Error(err)
+			} else {
+				dump, _ := db.Dump()
+				logger.Debug(dump)
+				if err := db.Close(); err != nil {
+					t.Error(err)
+				} else if err = os.Remove(f); err != nil {
+					t.Error(err)
+				}
+			}
+		}
+	}
+}

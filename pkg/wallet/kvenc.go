@@ -78,12 +78,12 @@ func (db *DB) KVEnc(vars interface{}) (result [2][]byte) {
 			result[1] = Uint32ToBytes(V[1].(uint32))
 		}
 	case "cscript":
-		hashID := V[1].(Uint.U160)
+		hashID := V[1].(*Uint.U160)
 		hashIDB := hashID.ToBytes()
 		result[0] = append(result[0], append([]byte{byte(len(hashIDB))}, hashIDB...)...)
 		if len(V) > 2 {
-			script := V[2].([]byte)
-			result[1] = append([]byte{byte(len(script))}, script...)
+			script := V[2].(*key.Script)
+			result[1] = append([]byte{byte(len([]byte(*script)))}, []byte([]byte(*script))...)
 		}
 	case "orderposnext":
 		if len(V) > 2 {

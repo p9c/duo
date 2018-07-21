@@ -397,7 +397,21 @@ func (db *DB) eraseMasterKey(id int64) (err error) {
 }
 
 // WriteScript writes a script to the wallet
-func (db *DB) WriteScript(Uint.U160, *key.Script) (err error) {
+func (db *DB) WriteScript(hashID *Uint.U160, script *key.Script) (err error) {
+	r := db.KVEnc([]interface{}{"cscript", hashID, script})
+	if err = db.Put(bdb.NoTransaction, false, r); err != nil {
+		return
+	}
+	WalletDBUpdated++
+	return
+}
+
+func (db *DB) eraseScript(hashID *Uint.U160) (err error) {
+	r := db.KVEnc([]interface{}{"cscript", hashID})
+	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
+		return
+	}	
+	WalletDBUpdated++
 	return
 }
 

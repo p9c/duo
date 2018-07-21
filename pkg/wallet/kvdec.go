@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/ec"
@@ -99,9 +100,11 @@ func (db *DB) KVDec(k, v []byte) (result interface{}) {
 		return []interface{}{id, version}
 	case "cscript":
 		hID, _ := ser.GetPreLen(keyRem)
-		hashID := Uint.Zero160().SetBytes(hID)
-		script, _ := ser.GetPreLen(v)
-		return []interface{}{id, hashID, script}
+		hashID := Uint.Zero160()
+		hashID.SetBytes(hID)
+		scriptB, _ := ser.GetPreLen(v)
+		script := key.Script(scriptB)
+		return []interface{}{id, hashID, &script}
 	case "orderposnext":
 		orderposnext := BytesToInt64(v)
 		return []interface{}{id, orderposnext}
