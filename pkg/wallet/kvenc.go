@@ -86,10 +86,8 @@ func (db *DB) KVEnc(vars interface{}) (result [2][]byte) {
 			result[1] = append([]byte{byte(len([]byte(*script)))}, []byte([]byte(*script))...)
 		}
 	case "orderposnext":
-		if len(V) > 2 {
-			opn := bytes.NewBuffer(make([]byte, 8))
-			binary.Write(opn, binary.LittleEndian, V[1].(int64))
-			result[1] = opn.Bytes()
+		if len(V) > 1 {
+			result[1] = Int64ToBytes(V[1].(int64))
 		}
 	case "account":
 		acct := V[1].(string)

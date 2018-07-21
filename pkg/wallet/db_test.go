@@ -201,7 +201,7 @@ func TestPutGetDelCscript(t *testing.T) {
 	rand.Read(bytes)
 	s := key.Script(bytes)
 	script := &s
-		if db, err := NewDB(f); err != nil {
+	if db, err := NewDB(f); err != nil {
 		t.Error(err)
 	} else {
 		if _, err := db.Find(keyType, hashID.Bytes()); err == nil {
@@ -219,6 +219,51 @@ func TestPutGetDelCscript(t *testing.T) {
 			if _, err := db.Find(keyType, hashID.Bytes()); err != nil {
 				t.Error(errors.New("Could not find key"))
 			} else if err := db.eraseScript(hashID); err != nil {
+				t.Error(err)
+			} else {
+				dump, _ := db.Dump()
+				logger.Debug(dump)
+				if err := db.Close(); err != nil {
+					t.Error(err)
+				} else if err = os.Remove(f); err != nil {
+					t.Error(err)
+				}
+			}
+		}
+	}
+}
+
+func TestWriteOrderPosNext(t *testing.T) {
+	keyType := "orderposnext"
+	orderposnext := int64(101)
+	if db, err := NewDB(f); err != nil {
+		t.Error(err)
+	} else {
+		if _, err := db.Find(keyType, nil); err == nil {
+			if err := db.EraseOrderPosNext(); err != nil {
+				t.Error(err)
+			}
+		}
+		dump, _ := db.Dump()
+		logger.Debug(dump)
+		if err := db.WriteOrderPosNext(orderposnext); err != nil {
+			t.Error(err)
+		} else {
+			dump, _ := db.Dump()
+			logger.Debug(dump)
+			if err := db.EraseOrderPosNext(); err != nil {
+				t.Error(err)
+			}
+			dump, _ = db.Dump()
+			logger.Debug(dump)
+			if err := db.WriteOrderPosNext(orderposnext+1001); err != nil {
+				t.Error(err)
+				}
+			dump, _ = db.Dump()
+			logger.Debug(dump)
+			if _, err := db.Find(keyType, nil); err != nil {
+				t.Error(errors.New("Could not find key"))
+			} else if err := db.EraseOrderPosNext(); err != nil {
 				t.Error(err)
 			} else {
 				dump, _ := db.Dump()

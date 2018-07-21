@@ -288,10 +288,12 @@ func (db *DB) Find(label string, content []byte) (result [][2][]byte, err error)
 				matchfail = true
 			}
 		}
-		rem := []byte(string(rec[0]))[len(labelB):]
-		for i := 0; i < len(rem) && !matchfail; i++ {
-			if rem[i] != contentB[i] {
-				matchfail = true
+		if content != nil {
+			rem := []byte(string(rec[0]))[len(labelB):]
+			for i := 0; i < len(rem) && !matchfail; i++ {
+				if rem[i] != contentB[i] {
+					matchfail = true
+				}
 			}
 		}
 		if matchfail {
@@ -426,9 +428,24 @@ func (db *DB) ReadBestBlock(*block.Locator) (err error) {
 }
 
 // WriteOrderPosNext moves the write position to the next
-func (db *DB) WriteOrderPosNext(int64) (err error) {
+func (db *DB) WriteOrderPosNext(p int64) (err error) {
+	r := db.KVEnc([]interface{}{"orderposnext", p})
+	if err = db.Put(bdb.NoTransaction, true, r); err != nil {
+		return
+	}
+	WalletDBUpdated++
 	return
 }
+
+func (db *DB) EraseOrderPosNext() (err error) {
+	r := db.KVEnc([]interface{}{"orderposnext"})
+	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
+		return
+	}	
+	WalletDBUpdated++
+	return
+}
+
 
 // WriteDefaultKey writes the default key
 func (db *DB) WriteDefaultKey(*key.Pub) (err error) {
