@@ -359,7 +359,7 @@ func (db *DB) WriteKey(pub *key.Pub, priv *key.Priv, meta *KeyMetadata) (err err
 	return
 }
 
-func (db *DB) EraseKey(pub *key.Pub) (err error) {
+func (db *DB) eraseKey(pub *key.Pub) (err error) {
 	rKey := db.KVEnc([]interface{}{"key", pub})
 	rMeta := db.KVEnc([]interface{}{"keymeta", pub})
 	if err = db.Del(bdb.NoTransaction, rKey[0]); err != nil {
@@ -367,16 +367,32 @@ func (db *DB) EraseKey(pub *key.Pub) (err error) {
 	} else if err = db.Del(bdb.NoTransaction, rMeta[0]); err != nil {
 		return
 	}
+	WalletDBUpdated++
 	return
 }
 
 // WriteCryptedKey writes an encrypted key to the wallet
 func (db *DB) WriteCryptedKey(*key.Pub, []byte, *KeyMetadata) (err error) {
+	WalletDBUpdated++
 	return
 }
 
 // WriteMasterKey writes a MasterKey to the wallet
-func (db *DB) WriteMasterKey(uint, *crypto.MasterKey) (err error) {
+func (db *DB) WriteMasterKey(id int64, mkey *crypto.MasterKey) (err error) {
+	r := db.KVEnc([]interface{}{"mkey", id, mkey})
+	if err = db.Put(bdb.NoTransaction, false, r); err != nil {
+		return
+	}
+	WalletDBUpdated++
+	return
+}
+
+func (db *DB) eraseMasterKey(id int64) (err error) {
+	r := db.KVEnc([]interface{}{"mkey", id})
+	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
+		return
+	}	
+	WalletDBUpdated++
 	return
 }
 

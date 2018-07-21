@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -113,12 +114,12 @@ func TestPutGetDelKey(t *testing.T) {
 		t.Error(err)
 	} else {
 		if _, err := db.Find(keyType, priv.GetPub().Key()); err == nil {
-			if err := db.EraseKey(priv.GetPub()); err != nil {
+			if err := db.eraseKey(priv.GetPub()); err != nil {
 				t.Error(err)
 			}
 		}
 		if _, err := db.Find(metaType, priv.GetPub().Key()); err == nil {
-			if err := db.EraseKey(priv.GetPub()); err != nil {
+			if err := db.eraseKey(priv.GetPub()); err != nil {
 				t.Error(err)
 			}
 		}
@@ -131,7 +132,50 @@ func TestPutGetDelKey(t *testing.T) {
 			logger.Debug(dump)
 			if _, err := db.Find(metaType, priv.GetPub().Key()); err != nil {
 				t.Error(errors.New("Could not find key"))
-			} else if err := db.EraseKey(priv.GetPub()); err != nil {
+			} else if err := db.eraseKey(priv.GetPub()); err != nil {
+				t.Error(err)
+			} else {
+				dump, _ := db.Dump()
+				logger.Debug(dump)
+				if err := db.Close(); err != nil {
+					t.Error(err)
+				} else if err = os.Remove(f); err != nil {
+					t.Error(err)
+				}
+			}
+		}
+	}
+}
+
+func TestPutGetDelMkey(t *testing.T) {
+	keyType:="mkey"
+	id := int64(1)
+	encryptedKey, _ := hex.DecodeString("5e12dde67bc7ebd32707eb585326b88d26db3ecea3212909a7c352ac39f2f944045dd56ba177bdb65b985a93d9a7da01")
+	salt, _ := hex.DecodeString("f4070bc4fea8df65")
+ 	mkey := &crypto.MasterKey{
+		EncryptedKey: encryptedKey,
+	 	Salt: salt, 
+	 	DerivationMethod: 0,
+	 	DeriveIterations: 280611,
+	 	OtherDerivationParameters: []byte{0x00}}
+	if db, err := NewDB(f); err != nil {
+		t.Error(err)
+	} else {
+		if _, err := db.Find(keyType, Int64ToBytes(id)); err == nil {
+			if err := db.eraseMasterKey(id); err != nil {
+				t.Error(err)
+			}
+		}
+		dump, _ := db.Dump()
+		logger.Debug(dump)
+		if err := db.WriteMasterKey(id, mkey); err != nil {
+			t.Error(err)
+		} else {
+			dump, _ := db.Dump()
+			logger.Debug(dump)
+			if _, err := db.Find(keyType, Int64ToBytes(id)); err != nil {
+				t.Error(errors.New("Could not find key"))
+			} else if err := db.eraseMasterKey(id); err != nil {
 				t.Error(err)
 			} else {
 				dump, _ := db.Dump()
