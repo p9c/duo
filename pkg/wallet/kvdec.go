@@ -23,9 +23,17 @@ func (db *DB) KVDec(k, v []byte) (result interface{}) {
 		tx := v
 		return []interface{}{id, hashVal, tx}
 	case "acentry":
-		acc, numB := ser.GetPreLen(keyRem)
-		num := BytesToUint64(numB)
-		return []interface{}{id, string(acc), num}
+		a := AccountingEntry{}
+		a.Account, keyRem = ser.GetPreLenString(v)
+		keyRem = ser.GetInt(keyRem, &a.CreditDebit)
+		keyRem = ser.GetInt(keyRem, &a.Time)
+		a.OtherAccount, keyRem = ser.GetPreLenString(keyRem)
+		a.Comment, keyRem = ser.GetPreLenString(keyRem)
+		
+		// account, keyRem := ser.GetPreLen(keyRem)
+		
+		// num := BytesToUint64(numB)
+		return []interface{}{id, &a}
 	case "keymeta":
 		keyB, _ := ser.GetPreLen(keyRem)
 		if pub, err := ec.ParsePubKey(keyB, ec.S256()); err != nil {

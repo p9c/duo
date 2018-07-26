@@ -32,8 +32,6 @@ var (
 	Locktime = time.Minute * 15
 	// Db is a shared wallet for the typical application using one
 	Db DB
-	// WalletDBUpdated is a sequence counter that tracks how many updates have happened to the wallet database
-	WalletDBUpdated uint
 	// Prefix is loaded in init to contain KeyNames
 	Prefix map[string][]byte
 	// KeyNames is the list of key types stored in the wallet
@@ -54,6 +52,7 @@ type DB struct {
 	Filename      string
 	UnlockedUntil int64
 	mutex         sync.Mutex
+	updateCount uint64
 }
 
 type dB interface {
@@ -108,6 +107,7 @@ type dB interface {
 	Erase(*interface{}) bool
 	Exists(*interface{})
 	GetCursor() *bdb.Cursor
+	GetupdateCount() uint64
 }
 
 // ScanState stores the state of a wallet
@@ -314,7 +314,7 @@ func (db *DB) WriteName(addr, name string) (err error) {
 	if err = db.Put(bdb.NoTransaction, true, r); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -324,7 +324,7 @@ func (db *DB) EraseName(addr string) (err error) {
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return err
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -334,7 +334,7 @@ func (db *DB) WriteTx(u *Uint.U256, t []byte) (err error) {
 	if err = db.Put(bdb.NoTransaction, false, r); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -344,7 +344,7 @@ func (db *DB) EraseTx(u *Uint.U256) (err error) {
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return err
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -357,7 +357,7 @@ func (db *DB) WriteKey(pub *key.Pub, priv *key.Priv, meta *KeyMetadata) (err err
 	} else if err = db.Put(bdb.NoTransaction, false, rMeta); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -369,13 +369,13 @@ func (db *DB) eraseKey(pub *key.Pub) (err error) {
 	} else if err = db.Del(bdb.NoTransaction, rMeta[0]); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
 // WriteCryptedKey writes an encrypted key to the wallet
 func (db *DB) WriteCryptedKey(*key.Pub, []byte, *KeyMetadata) (err error) {
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -385,7 +385,7 @@ func (db *DB) WriteMasterKey(id int64, mkey *crypto.MasterKey) (err error) {
 	if err = db.Put(bdb.NoTransaction, false, r); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -394,7 +394,7 @@ func (db *DB) eraseMasterKey(id int64) (err error) {
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -404,7 +404,7 @@ func (db *DB) WriteScript(hashID *Uint.U160, script *key.Script) (err error) {
 	if err = db.Put(bdb.NoTransaction, false, r); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -413,7 +413,7 @@ func (db *DB) eraseScript(hashID *Uint.U160) (err error) {
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -433,7 +433,7 @@ func (db *DB) WriteOrderPosNext(p int64) (err error) {
 	if err = db.Put(bdb.NoTransaction, true, r); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -442,17 +442,17 @@ func (db *DB) EraseOrderPosNext() (err error) {
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
 // WriteDefaultKey writes the default key
 func (db *DB) WriteDefaultKey(p *key.Pub) (err error) {
-	r := db.KVEnc([]interface{}{"defaultkey", p.Key()})
+	r := db.KVEnc([]interface{}{"defaultkey", p})
 	if err = db.Put(bdb.NoTransaction, true, r); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -461,7 +461,7 @@ func (db *DB) EraseDefaultKey() (err error) {
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return
 	}
-	WalletDBUpdated++
+	db.updateCount++
 	return
 }
 
@@ -558,4 +558,8 @@ func (db *DB) Backup(*Wallet, string) (err error) {
 func (db *DB) GetCursor() *bdb.Cursor {
 	cursor, _ := db.Cursor(bdb.NoTransaction)
 	return &cursor
+}
+
+func (db *DB) GetupdateCount() uint64 {
+	return db.updateCount
 }

@@ -101,6 +101,10 @@ func TestPutGetDelTx(t *testing.T) {
 	}
 }
 
+func TestPutGetDelAccountingEntry(t *testing.T) {
+
+}
+
 func TestPutGetDelKey(t *testing.T) {
 	os.Remove(f)
 	keyType := "key"
@@ -147,6 +151,10 @@ func TestPutGetDelKey(t *testing.T) {
 	}
 }
 
+func TestPutGetDelWKey(t *testing.T) {
+	
+}
+
 func TestPutGetDelMkey(t *testing.T) {
 	keyType := "mkey"
 	id := int64(1)
@@ -188,6 +196,57 @@ func TestPutGetDelMkey(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestPutGetDelCKey(t *testing.T) {
+	
+}
+
+func TestPutGetDelDefaultKey(t *testing.T) {
+	keyType := "defaultkey"
+	bytes := make([]byte, 32)
+	rand.Read(bytes)
+	_, pubKey := ec.PrivKeyFromBytes(ec.S256(), bytes)
+	defaultkey := &key.Pub{}
+	defaultkey.SetPub(pubKey)
+	if db, err := NewDB(f); err != nil {
+		t.Error(err)
+	} else {
+		if _, err := db.Find(keyType, nil); err == nil {
+			if err := db.EraseDefaultKey(); err != nil {
+				t.Error(err)
+			}
+		}
+		dump, _ := db.Dump()
+		logger.Debug(dump)
+		if err := db.WriteDefaultKey(defaultkey); err != nil {
+			t.Error(err)
+		} else {
+			dump, _ = db.Dump()
+			logger.Debug(dump)
+			if _, err := db.Find(keyType, nil); err != nil {
+				t.Error(errors.New("Could not find key"))
+			} else if err := db.EraseDefaultKey(); err != nil {
+				t.Error(err)
+			} else {
+				dump, _ := db.Dump()
+				logger.Debug(dump)
+				if err := db.Close(); err != nil {
+					t.Error(err)
+				} else if err = os.Remove(f); err != nil {
+					t.Error(err)
+				}
+			}
+		}
+	}
+}
+
+func TestPutGetDelPool(t *testing.T) {
+	
+}
+
+func TestPutGetDelVersion(t *testing.T) {
+	
 }
 
 func TestPutGetDelCscript(t *testing.T) {
@@ -232,7 +291,7 @@ func TestPutGetDelCscript(t *testing.T) {
 	}
 }
 
-func TestWriteEraseOrderPosNext(t *testing.T) {
+func TestPutGetDelOrderPosNext(t *testing.T) {
 	keyType := "orderposnext"
 	orderposnext := int64(101)
 	if db, err := NewDB(f); err != nil {
@@ -277,51 +336,17 @@ func TestWriteEraseOrderPosNext(t *testing.T) {
 	}
 }
 
-func TestWriteEraseDefaultKey(t *testing.T) {
-	keyType := "defaultkey"
-	bytes := make([]byte, 32)
-	rand.Read(bytes)
-	_, pubKey := ec.PrivKeyFromBytes(ec.S256(), bytes)
-	defaultkey := &key.Pub{}
-	defaultkey.SetPub(pubKey)
-	if db, err := NewDB(f); err != nil {
-		t.Error(err)
-	} else {
-		if _, err := db.Find(keyType, nil); err == nil {
-			if err := db.EraseDefaultKey(); err != nil {
-				t.Error(err)
-			}
-		}
-		dump, _ := db.Dump()
-		logger.Debug(dump)
-		if err := db.WriteDefaultKey(defaultkey); err != nil {
-			t.Error(err)
-		} else {
-			dump, _ := db.Dump()
-			logger.Debug(dump)
-			if err := db.EraseDefaultKey(); err != nil {
-				t.Error(err)
-			}
-			dump, _ = db.Dump()
-			logger.Debug(dump)
-			if err := db.WriteDefaultKey(defaultkey); err != nil {
-				t.Error(err)
-			}
-			dump, _ = db.Dump()
-			logger.Debug(dump)
-			if _, err := db.Find(keyType, nil); err != nil {
-				t.Error(errors.New("Could not find key"))
-			} else if err := db.EraseDefaultKey(); err != nil {
-				t.Error(err)
-			} else {
-				dump, _ := db.Dump()
-				logger.Debug(dump)
-				if err := db.Close(); err != nil {
-					t.Error(err)
-				} else if err = os.Remove(f); err != nil {
-					t.Error(err)
-				}
-			}
-		}
-	}
+func TestPutGetDelAccount(t *testing.T) {
+	
+}
+
+func TestPutGetDelSetting(t *testing.T) {
+	
+}
+
+func TestPutGetDelBestBlock(t *testing.T) {
+	
+}
+func TestPutGetDelMinVersion(t *testing.T) {
+	
 }

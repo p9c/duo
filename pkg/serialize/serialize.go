@@ -1,6 +1,7 @@
 package ser
 
 import (
+	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"bytes"
 	"encoding/binary"
 	"os"
@@ -99,6 +100,58 @@ func GetPreLen(i []byte) (first, remainder []byte) {
 		remainder = b[preLen:]
 	} else {
 		first = b[1:]
+	}
+	return
+}
+
+// GetPreLenString cuts a prefix length marked section of bytes, returns the value and the remainder slice
+func GetPreLenString(i []byte) (first string, remainder []byte) {
+	b := []byte(string(i))
+	preLen := int(b[0]) + 1
+	if len(b) > preLen {
+		first = string(b[1:preLen])
+		remainder = b[preLen:]
+	} else {
+		first = string(b[1:])
+	}
+	return
+}
+
+// GetInt extracts an integer of arbitrary type from the front of a byte slice
+func GetInt(b []byte, i interface{}) (remainder []byte) {
+	switch i.(type) {
+	case int8:
+		i = int8(b[0])
+		return b[1:]
+	case byte:
+			i = b[0]
+			return b[1:]
+		case int16, uint16:
+		B := bytes.NewBuffer(b[:2])
+		binary.Read(B, binary.LittleEndian, &i)
+		return b[2:]
+	case int32, uint32:
+		B := bytes.NewBuffer(b[:4])
+		binary.Read(B, binary.LittleEndian, &i)
+		return b[4:]
+	case int64, uint64:
+		B := bytes.NewBuffer(b[:8])
+		binary.Read(B, binary.LittleEndian, &i)
+		return b[8:]
+	case int, uint:
+		var I int
+		iSize := unsafe.Sizeof(I)
+		B := bytes.NewBuffer(b[:iSize])
+		binary.Read(B, binary.LittleEndian, &i)
+		return b[iSize:]
+	case Uint.U160:
+		B := b[:20]
+		i = Uint.Zero160().FromBytes(B)
+		return b[20:]
+	case Uint.U256:
+		B := b[:32]
+		i = Uint.Zero256().FromBytes(B)
+		return b[32:]
 	}
 	return
 }

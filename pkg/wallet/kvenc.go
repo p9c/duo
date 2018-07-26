@@ -62,8 +62,8 @@ func (db *DB) KVEnc(vars interface{}) (result [2][]byte) {
 			Append(&result[1], Uint32ToBytes(V[2].(uint32)), Int64ToBytes(V[3].(int64)))
 		}
 	case "defaultkey":
-		if len(V) > 2 {
-			Append(&result[1], V[1].(*key.Pub).GetPub().SerializeUncompressed())
+		if len(V) > 1 {
+			Append(&result[1], FormatBytes(V[1].(*key.Pub).GetPub().SerializeUncompressed()))
 		}
 	case "pool":
 		Append(&result[0], Uint64ToBytes(V[1].(uint64)))
