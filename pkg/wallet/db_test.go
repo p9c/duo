@@ -1,11 +1,11 @@
 package wallet
 
 import (
-	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
+	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
@@ -148,16 +148,16 @@ func TestPutGetDelKey(t *testing.T) {
 }
 
 func TestPutGetDelMkey(t *testing.T) {
-	keyType:="mkey"
+	keyType := "mkey"
 	id := int64(1)
 	encryptedKey, _ := hex.DecodeString("5e12dde67bc7ebd32707eb585326b88d26db3ecea3212909a7c352ac39f2f944045dd56ba177bdb65b985a93d9a7da01")
 	salt, _ := hex.DecodeString("f4070bc4fea8df65")
- 	mkey := &crypto.MasterKey{
-		EncryptedKey: encryptedKey,
-	 	Salt: salt, 
-	 	DerivationMethod: 0,
-	 	DeriveIterations: 280611,
-	 	OtherDerivationParameters: []byte{0x00}}
+	mkey := &crypto.MasterKey{
+		EncryptedKey:              encryptedKey,
+		Salt:                      salt,
+		DerivationMethod:          0,
+		DeriveIterations:          280611,
+		OtherDerivationParameters: []byte{0x00}}
 	if db, err := NewDB(f); err != nil {
 		t.Error(err)
 	} else {
@@ -190,9 +190,8 @@ func TestPutGetDelMkey(t *testing.T) {
 	}
 }
 
-
 func TestPutGetDelCscript(t *testing.T) {
-	keyType:="cscript"
+	keyType := "cscript"
 	bytes := make([]byte, 20)
 	rand.Read(bytes)
 	hashID := Uint.Zero160()
@@ -233,7 +232,7 @@ func TestPutGetDelCscript(t *testing.T) {
 	}
 }
 
-func TestWriteOrderPosNext(t *testing.T) {
+func TestWriteEraseOrderPosNext(t *testing.T) {
 	keyType := "orderposnext"
 	orderposnext := int64(101)
 	if db, err := NewDB(f); err != nil {
@@ -256,14 +255,63 @@ func TestWriteOrderPosNext(t *testing.T) {
 			}
 			dump, _ = db.Dump()
 			logger.Debug(dump)
-			if err := db.WriteOrderPosNext(orderposnext+1001); err != nil {
+			if err := db.WriteOrderPosNext(orderposnext + 1001); err != nil {
 				t.Error(err)
-				}
+			}
 			dump, _ = db.Dump()
 			logger.Debug(dump)
 			if _, err := db.Find(keyType, nil); err != nil {
 				t.Error(errors.New("Could not find key"))
 			} else if err := db.EraseOrderPosNext(); err != nil {
+				t.Error(err)
+			} else {
+				dump, _ := db.Dump()
+				logger.Debug(dump)
+				if err := db.Close(); err != nil {
+					t.Error(err)
+				} else if err = os.Remove(f); err != nil {
+					t.Error(err)
+				}
+			}
+		}
+	}
+}
+
+func TestWriteEraseDefaultKey(t *testing.T) {
+	keyType := "defaultkey"
+	bytes := make([]byte, 32)
+	rand.Read(bytes)
+	_, pubKey := ec.PrivKeyFromBytes(ec.S256(), bytes)
+	defaultkey := &key.Pub{}
+	defaultkey.SetPub(pubKey)
+	if db, err := NewDB(f); err != nil {
+		t.Error(err)
+	} else {
+		if _, err := db.Find(keyType, nil); err == nil {
+			if err := db.EraseDefaultKey(); err != nil {
+				t.Error(err)
+			}
+		}
+		dump, _ := db.Dump()
+		logger.Debug(dump)
+		if err := db.WriteDefaultKey(defaultkey); err != nil {
+			t.Error(err)
+		} else {
+			dump, _ := db.Dump()
+			logger.Debug(dump)
+			if err := db.EraseDefaultKey(); err != nil {
+				t.Error(err)
+			}
+			dump, _ = db.Dump()
+			logger.Debug(dump)
+			if err := db.WriteDefaultKey(defaultkey); err != nil {
+				t.Error(err)
+			}
+			dump, _ = db.Dump()
+			logger.Debug(dump)
+			if _, err := db.Find(keyType, nil); err != nil {
+				t.Error(errors.New("Could not find key"))
+			} else if err := db.EraseDefaultKey(); err != nil {
 				t.Error(err)
 			} else {
 				dump, _ := db.Dump()

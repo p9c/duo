@@ -393,7 +393,7 @@ func (db *DB) eraseMasterKey(id int64) (err error) {
 	r := db.KVEnc([]interface{}{"mkey", id})
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return
-	}	
+	}
 	WalletDBUpdated++
 	return
 }
@@ -412,7 +412,7 @@ func (db *DB) eraseScript(hashID *Uint.U160) (err error) {
 	r := db.KVEnc([]interface{}{"cscript", hashID})
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return
-	}	
+	}
 	WalletDBUpdated++
 	return
 }
@@ -441,14 +441,27 @@ func (db *DB) EraseOrderPosNext() (err error) {
 	r := db.KVEnc([]interface{}{"orderposnext"})
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
 		return
-	}	
+	}
 	WalletDBUpdated++
 	return
 }
 
-
 // WriteDefaultKey writes the default key
-func (db *DB) WriteDefaultKey(*key.Pub) (err error) {
+func (db *DB) WriteDefaultKey(p *key.Pub) (err error) {
+	r := db.KVEnc([]interface{}{"defaultkey", p.Key()})
+	if err = db.Put(bdb.NoTransaction, true, r); err != nil {
+		return
+	}
+	WalletDBUpdated++
+	return
+}
+
+func (db *DB) EraseDefaultKey() (err error) {
+	r := db.KVEnc([]interface{}{"defaultkey"})
+	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
+		return
+	}
+	WalletDBUpdated++
 	return
 }
 
