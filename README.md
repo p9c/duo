@@ -12,10 +12,17 @@ The blockchain fundamentals will also be improved with the addition of merge min
 
 ### Prerequisites
 
-You need some version of BerkeleyDB C headers installed (and the library of course)
+You need some version of BerkeleyDB C headers installed (and the library of course). This is to enable the import of `wallet.dat` files from the old parallelcoind.
+
+Also needed is base58check:
 
     go get github.com/anaskhan96/base58check
-    go get github.com/zippoxer/bow
+    
+For keeping secrets off disk and away from potential buffer exploits, we use memguard, and for that we want to check out the latest stable release tag:
+    
+    go get github.com/awnumar/memguard \
+       && cd $GOPATH/src/github.com/awnumar/memguard \
+       && git checkout v0.15.0
 
 ### Build it
 

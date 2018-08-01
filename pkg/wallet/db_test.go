@@ -21,6 +21,8 @@ var (
 func TestNewDB(t *testing.T) {
 	if db, err := NewDB(f); err != nil {
 		t.Error(err)
+	} else if err = db.Verify(); err != nil {
+		t.Error(err)
 	} else if err := db.Close(); err != nil {
 		t.Error(err)
 	} else if err = os.Remove(f); err != nil {

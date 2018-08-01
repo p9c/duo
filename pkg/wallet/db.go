@@ -205,7 +205,11 @@ func (db *DB) Verify() (err error) {
 		logger.Debug(err)
 		return
 	}
-	return
+	if err = bdb.Verify(db.Filename); err != nil {
+		logger.Debug(err)
+		return	
+	}
+return
 }
 
 // Encrypt a wallet.dat database

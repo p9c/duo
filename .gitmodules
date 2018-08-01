@@ -1,6 +1,0 @@
-[submodule "lib/fast-elliptic-curve-p256"]
-	path = lib/fast-elliptic-curve-p256
-	url = git@github.com:glycerine/fast-elliptic-curve-p256.git
-[submodule "lib/base58"]
-	path = lib/base58
-	url = git@github.com:mr-tron/base58.git

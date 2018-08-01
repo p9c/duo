@@ -11,7 +11,7 @@ import (
 
 // KVDec reads a key/value pair from the wallet storage format
 func (db *DB) KVDec(k, v []byte) (result interface{}) {
-	id, keyRem := ser.GetPreLen(k)
+	keyRem, _ := ser.Deserialize(k, id)
 	switch string(id) {
 	case "name":
 		addr, _ := ser.GetPreLen(keyRem)
@@ -22,18 +22,19 @@ func (db *DB) KVDec(k, v []byte) (result interface{}) {
 		hashVal := Uint.Zero256().FromBytes(hashB)
 		tx := v
 		return []interface{}{id, hashVal, tx}
-	case "acentry":
-		a := AccountingEntry{}
-		a.Account, keyRem = ser.GetPreLenString(v)
-		keyRem = ser.GetInt(keyRem, &a.CreditDebit)
-		keyRem = ser.GetInt(keyRem, &a.Time)
-		a.OtherAccount, keyRem = ser.GetPreLenString(keyRem)
-		a.Comment, keyRem = ser.GetPreLenString(keyRem)
+	// On account of this obscure table in the wallet database we do not implement full read/write, only import of existing wallet.dat files
+	// case "acentry":
+	// 	a := AccountingEntry{}
+	// 	a.Account, keyRem = ser.GetPreLenString(v)
+	// 	keyRem = ser.GetInt(keyRem, &a.CreditDebit)
+	// 	keyRem = ser.GetInt(keyRem, &a.Time)
+	// 	a.OtherAccount, keyRem = ser.GetPreLenString(keyRem)
+	// 	a.Comment, keyRem = ser.GetPreLenString(keyRem)
 		
-		// account, keyRem := ser.GetPreLen(keyRem)
+	// 	// account, keyRem := ser.GetPreLen(keyRem)
 		
-		// num := BytesToUint64(numB)
-		return []interface{}{id, &a}
+	// 	// num := BytesToUint64(numB)
+	// 	return []interface{}{id, &a}
 	case "keymeta":
 		keyB, _ := ser.GetPreLen(keyRem)
 		if pub, err := ec.ParsePubKey(keyB, ec.S256()); err != nil {
