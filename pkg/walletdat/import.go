@@ -16,6 +16,25 @@ type Imports struct {
 	}
 	Key []struct {
 		Pub *key.Pub
+		Priv *key.Priv
+	}
+	WKey []struct {
+		Pub *key.Pub
+		PrivKey     *key.Priv
+		TimeCreated int64
+		TimeExpires: int64
+		Comment:     string
+	}
+	Mkey []struct {
+		EncryptedKey []byte
+		Salt []byte
+		DerivationMethod uint32
+		DeriveIterations uint32
+		OtherDerivationParameters []byte
+	}
+	Ckey []struct {
+		Pub *key.Pub
+		Priv []byte
 	}
 }
 
