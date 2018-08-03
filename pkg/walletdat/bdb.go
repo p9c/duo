@@ -1,12 +1,10 @@
 package walletdat
 
 import (
-	"encoding/hex"
 	"os"
-	"strconv"
 	"sync"
 	"time"
-
+	"gitlab.com/parallelcoin/duo/pkg/bdb"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"gitlab.com/parallelcoin/duo/pkg/server/args"
 )
@@ -21,13 +19,6 @@ var (
 		bdb.Unknown:  "unknown",
 	}
 	// Filename is the default filename being in the data directory for the wallet file
-	Filename string
-	// Db is a shared wallet for the typical application using one
-	Db DB
-	// Prefix is loaded in init to contain KeyNames
-	Prefix map[string][]byte
-	// KeyNames is the list of key types stored in the wallet
-	KeyNames = []string{"name", "tx", "acentry", "key", "wkey", "mkey", "ckey", "keymeta", "defaultkey", "pool", "version", "cscript", "orderposnext", "account", "setting", "bestblock", "minversion"}
 )
 
 func init() {

@@ -4,7 +4,7 @@
     "markdown.preview.fontFamily": "'Magra'",
     "markdown.preview.lineHeight": 1.2,
     "markdown.preview.doubleClickToSwitchToEditor": true,
-    "window.zoomLevel": 0,
+    "window.zoomLevel": 2,
     "explorer.confirmDragAndDrop": false,
     "git.enableSmartCommit": true,
     "git.autofetch": true,
