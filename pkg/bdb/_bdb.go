@@ -149,6 +149,7 @@ func check(rc C.int) (err error) {
 	return
 }
 
+// EnvironmentConfig -
 type EnvironmentConfig struct {
 	Create        bool        // Create the environment, if necessary.
 	Mode          os.FileMode // File creation mode for the environment.
@@ -159,12 +160,12 @@ type EnvironmentConfig struct {
 	WriteNoSync   bool        // Do not flush log when committing.
 }
 
-// Database environment.
+// Environment -
 type Environment struct {
 	ptr *C.DB_ENV
 }
 
-// Special constant to indicate no environment should be used.
+// NoEnvironment is a special constant to indicate no environment should be used.
 var NoEnvironment = Environment{ptr: nil}
 
 type IsolationLevel int
@@ -191,9 +192,10 @@ type Transaction struct {
 	ptr *C.DB_TXN
 }
 
-// Special constant indicating no transaction should be used.
+// NoTransaction indicates no transaction should be used.
 var NoTransaction = Transaction{ptr: nil}
 
+// OpenEnvironment opens a berkeleydb environment
 func OpenEnvironment(home string, config *EnvironmentConfig) (env Environment, err error) {
 	err = check(C.db_env_create(&env.ptr, 0))
 	if err == nil {
@@ -256,7 +258,7 @@ func (env Environment) Close() (err error) {
 	return
 }
 
-// OpenDatabase -
+// OpenDatabase opens a database file
 func OpenDatabase(env Environment, txn Transaction, file string, config *DatabaseConfig) (db Database, err error) {
 	err = check(C.db_create(&db.ptr, env.ptr, 0))
 	if err == nil {
@@ -346,7 +348,7 @@ func Verify(file string) (err error) {
 	return
 }
 
-// Get the type of the database.
+// Type returns the type of the database.
 func (db Database) Type() (dbtype DatabaseType, err error) {
 	var cdbtype C.DBTYPE
 	err = check(C.db_get_type(db.ptr, &cdbtype))
@@ -354,6 +356,7 @@ func (db Database) Type() (dbtype DatabaseType, err error) {
 	return
 }
 
+// Put a set of records into the database
 func (db Database) Put(txn Transaction, append bool, recs ...[2][]byte) (err error) {
 	dbtype, err := db.Type()
 	if err != nil {
@@ -389,6 +392,7 @@ func (db Database) Put(txn Transaction, append bool, recs ...[2][]byte) (err err
 	return
 }
 
+// Get a set of records from the database
 func (db Database) Get(txn Transaction, consume bool, recs ...[2][]byte) (err error) {
 	var key, data C.DBT
 	var flags C.u_int32_t = 0
@@ -415,6 +419,7 @@ func (db Database) Get(txn Transaction, consume bool, recs ...[2][]byte) (err er
 	return
 }
 
+// Del deletes a set of records from the database
 func (db Database) Del(txn Transaction, recs ...[]byte) (err error) {
 	var key C.DBT
 	key.flags |= C.DB_DBT_READONLY
@@ -429,12 +434,13 @@ func (db Database) Del(txn Transaction, recs ...[]byte) (err error) {
 	return
 }
 
+// Cursor is used to walk through the database in key sort order
 type Cursor struct {
 	db  Database
 	ptr *C.DBC
 }
 
-// Obtain a cursor over the database.
+// Cursor returns a cursor for the database.
 func (db Database) Cursor(txn Transaction) (cur Cursor, err error) {
 	cur.db = db
 	err = check(C.db_cursor(db.ptr, txn.ptr, &cur.ptr, 0))
@@ -446,6 +452,8 @@ func (cur Cursor) Close() (err error) {
 	err = check(C.db_cursor_close(cur.ptr))
 	return
 }
+
+// Set a record
 func (cur Cursor) Set(rec [2][]byte, exact bool) (err error) {
 	var key, data C.DBT
 	var flags C.u_int32_t = 0
@@ -477,7 +485,7 @@ func (cur Cursor) Set(rec [2][]byte, exact bool) (err error) {
 	return
 }
 
-// Retrieve the first record of the database.
+// First etrieves the first record of the database.
 func (cur Cursor) First(rec *[2][]byte) (err error) {
 	var key, data C.DBT
 
@@ -495,7 +503,7 @@ func (cur Cursor) First(rec *[2][]byte) (err error) {
 	return
 }
 
-// Retrieve the next record from the cursor.
+// Next retrieves the next record from the cursor.
 func (cur Cursor) Next(rec *[2][]byte) (err error) {
 	var key, data C.DBT
 
@@ -513,7 +521,7 @@ func (cur Cursor) Next(rec *[2][]byte) (err error) {
 	return
 }
 
-// Retrieve the last record of the database.
+// Last retrieves the last record of the database.
 func (cur Cursor) Last(rec [2][]byte) (err error) {
 	var key, data C.DBT
 
@@ -531,7 +539,7 @@ func (cur Cursor) Last(rec [2][]byte) (err error) {
 	return
 }
 
-// Retrieve the previous record from the cursor.
+// Prev retrieves the previous record from the cursor.
 func (cur Cursor) Prev(rec [2][]byte) (err error) {
 	var key, data C.DBT
 
@@ -549,7 +557,7 @@ func (cur Cursor) Prev(rec [2][]byte) (err error) {
 	return
 }
 
-// Delete the current record at the cursor.
+// Del deletes the current record at the cursor.
 func (cur Cursor) Del() (err error) {
 	err = check(C.db_cursor_del(cur.ptr, 0))
 	return

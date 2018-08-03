@@ -1,7 +1,7 @@
 package walletdat
 
 import (
-	"gitlab.com/parallelcoin/duo/pkg/wallet"
+	// "gitlab.com/parallelcoin/duo/pkg/wallet"
 	"gitlab.com/parallelcoin/duo/pkg/util"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/ec"

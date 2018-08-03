@@ -35,7 +35,7 @@ var (
 	// Prefix is loaded in init to contain KeyNames
 	Prefix map[string][]byte
 	// KeyNames is the list of key types stored in the wallet
-	KeyNames = []string{"name", "tx", "acentry", "key", "wkey", "mkey", "ckey", "keymeta", "defaultkey", "pool", "version", "cscript", "orderposnext", "account", "setting", "bestblock", "minversion"}
+	KeyNames = []string{"name", "tx", "acentry", "key", "wkey", "mkey", "ckey", "keymeta", "defaultkey", "pool", "version", "cscript", "orderposnext", "acc", "setting", "bestblock", "minversion"}
 )
 
 func init() {

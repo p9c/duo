@@ -11,17 +11,14 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
-	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"gitlab.com/parallelcoin/duo/pkg/net"
 	"gitlab.com/parallelcoin/duo/pkg/rpc"
 	"gitlab.com/parallelcoin/duo/pkg/server"
 	"gitlab.com/parallelcoin/duo/pkg/server/args"
 	"gitlab.com/parallelcoin/duo/pkg/server/state"
 	"gitlab.com/parallelcoin/duo/pkg/subcmd"
-	"gitlab.com/parallelcoin/duo/pkg/util"
+	// "gitlab.com/parallelcoin/duo/pkg/util"
 	"gitlab.com/parallelcoin/duo/pkg/version"
-	"gitlab.com/parallelcoin/duo/pkg/wallet"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -87,7 +84,7 @@ func isEmpty(s string) bool {
 	return false
 }
 
-func failure(mode string, erri error, s ...interface{}) (r string, err error) {
+func Failure(mode string, erri error, s ...interface{}) (r string, err error) {
 	err = erri
 	switch mode {
 	case "cli", "":
@@ -121,14 +118,14 @@ func init() {
 			case "cli", "":
 				n, i := isInteger(f[0])
 				if !i {
-					return failure(mode, err, "First parameter was not a number")
+					return Failure(mode, err, "First parameter was not a number")
 				}
 				if !json.Valid([]byte(f[1])) {
-					return failure(mode, err, "List of addresses was not formatted correctly")
+					return Failure(mode, err, "List of addresses was not formatted correctly")
 				}
 				list, i := isValidJSONArray(f[1])
 				if !i {
-					return failure(mode, err, "JSON was valid but not an array")
+					return Failure(mode, err, "JSON was valid but not an array")
 				}
 				r += "  Number of signers required:" + strconv.Itoa(n) + "\n  Addresses: "
 				for i := range list {
@@ -151,14 +148,14 @@ func init() {
 			case "cli", "":
 				node := f[0]
 				if isEmpty(node) {
-					return failure(mode, err, "<node> is a required parameter")
+					return Failure(mode, err, "<node> is a required parameter")
 				}
 				action := f[1]
 				if isEmpty(action) {
-					return failure(mode, err, "Must have one of <add|remove|onetry>")
+					return Failure(mode, err, "Must have one of <add|remove|onetry>")
 				}
 				if !(action == "add" || f[1] == "remove" || f[1] == "onetry") {
-					return failure(mode, err, "unrecognised option ", action)
+					return Failure(mode, err, "unrecognised option ", action)
 				}
 				switch action {
 				case "add":
@@ -179,7 +176,7 @@ func init() {
 			case "cli", "":
 				wallet := f[0]
 				if len(f[0]) != 1 {
-					return failure(mode, err, "ERROR: <destination> is a required parameter")
+					return Failure(mode, err, "ERROR: <destination> is a required parameter")
 				}
 				r += "Backing up wallet to '" + wallet + "'\n"
 			}
@@ -194,15 +191,15 @@ func init() {
 				list, L := isValidJSONArray(f[1])
 				switch {
 				case len(f) > 2:
-					return failure(mode, err, "Excess parameters, wanted <nrequired> <'[\"key\",\"key\"]'>, got ", f)
+					return Failure(mode, err, "Excess parameters, wanted <nrequired> <'[\"key\",\"key\"]'>, got ", f)
 				case isEmpty(f[0]):
-					return failure(mode, err, "<nrequired> is a required parameter")
+					return Failure(mode, err, "<nrequired> is a required parameter")
 				case !N:
-					return failure(mode, err, "First parameter was not a number")
+					return Failure(mode, err, "First parameter was not a number")
 				case !json.Valid([]byte(f[1])):
-					return failure(mode, err, "List of addresses was not formatted correctly")
+					return Failure(mode, err, "List of addresses was not formatted correctly")
 				case !L:
-					return failure(mode, err, "List of addresses was not formatted correctly")
+					return Failure(mode, err, "List of addresses was not formatted correctly")
 				}
 				r += "Creating multisig address\n"
 				r += "  Number of signers required: " + strconv.Itoa(n) + "\n"
@@ -226,17 +223,17 @@ func init() {
 			case "cli", "":
 				switch {
 				case len(f[0]) != 1:
-					return failure(mode, err, "<transaction> is a required parameter")
+					return Failure(mode, err, "<transaction> is a required parameter")
 				case !json.Valid([]byte(f[0])):
-					return failure(mode, err, "Transaction JSON was not formatted correctly")
+					return Failure(mode, err, "Transaction JSON was not formatted correctly")
 				case !j:
-					return failure(mode, err, "Transaction was not correct JSON ", f[0])
+					return Failure(mode, err, "Transaction was not correct JSON ", f[0])
 				case isEmpty(f[1]):
-					return failure(mode, err, "<addresses> is a required parameter")
+					return Failure(mode, err, "<addresses> is a required parameter")
 				case !json.Valid([]byte(f[1])):
-					return failure(mode, err, "List of addresses was not formatted correctly")
+					return Failure(mode, err, "List of addresses was not formatted correctly")
 				case !a:
-					return failure(mode, err, "List of addresses was not correct JSON")
+					return Failure(mode, err, "List of addresses was not correct JSON")
 				}
 				r += "Transaction: " + fmt.Sprint(tx) + "\n"
 				r += "Addresses: " + fmt.Sprint(addrs) + "\n"
@@ -249,7 +246,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f[0]) != 1 {
-					return failure(mode, err, "<hex string> is a required parameter")
+					return Failure(mode, err, "<hex string> is a required parameter")
 				}
 				r += "Decoding " + f[0]
 			}
@@ -261,7 +258,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if f[0] == "" {
-					return failure(mode, err, "<parallelcoinaddress> is a required parameter")
+					return Failure(mode, err, "<parallelcoinaddress> is a required parameter")
 				}
 				r += "Dumping address '" + f[0] + "'\n"
 
@@ -270,37 +267,37 @@ func init() {
 		},
 
 		"dumpwallet": func(mode string, f []string, erri error) (r string, err error) {
-			err = erri
-			switch mode {
-			case "cli", "":
-				if len(f) > 2 {
-					return failure(mode, err, "Excess arguments")
-				}
-				if wallet.Db.Filename == "" {
-					wallet.Db.SetFilename(*args.DataDir + "/" + *args.Wallet)
-				}
-				logger.Debug(wallet.Db.Filename)
-				if db, err := wallet.NewDB(); err != nil {
-					return failure(mode, err, "unable to open wallet")
-				} else if err := db.Open(); err != nil {
-					return failure(mode, err, "")
-				} else if dump, err := db.Dump(); err != nil {
-					return failure(mode, err, "")
-				} else {
-					r += dump + "\n"
-					if len(f) == 1 {
-						if wallet.Db.Filename == "" {
-							wallet.Db.SetFilename(*args.DataDir + "/" + *args.Wallet)
-							dumpfile, err := os.OpenFile(f[0], os.O_RDWR|os.O_CREATE, 0600)
-							if err != nil {
-								return failure(mode, err, "")
-							}
-							defer dumpfile.Close()
-							// Write r to dump file
-						}
-					}
-				}
-			}
+			// err = erri
+			// switch mode {
+			// case "cli", "":
+			// 	if len(f) > 2 {
+			// 		return Failure(mode, err, "Excess arguments")
+			// 	}
+			// 	if wallet.Db.Filename == "" {
+			// 		wallet.Db.SetFilename(*args.DataDir + "/" + *args.Wallet)
+			// 	}
+			// 	logger.Debug(wallet.Db.Filename)
+			// 	if db, err := wallet.NewDB(); err != nil {
+			// 		return Failure(mode, err, "unable to open wallet")
+			// 	} else if err := db.Open(); err != nil {
+			// 		return Failure(mode, err, "")
+			// 	} else if dump, err := db.Dump(); err != nil {
+			// 		return Failure(mode, err, "")
+			// 	} else {
+			// 		r += dump + "\n"
+			// 		if len(f) == 1 {
+			// 			if wallet.Db.Filename == "" {
+			// 				wallet.Db.SetFilename(*args.DataDir + "/" + *args.Wallet)
+			// 				dumpfile, err := os.OpenFile(f[0], os.O_RDWR|os.O_CREATE, 0600)
+			// 				if err != nil {
+			// 					return Failure(mode, err, "")
+			// 				}
+			// 				defer dumpfile.Close()
+			// 				// Write r to dump file
+			// 			}
+			// 		}
+			// 	}
+			// }
 			return
 		},
 
@@ -309,7 +306,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f[0]) != 1 {
-					return failure(mode, err, "<passphrase> is a required parameter")
+					return Failure(mode, err, "<passphrase> is a required parameter")
 				}
 				r += "Encypting wallet"
 			}
@@ -321,7 +318,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f[0]) != 1 {
-					return failure(mode, err, "<parallelcoinaddress> is a required parameter")
+					return Failure(mode, err, "<parallelcoinaddress> is a required parameter")
 				}
 				r += "Getting account '" + f[0] + "'..."
 			}
@@ -333,7 +330,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f[0]) != 1 {
-					return failure(mode, err, "<account> is a required parameter")
+					return Failure(mode, err, "<account> is a required parameter")
 				}
 				r += "Getting address from account '" + f[0] + "'...\n"
 			}
@@ -346,7 +343,7 @@ func init() {
 			case "cli", "":
 				switch {
 				case !(f[0] == "true" || f[0] == "false"):
-					return failure(mode, err, "<dns> must be set to true or false")
+					return Failure(mode, err, "<dns> must be set to true or false")
 				case f[0] == "true":
 					r += "Showing all DNS information\n"
 				case f[0] == "false":
@@ -365,7 +362,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if isEmpty(f[0]) {
-					return failure(mode, err, "<account> is a required parameter")
+					return Failure(mode, err, "<account> is a required parameter")
 				}
 				r += "Getting info about account '" + f[0] + "'\n"
 			}
@@ -379,7 +376,7 @@ func init() {
 				minconf := 1
 				account := ""
 				if len(f) > 2 {
-					return failure(mode, err, "Excess arguments: ", f)
+					return Failure(mode, err, "Excess arguments: ", f)
 				}
 				for i := range f {
 					if strings.HasPrefix(f[i], "minconf=") {
@@ -388,7 +385,7 @@ func init() {
 						if i {
 							minconf = n
 						} else {
-							return failure(mode, err, "minconf value is not a number")
+							return Failure(mode, err, "minconf value is not a number")
 						}
 					} else {
 						account = f[i]
@@ -407,7 +404,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				r += "Getting best block hash ...\n"
 			}
@@ -419,19 +416,19 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) == 0 {
-					return failure(mode, err, "No arguments given for '", "'\n")
+					return Failure(mode, err, "No arguments given for '", "'\n")
 				}
 				verbose := false
 				hash := ""
 				for i := range f {
 					if f[i] == "verbose" {
 						if verbose {
-							return failure(mode, err, "verbose can only be set once")
+							return Failure(mode, err, "verbose can only be set once")
 						}
 						verbose = true
 					} else {
 						if hash != "" {
-							return failure(mode, err, "Too many arguments given for '", "'\n")
+							return Failure(mode, err, "Too many arguments given for '", "'\n")
 						}
 						hash = f[i]
 					}
@@ -440,7 +437,7 @@ func init() {
 					r += "verbose enabled\n"
 				}
 				if hash == "" {
-					return failure(mode, err, "No hash given")
+					return Failure(mode, err, "No hash given")
 				}
 				r += "Info about: '" + hash + "'\n"
 			}
@@ -452,7 +449,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required")
+					return Failure(mode, err, "No arguments are required")
 				}
 				r += "Getting the number of blocks in the longest block chain ..."
 			}
@@ -464,13 +461,13 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) != 1 {
-					return failure(mode, err, "No/too many arguments given for '", "'\n")
+					return Failure(mode, err, "No/too many arguments given for '", "'\n")
 				}
 				n, i := isInteger(f[0])
 				if i {
 					r += "Getting block hash of block number " + strconv.Itoa(n) + "\n"
 				} else {
-					return failure(mode, err, "Argument is not a number")
+					return Failure(mode, err, "Argument is not a number")
 				}
 			}
 			return
@@ -482,11 +479,11 @@ func init() {
 			case "cli", "":
 				if len(f) > 0 {
 					if !json.Valid([]byte(f[0])) {
-						return failure(mode, err, "Transaction JSON was not formatted correctly")
+						return Failure(mode, err, "Transaction JSON was not formatted correctly")
 					}
 					m, i := isValidJSONMap(f[0])
 					if !i {
-						return failure(mode, err, "Parameters incorrectly formatted ", f[0])
+						return Failure(mode, err, "Parameters incorrectly formatted ", f[0])
 					}
 					params, _ := json.Marshal(m)
 					r += "Parameters " + string(params) + "\n"
@@ -500,7 +497,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				r += "Getting connection count ..."
 			}
@@ -512,7 +509,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				r += "Getting current Proof of Work difficulty ..."
 			}
@@ -524,7 +521,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				fmt.Println("Getting mining status ...")
 			}
@@ -536,7 +533,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				fmt.Println("Getting miner's current hashrate ...")
 			}
@@ -548,14 +545,14 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				info := GetInfo{
 					Version:           version.Client,
 					Protocolversion:   version.Protocol,
-					Walletversion:     server.Walletdb.Version(),
-					Balance:           server.Walletdb.GetBalance(),
-					Timeoffset:        util.GetTimeOffset(),
+					// Walletversion:     server.Walletdb.Version(),
+					// Balance:           server.Walletdb.GetBalance(),
+					// Timeoffset:        util.GetTimeOffset(),
 					Connections:       len(net.Nodes),
 					Proxy:             *args.Proxy,
 					PowAlgoID:         algos.Code(*args.Algo),
@@ -564,15 +561,15 @@ func init() {
 					DifficultySha256D: rpc.GetDifficulty(block.ChainIndex, algos.SHA256D),
 					DifficultyScrypt:  rpc.GetDifficulty(block.ChainIndex, algos.SCRYPT),
 					Testnet:           *args.TestNet,
-					Keypoololdest:     server.Walletdb.GetOldestKeyPoolTime(),
-					Keypoolsize:       server.Walletdb.GetKeyPoolSize(),
+					// Keypoololdest:     server.Walletdb.GetOldestKeyPoolTime(),
+					// Keypoolsize:       server.Walletdb.GetKeyPoolSize(),
 					Paytxfee:          state.TransactionFee,
-					UnlockedUntil:     wallet.Db.UnlockedUntil,
+					// UnlockedUntil:     wallet.Db.UnlockedUntil,
 					Errors:            server.GetWarnings("statusbar"),
 				}
 				reply, err := json.MarshalIndent(info, "", "  ")
 				if err != nil {
-					return failure(mode, err, "Unable to marshal struct into JSON")
+					return Failure(mode, err, "Unable to marshal struct into JSON")
 				}
 				r += string(reply) + "\n"
 			}
@@ -584,7 +581,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				r += "Getting info about mining on this server ...\n"
 			}
@@ -603,7 +600,7 @@ func init() {
 						var i bool
 						blocks, i = isInteger(value)
 						if !i {
-							return failure(mode, err, "Value after blocks= not a number")
+							return Failure(mode, err, "Value after blocks= not a number")
 						}
 					}
 					if strings.HasPrefix(f[i], "height=") {
@@ -611,7 +608,7 @@ func init() {
 						var i bool
 						height, i = isInteger(value)
 						if !i {
-							return failure(mode, err, "Value after height= not a number")
+							return Failure(mode, err, "Value after height= not a number")
 						}
 					}
 				}
@@ -627,7 +624,7 @@ func init() {
 			case "cli", "":
 				switch {
 				case len(f) > 1:
-					return failure(mode, err, "Excess arguments after [account]")
+					return Failure(mode, err, "Excess arguments after [account]")
 				case f[0] != "":
 					r += "Adding address to account " + f[0] + "\n"
 				default:
@@ -642,7 +639,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				r += "Getting peer information ...\n"
 			}
@@ -654,7 +651,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				fmt.Println("Getting raw mempool information ...")
 			}
@@ -670,19 +667,19 @@ func init() {
 				txid := ""
 				switch {
 				case nargs < 1:
-					return failure(mode, err, "A <txid> must be specified.")
+					return Failure(mode, err, "A <txid> must be specified.")
 				case nargs > 2:
-					return failure(mode, err, "Too many arguments specified, want <txid> [verbose]")
+					return Failure(mode, err, "Too many arguments specified, want <txid> [verbose]")
 				}
 				for i := range f {
 					if f[i] == "verbose" {
 						if verbose {
-							return failure(mode, err, "Already set verbose flag")
+							return Failure(mode, err, "Already set verbose flag")
 						}
 						verbose = true
 					} else if txid != "" {
 						if f[i] != "" {
-							return failure(mode, err, "Already set <txid>")
+							return Failure(mode, err, "Already set <txid>")
 						}
 						txid = f[i]
 					} else {
@@ -712,7 +709,7 @@ func init() {
 						if i {
 							minconf = n
 						} else {
-							return failure(mode, err, "minconf value is not a number")
+							return Failure(mode, err, "minconf value is not a number")
 						}
 					} else {
 						account = f[i]
@@ -740,7 +737,7 @@ func init() {
 						if i {
 							minconf = n
 						} else {
-							return failure(mode, err, "minconf value is not a number")
+							return Failure(mode, err, "minconf value is not a number")
 						}
 					} else {
 						address = f[i]
@@ -757,7 +754,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) != 1 {
-					return failure(mode, err, "Wrong number of arguments, wanted <txid> got ", f)
+					return Failure(mode, err, "Wrong number of arguments, wanted <txid> got ", f)
 				}
 				r += "Getting transaction with txid '" + f[0] + "'\n"
 			}
@@ -773,15 +770,15 @@ func init() {
 				txid := ""
 				cond := false
 				if len(f) > 3 {
-					return failure(mode, err, "Too many arguments, want <txid> <n> [includemempool] got: ", f)
+					return Failure(mode, err, "Too many arguments, want <txid> <n> [includemempool] got: ", f)
 				}
 				if len(f) < 2 {
-					return failure(mode, err, "Require at minimum <txid> <n> ", len(f), f)
+					return Failure(mode, err, "Require at minimum <txid> <n> ", len(f), f)
 				}
 				for i := range f {
 					if f[i] == "includemempool" {
 						if includemempool {
-							return failure(mode, err, "Already set includemempool flag")
+							return Failure(mode, err, "Already set includemempool flag")
 						}
 						includemempool = true
 					} else {
@@ -794,20 +791,20 @@ func init() {
 						} else {
 							_, cond = isInteger(f[i])
 							if cond {
-								return failure(mode, err, "Cannot set <n> twice")
+								return Failure(mode, err, "Cannot set <n> twice")
 							}
 							if txid != "" {
-								return failure(mode, err, "cannot set <txid> twice")
+								return Failure(mode, err, "cannot set <txid> twice")
 							}
 							txid = f[i]
 						}
 					}
 				}
 				if n == -1 {
-					return failure(mode, err, "did not set txout number")
+					return Failure(mode, err, "did not set txout number")
 				}
 				if txid == "" {
-					return failure(mode, err, "did not set txid")
+					return Failure(mode, err, "did not set txid")
 				}
 				fmt.Println("getting details about txid:", txid, "number:", n)
 				if includemempool {
@@ -822,7 +819,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				fmt.Println("Getting txout set info ...")
 			}
@@ -834,7 +831,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 1 {
-					return failure(mode, err, "Too many arguments, want [data] got: ", f)
+					return Failure(mode, err, "Too many arguments, want [data] got: ", f)
 				}
 				if len(f) == 1 {
 					fmt.Print("Using data\n", f[0], "\n")
@@ -861,19 +858,19 @@ func init() {
 				rescan := false
 				label := ""
 				if f[0] == "" {
-					return failure(mode, err, "<parallelcoinprivkey> is a mandatory parameter")
+					return Failure(mode, err, "<parallelcoinprivkey> is a mandatory parameter")
 				}
 				for i := 1; i < len(f); i++ {
 					if f[i] == "rescan" {
 						if rescan {
-							return failure(mode, err, "Cannot set rescan more than once")
+							return Failure(mode, err, "Cannot set rescan more than once")
 						}
 						rescan = true
 					} else {
 						if label == "" {
 							label = f[i]
 						} else {
-							return failure(mode, err, "Already set label, cannot set twice")
+							return Failure(mode, err, "Already set label, cannot set twice")
 						}
 					}
 				}
@@ -893,7 +890,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) != 1 {
-					return failure(mode, err, "parameter <filename> is mandatory")
+					return Failure(mode, err, "parameter <filename> is mandatory")
 				}
 				fmt.Printf("Importing wallet from '%s'", f[0])
 			}
@@ -905,7 +902,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				fmt.Println("Refilling keypool ...")
 			}
@@ -918,7 +915,7 @@ func init() {
 			case "cli", "":
 				minconf := 1
 				if len(f) > 1 {
-					return failure(mode, err, "Too many arguments, only [minconf=x] permitted")
+					return Failure(mode, err, "Too many arguments, only [minconf=x] permitted")
 				}
 				if len(f) > 0 {
 					if strings.HasPrefix(f[0], "minconf=") {
@@ -927,10 +924,10 @@ func init() {
 						if i {
 							minconf = n
 						} else {
-							return failure(mode, err, "minconf value is not a number")
+							return Failure(mode, err, "minconf value is not a number")
 						}
 					} else {
-						return failure(mode, err, "Urecognised argument ", f[0])
+						return Failure(mode, err, "Urecognised argument ", f[0])
 					}
 				}
 				fmt.Println("Listing accounts with balances (minconf=" + strconv.Itoa(minconf) + ")")
@@ -943,7 +940,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				fmt.Println("Listing address groupings ...")
 			}
@@ -955,7 +952,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				fmt.Println("Starting miner ...")
 			}
@@ -969,7 +966,7 @@ func init() {
 				minconf := 1
 				includeempty := false
 				if len(f) > 2 {
-					return failure(mode, err, "Too many arguments ")
+					return Failure(mode, err, "Too many arguments ")
 				}
 				for i := range f {
 					if strings.HasPrefix(f[i], "minconf=") {
@@ -978,15 +975,15 @@ func init() {
 						if i {
 							minconf = n
 						} else {
-							return failure(mode, err, "minconf value is not a number")
+							return Failure(mode, err, "minconf value is not a number")
 						}
 					} else if f[i] == "includeempty" {
 						if includeempty {
-							return failure(mode, err, "includeempty already set")
+							return Failure(mode, err, "includeempty already set")
 						}
 						includeempty = true
 					} else {
-						return failure(mode, err, "Urecognised argument ", f[0])
+						return Failure(mode, err, "Urecognised argument ", f[0])
 					}
 				}
 				if includeempty {
@@ -1006,7 +1003,7 @@ func init() {
 				minconf := 1
 				includeempty := false
 				if len(f) > 2 {
-					return failure(mode, err, "Too many arguments ")
+					return Failure(mode, err, "Too many arguments ")
 				}
 				for i := range f {
 					if strings.HasPrefix(f[i], "minconf=") {
@@ -1015,15 +1012,15 @@ func init() {
 						if i {
 							minconf = n
 						} else {
-							return failure(mode, err, "minconf value is not a number")
+							return Failure(mode, err, "minconf value is not a number")
 						}
 					} else if f[i] == "includeempty" {
 						if includeempty {
-							return failure(mode, err, "includeempty already set")
+							return Failure(mode, err, "includeempty already set")
 						}
 						includeempty = true
 					} else {
-						return failure(mode, err, "Urecognised argument ", f[0])
+						return Failure(mode, err, "Urecognised argument ", f[0])
 					}
 				}
 				if includeempty {
@@ -1048,13 +1045,13 @@ func init() {
 						if targetconfirmations == 0 {
 							targetconfirmations = n
 						} else {
-							return failure(mode, err, "[target-confirmations] already set")
+							return Failure(mode, err, "[target-confirmations] already set")
 						}
 					} else {
 						if blockhash == "" {
 							blockhash = f[i]
 						} else {
-							return failure(mode, err, "Cannot set more than one blockhash")
+							return Failure(mode, err, "Cannot set more than one blockhash")
 						}
 					}
 				}
@@ -1078,7 +1075,7 @@ func init() {
 				count := 10
 				from := 0
 				if len(f) > 3 {
-					return failure(mode, err, "Excess arguments")
+					return Failure(mode, err, "Excess arguments")
 				}
 				if len(f) > 0 {
 					for i := range f {
@@ -1090,10 +1087,10 @@ func init() {
 									count = n
 									countset = true
 								} else {
-									return failure(mode, err, "Cannot set count more than once")
+									return Failure(mode, err, "Cannot set count more than once")
 								}
 							} else {
-								return failure(mode, err, "count value is not a number")
+								return Failure(mode, err, "count value is not a number")
 							}
 						}
 						if strings.HasPrefix(f[i], "from=") {
@@ -1103,10 +1100,10 @@ func init() {
 								if from == 0 {
 									from = n
 								} else {
-									return failure(mode, err, "Cannot set from more than once")
+									return Failure(mode, err, "Cannot set from more than once")
 								}
 							} else {
-								return failure(mode, err, "from value is not a number")
+								return Failure(mode, err, "from value is not a number")
 							}
 						}
 					}
@@ -1130,7 +1127,7 @@ func init() {
 				maxconfset := false
 				var addresses []string
 				if len(f) > 3 {
-					return failure(mode, err, "Excess arguments")
+					return Failure(mode, err, "Excess arguments")
 				}
 				if len(f) > 0 {
 					for i := range f {
@@ -1142,10 +1139,10 @@ func init() {
 									minconf = n
 									minconfset = true
 								} else {
-									return failure(mode, err, "Cannot set minconf more than once")
+									return Failure(mode, err, "Cannot set minconf more than once")
 								}
 							} else {
-								return failure(mode, err, "minconf value is not a number")
+								return Failure(mode, err, "minconf value is not a number")
 							}
 						} else if strings.HasPrefix(f[i], "maxconf=") {
 							split := strings.Split(f[i], "=")
@@ -1155,18 +1152,18 @@ func init() {
 									maxconf = n
 									maxconfset = true
 								} else {
-									return failure(mode, err, "Cannot set maxconf more than once")
+									return Failure(mode, err, "Cannot set maxconf more than once")
 								}
 							} else {
-								return failure(mode, err, "maxconf is not a number")
+								return Failure(mode, err, "maxconf is not a number")
 							}
 						} else {
 							if !json.Valid([]byte(f[1])) {
-								return failure(mode, err, "List of addresses was not formatted correctly")
+								return Failure(mode, err, "List of addresses was not formatted correctly")
 							}
 							addresses, t = isValidJSONArray(f[i])
 							if !t {
-								return failure(mode, err, "List of addresses not correct JSON array")
+								return Failure(mode, err, "List of addresses not correct JSON array")
 							}
 						}
 					}
@@ -1188,14 +1185,14 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 2 {
-					return failure(mode, err, "Excess arguments")
+					return Failure(mode, err, "Excess arguments")
 				}
 				unlock := false
 				var arrayofobjects string
 				for i := range f {
 					if f[i] == "unlock" {
 						if unlock {
-							return failure(mode, err, "Cannot set unlock more than once")
+							return Failure(mode, err, "Cannot set unlock more than once")
 						}
 						unlock = true
 					} else {
@@ -1203,7 +1200,7 @@ func init() {
 					}
 				}
 				if arrayofobjects == "" {
-					return failure(mode, err, "No list of outputs provided")
+					return Failure(mode, err, "No list of outputs provided")
 				}
 				if unlock {
 					fmt.Println("Unlocking", arrayofobjects)
@@ -1224,7 +1221,7 @@ func init() {
 				case len(f) == 1:
 					fmt.Println("Using prefix", f[0])
 				default:
-					return failure(mode, err, "Excess arguments")
+					return Failure(mode, err, "Excess arguments")
 				}
 				bytes := make([]byte, 32)
 				rand.Read(bytes)
@@ -1233,7 +1230,7 @@ func init() {
 				priv.SetPriv(privKey, pubKey)
 				priv58, err := base58check.Encode("B2", hex.EncodeToString(priv.GetPriv().Get()))
 				if err != nil {
-					return failure(mode, err, "Base58check encoding failure")
+					return Failure(mode, err, "Base58check encoding failure")
 				}
 				pub := hex.EncodeToString(pubKey.SerializeUncompressed())
 				keymap := map[string]string{
@@ -1241,7 +1238,7 @@ func init() {
 					"PrivateKey": priv58,
 				}
 				if err != nil {
-					return failure(mode, err, "Base58check encoding failure")
+					return Failure(mode, err, "Base58check encoding failure")
 				}
 				jsonbytes, _ := json.MarshalIndent(keymap, "", "  ")
 				fmt.Println(string(jsonbytes))
@@ -1260,12 +1257,12 @@ func init() {
 				t := false
 				comment := ""
 				if len(f) < 3 {
-					return failure(mode, err, "Insufficient arguments")
+					return Failure(mode, err, "Insufficient arguments")
 				}
 				fromacct, toacct = f[0], f[1]
 				amount, t = isFloat(f[2])
 				if !t {
-					return failure(mode, err, "amount is not a number")
+					return Failure(mode, err, "amount is not a number")
 				}
 				length := len(f)
 				for i := 3; i < length; i++ {
@@ -1277,16 +1274,16 @@ func init() {
 								minconf = n
 								minconfset = true
 							} else {
-								return failure(mode, err, "Cannot set minconf more than once")
+								return Failure(mode, err, "Cannot set minconf more than once")
 							}
 						} else {
-							return failure(mode, err, "minconf value is not a number")
+							return Failure(mode, err, "minconf value is not a number")
 						}
 					} else {
 						if comment == "" {
 							comment = f[i]
 						} else {
-							return failure(mode, err, "Cannot set comment twice")
+							return Failure(mode, err, "Cannot set comment twice")
 						}
 					}
 				}
@@ -1303,32 +1300,32 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) < 6 {
-					return failure(mode, err, "Insufficient arguments")
+					return Failure(mode, err, "Insufficient arguments")
 				}
 				message := f[0]
 				privatekey := f[1]
 				minver, t := isInteger(f[2])
 				if !t {
-					return failure(mode, err, "minver is not a number")
+					return Failure(mode, err, "minver is not a number")
 				}
 				maxver, t := isInteger(f[3])
 				if !t {
-					return failure(mode, err, "maxver is not a number")
+					return Failure(mode, err, "maxver is not a number")
 				}
 				priority, t := isInteger(f[4])
 				if !t {
-					return failure(mode, err, "priority is not a number")
+					return Failure(mode, err, "priority is not a number")
 				}
 				id := f[5]
 				cancelupto := 0
 				if len(f) == 7 {
 					cancelupto, t = isInteger(f[6])
 					if !t {
-						return failure(mode, err, "[cancelupto] is not a number")
+						return Failure(mode, err, "[cancelupto] is not a number")
 					}
 				}
 				if len(f) > 7 {
-					return failure(mode, err, "Excess arguments ", f[7:])
+					return Failure(mode, err, "Excess arguments ", f[7:])
 				}
 				fmt.Println("message: '" + message + "'")
 				fmt.Println("private key: '" + privatekey + "'")
@@ -1347,13 +1344,13 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) < 3 {
-					return failure(mode, err, "Insufficient arguments")
+					return Failure(mode, err, "Insufficient arguments")
 				}
 				fromaccount := f[0]
 				toaddress := f[1]
 				amount, t := isFloat(f[2])
 				if !t {
-					return failure(mode, err, "amount is not a number")
+					return Failure(mode, err, "amount is not a number")
 				}
 				minconf := 1
 				comment := ""
@@ -1363,27 +1360,27 @@ func init() {
 						switch {
 						case strings.HasPrefix(f[i], "minconf="):
 							if minconf != 1 {
-								return failure(mode, err, "Already set minconf")
+								return Failure(mode, err, "Already set minconf")
 							}
 							minconf, t = isInteger(strings.Split(f[i], "=")[1])
 							if !t {
-								return failure(mode, err, "minconf value is not a number")
+								return Failure(mode, err, "minconf value is not a number")
 							}
 							if minconf == 1 {
-								return failure(mode, err, "no point setting minconf to default")
+								return Failure(mode, err, "no point setting minconf to default")
 							}
 						case strings.HasPrefix(f[i], "comment="):
 							if comment != "" {
-								return failure(mode, err, "Cannot set comment more than once")
+								return Failure(mode, err, "Cannot set comment more than once")
 							}
 							comment = strings.Split(f[i], "=")[1]
 						case strings.HasPrefix(f[i], "comment-to="):
 							if commentto != "" {
-								return failure(mode, err, "Cannot set comment-to more than once")
+								return Failure(mode, err, "Cannot set comment-to more than once")
 							}
 							commentto = strings.Split(f[i], "=")[1]
 						default:
-							return failure(mode, err, "Unrecognised parameter '"+f[i]+"'")
+							return Failure(mode, err, "Unrecognised parameter '"+f[i]+"'")
 						}
 					}
 				}
@@ -1403,15 +1400,15 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) < 2 {
-					return failure(mode, err, "<fromaccount> and address list are required")
+					return Failure(mode, err, "<fromaccount> and address list are required")
 				}
 				fromaccount := f[0]
 				if !json.Valid([]byte(f[1])) {
-					return failure(mode, err, "Transaction JSON was not formatted correctly")
+					return Failure(mode, err, "Transaction JSON was not formatted correctly")
 				}
 				addresses, t := isValidJSONMap(f[1])
 				if !t {
-					return failure(mode, err, "list is not in correct JSON format")
+					return Failure(mode, err, "list is not in correct JSON format")
 				}
 				comment := ""
 				minconf := 1
@@ -1420,18 +1417,18 @@ func init() {
 						switch {
 						case strings.HasPrefix(f[i], "minconf="):
 							if minconf != 1 {
-								return failure(mode, err, "Already set minconf")
+								return Failure(mode, err, "Already set minconf")
 							}
 							minconf, t = isInteger(strings.Split(f[i], "=")[1])
 							if !t {
-								return failure(mode, err, "minconf value is not a number")
+								return Failure(mode, err, "minconf value is not a number")
 							}
 							if minconf == 1 {
-								return failure(mode, err, "no point setting minconf to default")
+								return Failure(mode, err, "no point setting minconf to default")
 							}
 						default:
 							if comment != "" {
-								return failure(mode, err, "Already set comment")
+								return Failure(mode, err, "Already set comment")
 							}
 							comment = f[i]
 						}
@@ -1447,7 +1444,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) != 1 {
-					return failure(mode, err, "Must have <hex string> and nothing else")
+					return Failure(mode, err, "Must have <hex string> and nothing else")
 				}
 				fmt.Println("Sending raw transaction\n", f[0])
 			}
@@ -1459,12 +1456,12 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) < 2 {
-					return failure(mode, err, "Insufficient arguments")
+					return Failure(mode, err, "Insufficient arguments")
 				}
 				address := f[0]
 				amount, t := isFloat(f[1])
 				if !t {
-					return failure(mode, err, "<amount> '"+f[1]+"' needs to be a number")
+					return Failure(mode, err, "<amount> '"+f[1]+"' needs to be a number")
 				}
 				var comment, commentto string
 				if len(f) > 2 {
@@ -1472,16 +1469,16 @@ func init() {
 						switch {
 						case strings.HasPrefix(f[i], "comment="):
 							if comment != "" {
-								return failure(mode, err, "Cannot set comment more than once")
+								return Failure(mode, err, "Cannot set comment more than once")
 							}
 							comment = strings.Split(f[i], "=")[1]
 						case strings.HasPrefix(f[i], "comment-to="):
 							if commentto != "" {
-								return failure(mode, err, "Cannot set comment-to more than once")
+								return Failure(mode, err, "Cannot set comment-to more than once")
 							}
 							commentto = strings.Split(f[i], "=")[1]
 						default:
-							return failure(mode, err, "Unrecognised parameter '"+f[i]+"'")
+							return Failure(mode, err, "Unrecognised parameter '"+f[i]+"'")
 						}
 					}
 				}
@@ -1502,9 +1499,9 @@ func init() {
 			case "cli", "":
 				switch {
 				case len(f) < 2:
-					return failure(mode, err, "Insufficient arguments")
+					return Failure(mode, err, "Insufficient arguments")
 				case len(f) > 2:
-					return failure(mode, err, "Excess arguments")
+					return Failure(mode, err, "Excess arguments")
 				}
 				parallelcoinaddress := f[0]
 				account := f[1]
@@ -1518,7 +1515,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				fmt.Println("Starting miner ...")
 			}
@@ -1530,11 +1527,11 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) != 1 {
-					return failure(mode, err, "Incorrect number of arguments")
+					return Failure(mode, err, "Incorrect number of arguments")
 				}
 				txfee, t := isFloat(f[0])
 				if !t {
-					return failure(mode, err, "<amount> is not a number")
+					return Failure(mode, err, "<amount> is not a number")
 				}
 				fmt.Println("Setting txfee to", txfee)
 			}
@@ -1546,7 +1543,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) != 2 {
-					return failure(mode, err, "Incorrect number of arguments")
+					return Failure(mode, err, "Incorrect number of arguments")
 				}
 				address := f[0]
 				message := f[1]
@@ -1560,12 +1557,12 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) < 1 {
-					return failure(mode, err, "Incorrect number of arguments")
+					return Failure(mode, err, "Incorrect number of arguments")
 				}
 				sighashtype := "ALL"
 				sighashtypeset := false
 				if !json.Valid([]byte(f[0])) {
-					return failure(mode, err, "Transaction JSON was not formatted correctly")
+					return Failure(mode, err, "Transaction JSON was not formatted correctly")
 				}
 				data, _ := isValidJSONMap(f[0])
 				dataset := false
@@ -1575,19 +1572,19 @@ func init() {
 					for i := 1; i < len(f); i++ {
 						if strings.HasPrefix(f[i], "sighashtype=") {
 							if sighashtypeset {
-								return failure(mode, err, "Already set sighashtype")
+								return Failure(mode, err, "Already set sighashtype")
 							}
 							sighashtype = strings.Split(f[i], "=")[1]
 							switch sighashtype {
 							case "ALL", "NONE", "SINGLE", "ALL|ANYONECANPAY", "NONE|ANYONECANPAY", "SINGLE|ANYONECANPAY":
 								sighashtypeset = true
 							default:
-								return failure(mode, err, "sighashtype not one of available options")
+								return Failure(mode, err, "sighashtype not one of available options")
 							}
 
 						}
 						if !json.Valid([]byte(f[i])) {
-							return failure(mode, err, "Transaction JSON was not formatted correctly")
+							return Failure(mode, err, "Transaction JSON was not formatted correctly")
 						}
 						datain, t := isValidJSONMap(f[i])
 						if t {
@@ -1618,7 +1615,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 0 {
-					return failure(mode, err, "No arguments are required ")
+					return Failure(mode, err, "No arguments are required ")
 				}
 				fmt.Println("Stopping miner ...")
 			}
@@ -1630,7 +1627,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) < 1 {
-					return failure(mode, err, "Incorrect number of arguments")
+					return Failure(mode, err, "Incorrect number of arguments")
 				}
 				fmt.Println("Submitting block '" + f[0] + "'")
 			}
@@ -1642,7 +1639,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) != 1 {
-					return failure(mode, err, "Incorrect number of arguments")
+					return Failure(mode, err, "Incorrect number of arguments")
 				}
 				fmt.Println("Validating address", f[0])
 			}
@@ -1654,14 +1651,14 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) > 1 {
-					return failure(mode, err, "only one optional parameter allowed")
+					return Failure(mode, err, "only one optional parameter allowed")
 				}
 				var checklevel int
 				var t bool
 				if f[0] != "" {
 					checklevel, t = isInteger(f[0])
 					if !t {
-						return failure(mode, err, "checklevel is not an integer")
+						return Failure(mode, err, "checklevel is not an integer")
 					}
 				}
 				if t {
@@ -1677,7 +1674,7 @@ func init() {
 			switch mode {
 			case "cli", "":
 				if len(f) != 3 {
-					return failure(mode, err, "Incorrect number of args")
+					return Failure(mode, err, "Incorrect number of args")
 				}
 				address := f[0]
 				signature := f[1]

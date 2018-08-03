@@ -13,7 +13,6 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/serialize"
 	"gitlab.com/parallelcoin/duo/pkg/tx"
 	"gitlab.com/parallelcoin/duo/pkg/txdb"
-	"gitlab.com/parallelcoin/duo/pkg/wallet"
 )
 
 const (
@@ -108,7 +107,8 @@ var (
 	// WalletFilename is the centrally stored filename of the wallet in a server instance
 	WalletFilename string
 	// WalletMain is the main wallet of a server instance
-	WalletMain *wallet.Wallet
+	// WalletMain *wallet.Wallet
+
 	// RequestShutdown is a trigger that represents whether a shutdown switch has been flipped
 	RequestShutdown = false
 	// CoinsDBView is
@@ -134,7 +134,8 @@ var (
 	// WalletRegisteredMutexSet is a set of mutexes for the wallet
 	WalletRegisteredMutexSet sync.RWMutex
 	// WalletRegisteredSet is the set of registered wallets
-	WalletRegisteredSet wallet.Wallet
+	// WalletRegisteredSet wallet.Wallet
+
 	// MainMutex is the main mutex of the server
 	MainMutex sync.RWMutex
 	// MemPool is the transaction mempool
@@ -220,4 +221,5 @@ var (
 	LastBlockSize uint64
 )
 
+// Init sets up the client's global data structures
 func Init() {}

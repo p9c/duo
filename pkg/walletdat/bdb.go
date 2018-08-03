@@ -2,17 +2,11 @@ package walletdat
 
 import (
 	"encoding/hex"
-	"errors"
 	"os"
 	"strconv"
 	"sync"
 	"time"
 
-	"gitlab.com/parallelcoin/duo/pkg/Uint"
-	"gitlab.com/parallelcoin/duo/pkg/bdb"
-	"gitlab.com/parallelcoin/duo/pkg/block"
-	"gitlab.com/parallelcoin/duo/pkg/crypto"
-	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"gitlab.com/parallelcoin/duo/pkg/server/args"
 )
@@ -50,7 +44,7 @@ type DB struct {
 	Filename      string
 	UnlockedUntil int64
 	mutex         sync.Mutex
-	updateCount uint64
+	updateCount   uint64
 }
 
 type dB interface {
@@ -101,38 +95,38 @@ func (db *DB) Verify() (err error) {
 	}
 	if err = bdb.Verify(db.Filename); err != nil {
 		logger.Debug(err)
-		return	
+		return
 	}
-return
+	return
 }
 
 // Dump the set of keys and current stats of the chain in a string
 func (db *DB) Dump() (dump string, err error) {
-	cursor, err := db.Cursor(bdb.NoTransaction)
-	if err != nil {
-		return "", err
-	}
-	rec := [2][]byte{}
-	err = cursor.First(&rec)
-	if err != nil {
-		return "", err
-	}
-	dbt, _ := db.Type()
-	dump += "databasetype " + DBTypes[dbt] + "\n"
-	for {
-		dump1 := db.KVToString(rec)
-		if dump1 != "" {
-			dump += dump1
-		} else {
-			dump += "key " + strconv.Itoa(len(rec[0])) + " " + hex.EncodeToString(rec[0]) +
-				" " + string(rec[0]) + "\n"
-			dump += "value " + strconv.Itoa(len(rec[1])) + " " + hex.EncodeToString(rec[1]) + "\n"
-		}
-		err = cursor.Next(&rec)
-		if err != nil {
-			err = cursor.Close()
-			break
-		}
-	}
+	// cursor, err := db.Cursor(bdb.NoTransaction)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// rec := [2][]byte{}
+	// err = cursor.First(&rec)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// dbt, _ := db.Type()
+	// dump += "databasetype " + DBTypes[dbt] + "\n"
+	// for {
+	// 	dump1 := db.KVToString(rec)
+	// 	if dump1 != "" {
+	// 		dump += dump1
+	// 	} else {
+	// 		dump += "key " + strconv.Itoa(len(rec[0])) + " " + hex.EncodeToString(rec[0]) +
+	// 			" " + string(rec[0]) + "\n"
+	// 		dump += "value " + strconv.Itoa(len(rec[1])) + " " + hex.EncodeToString(rec[1]) + "\n"
+	// 	}
+	// 	err = cursor.Next(&rec)
+	// 	if err != nil {
+	// 		err = cursor.Close()
+	// 		break
+	// 	}
+	// }
 	return
 }

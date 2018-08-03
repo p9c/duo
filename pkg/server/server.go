@@ -7,7 +7,7 @@ import (
 
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"gitlab.com/parallelcoin/duo/pkg/server/args"
-	"gitlab.com/parallelcoin/duo/pkg/wallet"
+	// "gitlab.com/parallelcoin/duo/pkg/wallet"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 
 var (
 	// Walletdb is a package centralised store for the server wallet
-	Walletdb *wallet.DB
+	// Walletdb *wallet.DB
 )
 
 func lockDataDir() bool {
@@ -52,19 +52,19 @@ func unlockDataDir() bool {
 // Start up a server (network client)
 func Start() {
 	logger.Debug("Starting up server ...")
-	wallet.Db.SetFilename(*args.DataDir + "/" + *args.Wallet)
+	// wallet.Db.SetFilename(*args.DataDir + "/" + *args.Wallet)
 	if lockDataDir() {
-		err := wallet.Db.Verify()
-		if err != nil {
-			logger.Debug("Wallet did not verify", err)
-			// Add automatic salvage here ... (maybe only possible with newer bdb?)
-			os.Exit(1)
-		}
-		err = wallet.Db.Open()
-		if err != nil {
-			logger.Debug("Could not open wallet", err)
-			os.Exit(1)
-		}
+		// err := wallet.Db.Verify()
+		// if err != nil {
+		// 	logger.Debug("Wallet did not verify", err)
+		// 	// Add automatic salvage here ... (maybe only possible with newer bdb?)
+		// 	os.Exit(1)
+		// }
+		// err = wallet.Db.Open()
+		// if err != nil {
+		// 	logger.Debug("Could not open wallet", err)
+		// 	os.Exit(1)
+		// }
 		select {}
 	} else {
 		Shutdown()
@@ -73,9 +73,9 @@ func Start() {
 
 // Shutdown a server
 func Shutdown() {
-	if err := wallet.Db.Close(); err != nil {
-		logger.Debug("error closing DB", err)
-	}
+	// if err := wallet.Db.Close(); err != nil {
+	// 	logger.Debug("error closing DB", err)
+	// }
 	if !unlockDataDir() {
 		logger.Debug("lock must have been removed by another process")
 	}
