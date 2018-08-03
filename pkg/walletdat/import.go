@@ -52,17 +52,55 @@ func (db *DB) SetFilename(filename string) {
 }
 
 // Import reads an existing wallet.dat and returns all the keys and address data in it
-func Import(filename string) (imp *Imports, err error) {
-	if Db.Filename == "" {
-		Db.SetFilename(*args.DataDir + "/" + *args.Wallet)
-	}
+func Import(filename ...string) (imp *Imports, err error) {
 	if db, err := NewDB(); err != nil {
 		return nil, errors.New(err, "unable to open wallet")
-	} else if err := db.Open(); err != nil {
-		return
-	} else {
-		r += dump + "\n"
+		} else if Db.Filename == "" {
+			Db.SetFilename("~/.parallelcoin/wallet.dat")
+		} else if err := db.Open(); err != nil {
+			return
+		} else if cursor, err := db.Cursor(bdb.NoTransaction); err != nil {
+			return "", err 
+		} else {
+			rec := [2][]byte{}
+			err = cursor.First(&rec)
+			if err != nil {
+				return "", err
+			} else {
+				dbt, _ := db.Type()
+				for {
+					if res := KVDec(rec); res == nil {
+						r := res.([]interface{})
+						t := r[0].(string)
+						switch t {
+						case "name":
+							imp.Name = append(imp.Name, make(imp.Name))
+							l := len(imp.Name)-1
+							imp.Name[l].Addr = r[1].(string)
+							imp.Name[l].Name = r[2].(string)
+						case "keymeta":
+							imp.Metadata = append(imp.Metadata, make(imp.Metadata))
+							l := len(imp.Metadata)-1
+							imp.Metadata[l].Pub = r[1].(*key.Pub)
+							imp.Metadata[l].Version = r[2].(uint32)
+							imp.Metadata[l].CreateTime = r[3].(int64)
+						case "key":
+							imp.Key = append(imp.Key, make(imp.Key))
+							
+						case "wkey":
+						case "mkey":
+						case "ckey":
+						default:
+						}
+					} else {
+						if err = cursor.Next(&rec); err != nil {
+							err = cursor.Close()
+							break
+						}
+					}
+				}
+			}
+		}
 	}
-
 	return
 }

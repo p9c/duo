@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "gitlab.com/parallelcoin/duo/pkg/walletdat"
 	_ "gitlab.com/parallelcoin/duo/pkg/cmd"
 	"gitlab.com/parallelcoin/duo/pkg/iniflags"
 	"gitlab.com/parallelcoin/duo/pkg/logger"

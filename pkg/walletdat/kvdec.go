@@ -11,7 +11,8 @@ import (
 
 // KVDec reads a key/value pair from the wallet storage format.
 // Only the database entries containing key pairs and related data are imported, as the rest of the data can be computed using the blockchain and derived indices and metadata
-func KVDec(k, v []byte) (result interface{}) {
+func KVDec(kv [][]byte) (result interface{}) {
+	k, v := kv[0], kv[1]
 	var id string
 	keyRem, _ := ser.Deserialize(k, id)
 	switch string(id) {
