@@ -22,7 +22,7 @@ const (
 // Wallet controls access to a wallet.db file containing keys and data relating to accounts and addresses
 type Wallet struct {
 	key.StoreCrypto
-	dBEncryption        *DB
+	// dBEncryption        *DB
 	version, maxVersion int
 	Mutex               sync.RWMutex
 	FileBacked          bool
