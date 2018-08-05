@@ -132,7 +132,7 @@ type wallet interface {
 	GetTxCredit(*tx.Transaction) int64
 	GetTxChange(*tx.Transaction) int64
 	SetBestChaing(*block.Locator)
-	LoadWallet(bool) DBErrors
+	LoadWallet(bool) error
 	SetAddressBookName(*key.TxDestination, string) bool
 	DelAddressBookName(*key.TxDestination) bool
 	UpdatedTransaction(*Uint.U256)

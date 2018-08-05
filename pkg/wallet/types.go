@@ -7,20 +7,11 @@ import (
 
 const (
 	CurrentVersion          = 1
-	DBLoadOk       DBErrors = iota
-	DBCorrupt
-	DBNoncriticalError
-	DBTooNew
-	DBLoadFail
-	DBNeedRewrite
 )
 
 var (
 	AccountingEntryNumber = 0
 )
-
-// DBErrors is the berkeleydb error return value type
-type DBErrors int
 
 // MasterKeyMap is a list of master keys
 type MasterKeyMap map[uint]*KeyMetadata

@@ -303,8 +303,8 @@ func (w *Wallet) SetBestChain(*block.Locator) {
 }
 
 // LoadWallet loads a wallet
-func (w *Wallet) LoadWallet(bool) DBErrors {
-	return 0
+func (w *Wallet) LoadWallet(bool) error {
+	return nil
 }
 
 // SetAddressBookName sets a new name in the address book
