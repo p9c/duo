@@ -1,3 +1,4 @@
+// A library for interacting with various database types used in the duo blockchain client built on top of JVZC, built on the Badger key/value database from dgraph.io
 package db
 import (
 	"sync"

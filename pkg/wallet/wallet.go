@@ -4,7 +4,6 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/tx"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
-	"sync"
 )
 const (
 	// FeatureBase is the base version number for a wallet

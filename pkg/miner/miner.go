@@ -1,3 +1,4 @@
+// A library implementing a simple, multi-threaded CPU miner for DUO
 package miner
 import (
 	"gitlab.com/parallelcoin/duo/pkg/Uint"

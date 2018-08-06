@@ -1,3 +1,4 @@
+// A library for handling debug/logging outputs with support for files, tty and able to be disabled
 package logger
 import (
 	"fmt"

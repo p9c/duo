@@ -1,3 +1,4 @@
+// An interface to a bloom filter for optimising various types of data access
 package bloom
 const (
 	// UpdateNone updates none

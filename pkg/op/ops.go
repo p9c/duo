@@ -1,5 +1,5 @@
+// Forward and reverse map for transaction script opcodes
 package op
-// Opcodes are implemented here as maps to combine translation between commands and binary codes, as well as being able to quickly return also the human readable name associated with an opcode. They are implemented as a hash table by Go so the lookups are very fast... Plus the opcodes as constants makes ugly un-go-like all caps underscore containing names. C++ implementation has to duplicate anyway between names and strings, in Go we can just make the strings the names.
 var Code = map[string]byte{
 	// push value
 	"OP_0":         0x00,

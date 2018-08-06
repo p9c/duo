@@ -1,3 +1,4 @@
+// Duo is a new client for the Parallelcoin network written in Golang and using a html/json/dom/ajax progressive web application for its GUI interface
 package main
 import (
 	"context"
@@ -9,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 	_ "gitlab.com/parallelcoin/duo/pkg/walletdat"
-	_ "gitlab.com/parallelcoin/duo/pkg/cmd"
+	_ "gitlab.com/parallelcoin/duo/pkg/cmds"
 	"gitlab.com/parallelcoin/duo/pkg/iniflags"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"gitlab.com/parallelcoin/duo/pkg/server"

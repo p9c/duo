@@ -1,3 +1,4 @@
+// A library of functions for serialization and deserialization for wire and disk format encoding/decoding
 package ser
 import (
 	"bytes"

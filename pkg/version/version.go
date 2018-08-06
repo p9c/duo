@@ -1,3 +1,4 @@
+// Package scoped store for information about the version of the duo golang parallelcoin blockchain network client
 package version
 import (
 	"fmt"

@@ -1,3 +1,4 @@
+// A collection of utility functions used by many libraries in duo
 package util
 import (
 	"os"

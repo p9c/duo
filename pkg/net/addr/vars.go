@@ -1,3 +1,4 @@
+// A package scoped store of data related to managing addresses
 package addr
 var (
 	// TriedBucketCount is the number of buckets tried

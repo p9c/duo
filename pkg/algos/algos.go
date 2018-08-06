@@ -1,3 +1,4 @@
+// A library for querying proof of work algorithm metadata
 package algos
 const (
 	// SHA256D is proof of work using double SHA256 hashes
@@ -13,17 +14,7 @@ const (
 	// BlockVersionScrypt is
 	BlockVersionScrypt = (1 << 9)
 )
-// Get the type of PoW algorithm
-func Get(version int) int {
-	switch version & BlockVersionAlgo {
-	case 0:
-		return SHA256D
-	case BlockVersionDefault:
-		return SCRYPT
-	}
-	return SHA256D
-}
-// Name returns the string identifier of the PoW algorithm
+// Returns the string identifier of the PoW algorithm code number submitted
 func Name(algo int) string {
 	switch algo {
 	case SHA256D:
@@ -33,7 +24,7 @@ func Name(algo int) string {
 	}
 	return "unknown"
 }
-// Code accepts the name and returns the code
+// Accepts the string name of an algorithm and returns the code that identifies it
 func Code(s string) int {
 	switch s {
 	case "sha256d":

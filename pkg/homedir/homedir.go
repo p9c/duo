@@ -1,3 +1,4 @@
+// A cross-platform library for working with user's profile directory folders
 package homedir
 import (
   "bytes"

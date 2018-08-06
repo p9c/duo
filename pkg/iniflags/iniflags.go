@@ -1,3 +1,4 @@
+// A library for working with commandline arguments
 package iniflags
 import (
 	"bufio"

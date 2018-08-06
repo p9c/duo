@@ -1,3 +1,4 @@
+// Declarations for all the configuration options for a duo blockchain network client
 package args
 import (
 	"flag"

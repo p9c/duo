@@ -1,3 +1,4 @@
+// A library for keeping a cache based on a most recently used set
 package mruset
 // MRUSet - implement this for each type of set with a composition
 type MRUSet struct {

@@ -1,3 +1,4 @@
+// A library for working with blocks of the Parallelcoin DUO token ledger
 package block
 import (
 	"gitlab.com/parallelcoin/duo/pkg/Uint"

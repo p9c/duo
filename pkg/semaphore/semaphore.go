@@ -1,3 +1,4 @@
+// A library for managing semaphore signals for managing access exclusion to network resources
 package semaphore
 import (
 	"sync"

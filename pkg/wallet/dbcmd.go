@@ -1,14 +1,9 @@
 package wallet
 import (
-	"errors"
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/key"
-	"gitlab.com/parallelcoin/duo/pkg/logger"
-	"gitlab.com/parallelcoin/duo/pkg/server/args"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
-	"os"
-	"time"
 )
 // Backup copies the current wallet to another location
 func (db *DB) Backup(*Wallet, string) (err error) {
@@ -144,11 +139,6 @@ func (db *DB) GetAccountCreditDebit(string) (err error) {
 func (db *DB) GetBalance() float64 {
 	return 0.0
 }
-// GetCursor returns a cursor to walk over the wallet database
-func (db *DB) GetCursor() *bdb.Cursor {
-	cursor, _ := db.Cursor(bdb.NoTransaction)
-	return &cursor
-}
 // GetKeyPoolSize gets the keypool size
 func (db *DB) GetKeyPoolSize() int {
 	return 0
@@ -173,8 +163,9 @@ func (db *DB) ListAccountCreditDebit(string, []*AccountingEntry) (err error) {
 func (db *DB) LoadWallet(*Wallet) (err error) {
 	return
 }
-// Open a wallet.dat file
+// Open a wallet database
 func (db *DB) Open() (err error) {
+
 	// dbenvconf := bdb.EnvironmentConfig{
 	// 	Create:        true,
 	// 	Recover:       true,
@@ -224,15 +215,11 @@ func (db *DB) RecoverOnlyKeys(string) (err error) {
 func (db *DB) ReorderTransactions(*Wallet) (err error) {
 	return
 }
-// SetFilename changes the name of the database we want to open
-func (db *DB) SetFilename(filename string) {
-	db.Filename = filename
-}
 // Unlock a wallet.dat database
 func (db *DB) Unlock() (err error) {
 	return
 }
-// Verify the consistency of a wallet.jvzc database
+// Verify the consistency of a wallet database
 func (db *DB) Verify() (err error) {
 	// if _, err = os.Stat(db.Filename); os.IsNotExist(err) {
 	// 	logger.Debug(err)

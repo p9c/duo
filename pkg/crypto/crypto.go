@@ -1,3 +1,4 @@
+// A library for managing encryption based on the wallet EC cryptography primitives
 package crypto
 const (
 	// WalletKeySize is the size of keys (256 bits of course)
@@ -33,6 +34,7 @@ func (k *KeyingMaterial) Bytes() (b []byte) {
 func (k *KeyingMaterial) FromBytes(b []byte) {
 	*k = KeyingMaterial(b)
 }
+// Encrypter is the controlling structure for managing en/decryption of wallet data
 type Encrypter struct {
 	Key      [WalletKeySize]byte
 	IV       [WalletSaltSize]byte

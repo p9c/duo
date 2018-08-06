@@ -1,3 +1,4 @@
+// A library for managing checkpoints for the DUO token ledger blockchain
 package checkpoints
 import (
 	"gitlab.com/parallelcoin/duo/pkg/Uint"

@@ -1,7 +1,8 @@
 package wallet
 import (
+	"github.com/1lann/badger"
+	"github.com/1lann/badger/options"
 	"github.com/ParallelCoinTeam/JVZC"
-	"gitlab.com/parallelcoin/duo/pkg/bdb"
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/key"
@@ -31,7 +32,6 @@ func init() {
 // DB is the structure for encryptable wallet database
 type DB struct {
 	*jvzc.DB
-	Filename      string
 	UnlockedUntil int64
 	updateCount uint64
 }
@@ -48,7 +48,6 @@ type dB interface {
 	Flush()
 	GetAccountCreditDebit(string) int64
 	GetBalance() float64
-	GetCursor() *bdb.Cursor
 	GetKeyPoolSize() int
 	GetOldestKeyPoolTime() int64
 	GetUpdateCount() uint64
@@ -62,7 +61,6 @@ type dB interface {
 	Recover(string) error
 	RecoverOnlyKeys(string) error
 	ReorderTransactions(Wallet) error
-	SetFilename(string)
 	StringToVars(string) interface{}
 	Unlock() error
 	Verify() error
@@ -81,13 +79,18 @@ type dB interface {
 	WriteScript(Uint.U160, *key.Script) error
 	WriteTx(Uint.U256, *Tx)
 }
-// NewDB returns a new DB structure
-func NewDB() (db *DB) {
+// NewDB creates a new DB and opens it - if it already exists it just opens it
+func NewDB(path string) (db *DB, err error) {
 	db = new(DB)
-	return
-}
-// NewDBFromFile creates a new DB and opens it from a .jvzc file
-func NewDBFromFile(filename string) (db *DB) {
-	db = new(DB)
+	db.DB, err = jvzc.Open(path, badger.Options{
+		Dir: path,
+		ValueDir: path,
+		SyncWrites: false,
+		TableLoadingMode: options.MemoryMap,
+	})
+	if err != nil {
+		return
+	}
+	db.UnlockedUntil = time.Now().Unix()
 	return
 }

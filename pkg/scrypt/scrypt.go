@@ -1,3 +1,4 @@
+// An interface for the Scrypt hash function
 package scrypt
 const (
 	// ScratchpadSize is

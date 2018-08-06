@@ -9,6 +9,7 @@ const (
 	// Bytewidth160 is the number of bytes in a U160
 	Bytewidth160 = 20
 )
+// U160 stores the 160 bit integer value in a big.Int
 type U160 struct {
 	big.Int
 }
@@ -37,11 +38,11 @@ func (u *U160) truncate(input *U160) *U160 {
 	u.Int = *u.SetBytes(input.Bytes()[:Bytewidth160])
 	return u
 }
-// Zero160 returns an empty uint256
+// Returns an empty uint256
 func Zero160() *U160 {
 	return &U160{}
 }
-// Assign stores a new value in thte current variable
+// Stores a new value in the current variable as well returning the value
 func (u *U160) Assign(input *U160) *U160 {
 	if input.BitLen() <= Bitwidth160 {
 		u = input
@@ -50,26 +51,26 @@ func (u *U160) Assign(input *U160) *U160 {
 	}
 	return u
 }
-// ToString converts a U256 into a string containing a decimal representing the value
+// Converts a U256 into a string containing a decimal representing the value
 func (u *U160) ToString() string {
 	if u.BitLen() > Bitwidth160 {
 		u.truncate(u)
 	}
 	return u.String()
 }
-// ToBytes returns a byte slice containing the U256
+// Returns a byte slice containing the U256 raw binary data
 func (u *U160) ToBytes() []byte {
 	if u.BitLen() > Bitwidth160 {
 		u.truncate(u)
 	}
 	return u.Bytes()
 }
-// FromUint64 puts a Uint64 value into the U256
+// Puts a Uint64 value into the U256 and returns a U160
 func (u *U160) FromUint64(input uint64) *U160 {
 	u.SetUint64(input)
 	return u
 }
-// FromString converts a string, attempting to autodetect base, into a U256
+// Converts a string, attempting to autodetect base, into a U256, truncates if the number is too large for 160 bits
 func (u *U160) FromString(input string) *U160 {
 	u.SetString(input, 0)
 	if u.BitLen() > Bitwidth160 {
@@ -77,7 +78,7 @@ func (u *U160) FromString(input string) *U160 {
 	}
 	return u
 }
-// FromBytes converts a byte slice into a U256
+// Converts a byte slice into a U160, and returns the U160
 func (u *U160) FromBytes(input []byte) *U160 {
 	if len(input) > Bytewidth160 {
 		input = input[:Bytewidth160]
@@ -85,57 +86,63 @@ func (u *U160) FromBytes(input []byte) *U160 {
 	u.SetBytes(input)
 	return u
 }
+// Returns true if the operand is equal to the value in the receiver
 func (u *U160) EQ(operand *U160) bool {
 	return u.Int.Cmp(&operand.Int) == 0
 }
+// Returns true if the operand is not equal to the value in the receiver
 func (u *U160) NEQ(operand *U160) bool {
 	return u.Int.Cmp(&operand.Int) != 0
 }
+// Returns true if the operand is greater than the value in the receiver
 func (u *U160) GT(operand *U160) bool {
 	return u.Int.Cmp(&operand.Int) == 1
 }
+// Returns true if the operand is less than the value in the receiver
 func (u *U160) LT(operand *U160) bool {
 	return u.Int.Cmp(&operand.Int) == -1
 }
+// Returns true if the operand is greater than or equal to the value in the receiver
 func (u *U160) GToE(operand *U160) bool {
 	i := u.Int.Cmp(&operand.Int)
 	return i == 0 || i == 1
 }
+// Returns true if the operand is less than or equal to the value in the receiver
 func (u *U160) LToE(operand *U160) bool {
 	i := u.Int.Cmp(&operand.Int)
 	return i == 0 || i == -1
 }
-// Not returs the binary inverse and changes the current value to this
+// Returns the bitwise inversion of the value in the receiver and stores it
 func (u *U160) Not() *U160 {
 	u.Int.Not(&u.Int)
 	return u
 }
-// And returns the binary AND with another U160 and changes its value to this
+// Returns the binary AND with the operand and stores it
 func (u *U160) And(operand *U160) *U160 {
 	u.Int.And(&u.Int, &operand.Int)
 	return u
 }
-// Or returns the binary OR with another U160 and changes its value to this
+// Returns the binary OR with the operand and stores it
 func (u *U160) Or(operand *U160) *U160 {
 	u.Int.Or(&u.Int, &operand.Int)
 	return u
 }
-// Xor returns the binary XOR with another U160 and changes its value to this
+// Returns the binary XOR with another U160 and stores it
 func (u *U160) Xor(operand *U160) *U160 {
 	u.Int.Xor(&u.Int, &operand.Int)
 	return u
 }
-// Add adds another U160 to this one
+// Returns the sum of the value in the receiver and the operand and stores it
 func (u *U160) Add(operand *U160) *U160 {
 	u.Int.Add(&u.Int, &operand.Int)
 	return u
 }
-// Sub subtracts another U160 to this one
+// Returns the difference of the value in the receiver and the operand and stores it
 func (u *U160) Sub(operand *U160) *U160 {
 	u.Int.Sub(&u.Int, &operand.Int)
 	return u
 }
-// RIPEMD160 takes a byte slice and returs a U160 containing the hash of the slice
+// Returns the RIPEMD160 hash of a list of byte slices
 func RIPEMD160(b ...[]byte) *U160 {
 	var data []byte
 	for i := range b {

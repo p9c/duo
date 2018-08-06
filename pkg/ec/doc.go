@@ -1,7 +1,6 @@
-// Copyright (c) 2013-2014 The btcsuite developers
-// license that can be found in the LICENSE file.
+// A library for working with the elliptic curves needed for bitcoin
+package ec
 /*
-Package btcec implements support for the elliptic curves needed for bitcoin.
 Bitcoin uses elliptic curve cryptography using koblitz curves
 (specifically secp256k1) for cryptographic functions.  See
 http://www.secg.org/collateral/sec2_final.pdf for details on the
@@ -14,4 +13,3 @@ standard formats.  It was designed for use with btcd, but should be
 general enough for other uses of elliptic curve crypto.  It was originally based
 on some initial work by ThePiachu, but has significantly diverged since then.
 */
-package ec

@@ -1,3 +1,4 @@
+// A library for managing queues of blocks and transactions that need to be verified
 package check
 import (
 	"sync"

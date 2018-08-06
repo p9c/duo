@@ -1,3 +1,4 @@
+// An interface to the BerkeleyDB database C library
 package bdb
 /*
 	#cgo LDFLAGS: -ldb
