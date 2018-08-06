@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
-	// "gitlab.com/parallelcoin/duo/pkg/ec"
+	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	// "gitlab.com/parallelcoin/duo/pkg/logger"
 	"strconv"

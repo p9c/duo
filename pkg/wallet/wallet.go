@@ -19,21 +19,20 @@ const (
 // Wallet controls access to a wallet.db file containing keys and data relating to accounts and addresses
 type Wallet struct {
 	key.StoreCrypto
-	// dBEncryption        *DB
+	DB        *DB
 	version, maxVersion int
-	Mutex               sync.RWMutex
 	FileBacked          bool
 	File                string
 	KeyPoolSet          []int64
 	KeyMetadataMap      map[*key.ID]*KeyMetadata
 	MasterKeysMap       MasterKeyMap
 	MasterKeyMaxID      uint
-	WalletMap           map[*Uint.U256]Tx
+	WalletMap           map[*Uint.U256]*Tx
 	OrderPosNext        int64
 	RequestCountMap     map[*Uint.U256]int
-	AddressBookMap      map[key.TxDestination]string
-	DefaultKey          key.Pub
-	LockedCoinsSet      []tx.OutPoint
+	AddressBookMap      map[*key.TxDestination]string
+	DefaultKey          *key.Pub
+	LockedCoinsSet      []*tx.OutPoint
 	TimeFirstKey        int64
 }
 type wallet interface {

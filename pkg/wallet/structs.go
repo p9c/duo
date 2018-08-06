@@ -2,6 +2,7 @@ package wallet
 import (
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/key"
+	"gitlab.com/parallelcoin/duo/pkg/Uint"
 )
 type KeyMetadata struct {
 	Version    uint32

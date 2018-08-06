@@ -1,12 +1,12 @@
 package wallet
 import (
+	"github.com/ParallelCoinTeam/JVZC"
 	"gitlab.com/parallelcoin/duo/pkg/bdb"
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/server/args"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
-	"sync"
 	"time"
 )
 var (
@@ -19,7 +19,7 @@ var (
 	// Prefix is loaded in init to contain KeyNames
 	Prefix map[string][]byte
 	// KeyNames is the list of key types stored in the wallet
-	KeyNames = []string{"name", "tx", "acentry", "key", "wkey", "mkey", "ckey", "keymeta", "defaultkey", "pool", "version", "cscript", "orderposnext", "acc", "setting", "bestblock", "minversion"}
+	KeyNames = []string{"name", "tx", "acentry", "key", "wkey", "mkey", "ckey", "keymeta", "defaultkey", "pool", "version", "cscript", "orderposnext", "acc", "bestblock", "minversion"}
 )
 func init() {
 	Prefix = make(map[string][]byte)
@@ -28,11 +28,11 @@ func init() {
 	}
 	Filename = *args.DataDir + "/" + *args.Wallet
 }
+// DB is the structure for encryptable wallet database
 type DB struct {
-	*bdb.Database
+	*jvzc.DB
 	Filename      string
 	UnlockedUntil int64
-	mutex         sync.Mutex
 	updateCount uint64
 }
 type dB interface {
@@ -40,42 +40,35 @@ type dB interface {
 	Close() error
 	Dump() (string, error)
 	Encrypt() error
-	Erase(*interface{}) bool
 	EraseName(string) error
+	EraseMasterKey(int64) error
 	ErasePool(int64) error
-	EraseSetting(string) error
 	EraseTx(Uint.U256)
-	Exists(*interface{})
+	Find(string, []byte) ([][2][]byte, error)
 	Flush()
 	GetAccountCreditDebit(string) int64
 	GetBalance() float64
 	GetCursor() *bdb.Cursor
 	GetKeyPoolSize() int
 	GetOldestKeyPoolTime() int64
-	GetupdateCount() uint64
-	KVDec([]byte, []byte) interface{}
-	KVEnc(interface{}) *[2][]byte
-	KVToString(*[2][]byte) (string, bool)
+	GetUpdateCount() uint64
+	ImportWalletDat(string) error
 	ListAccountCreditDebit(*string, *[]AccountingEntry)
 	LoadWallet(Wallet) error
 	Open() error
-	Read(*interface{}, *interface{}) bool
 	ReadAccount(string, *Account) error
 	ReadBestBlock(*block.Locator) error
 	ReadPool(int64, KeyPool) error
-	ReadSetting(string, interface{}) error
-	Recover(*bdb.Environment, string) error
-	RecoverOnlyKeys(*bdb.Environment, string) error
+	Recover(string) error
+	RecoverOnlyKeys(string) error
 	ReorderTransactions(Wallet) error
 	SetFilename(string)
 	StringToVars(string) interface{}
 	Unlock() error
 	Verify() error
 	Version() int
-	Write(*interface{}, *interface{}, bool) bool
 	WriteAccount(string, *Account) error
 	WriteAccountingEntry(*AccountingEntry) error
-	writeAccountingEntry(uint64, *AccountingEntry) error
 	WriteBestBlock(*block.Locator) error
 	WriteCryptedKey(*key.Pub, []byte, *KeyMetadata) error
 	WriteDefaultKey(*key.Pub) error
@@ -86,6 +79,15 @@ type dB interface {
 	WriteOrderPosNext(int64) error
 	WritePool(int64, KeyPool) error
 	WriteScript(Uint.U160, *key.Script) error
-	WriteSetting(string, interface{}) error
 	WriteTx(Uint.U256, *Tx)
+}
+// NewDB returns a new DB structure
+func NewDB() (db *DB) {
+	db = new(DB)
+	return
+}
+// NewDBFromFile creates a new DB and opens it from a .jvzc file
+func NewDBFromFile(filename string) (db *DB) {
+	db = new(DB)
+	return
 }

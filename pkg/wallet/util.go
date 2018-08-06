@@ -3,7 +3,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
-	// "gitlab.com/parallelcoin/duo/pkg/ec"
+	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"strconv"
 )
