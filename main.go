@@ -1,5 +1,4 @@
 package main
-
 import (
 	"context"
 	"flag"
@@ -9,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
 	_ "gitlab.com/parallelcoin/duo/pkg/walletdat"
 	_ "gitlab.com/parallelcoin/duo/pkg/cmd"
 	"gitlab.com/parallelcoin/duo/pkg/iniflags"
@@ -19,13 +17,10 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/subcmd"
 	"gitlab.com/parallelcoin/duo/pkg/version"
 )
-
 var (
 	Version, GitCommit, GitBranch, GitState, BuildDate string
 )
-
 const ()
-
 // PrintGitInfo prints out information from git about the current build
 // Use govvv to get this to output correctly
 func PrintGitInfo() {
@@ -60,7 +55,6 @@ func createconf() {
 		}
 	})
 }
-
 func startServer() {
 	if *args.Debug || *args.DebugNet {
 		file, err := os.OpenFile(*args.DataDir+"/debug.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
@@ -80,13 +74,11 @@ func startServer() {
 	}
 	server.Start()
 }
-
 func cleanup() {
 	// Shut everything down
 	fmt.Println("")
 	server.Shutdown()
 }
-
 func main() {
 	state.Init()
 	if _, err := os.Stat(*args.Conf); os.IsNotExist(err) {

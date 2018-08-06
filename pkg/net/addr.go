@@ -1,9 +1,7 @@
 package net
-
 import (
 	"sync"
 )
-
 // AddrInfo stores all the information about a peer
 type AddrInfo struct {
 	Addr
@@ -12,8 +10,6 @@ type AddrInfo struct {
 	attempts, refCount, randomPos int
 	inTried                       bool
 }
-
-// AddrMan is the data structure for managing connections to addresses
 type AddrMan struct {
 	mutex    sync.RWMutex
 	key      []byte

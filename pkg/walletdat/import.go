@@ -1,6 +1,4 @@
-// Package walletdat is a library for reading all of the data out of a standard bitcoin berkeleydb wallet.dat file
 package walletdat
-
 import (
 	"encoding/binary"
 	"gitlab.com/parallelcoin/duo/pkg/util"
@@ -9,7 +7,6 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"time"
 )
-
 type Name struct {
 	Addr string
 	Name string
@@ -42,7 +39,6 @@ type CKey struct {
 	Pub  *key.Pub
 	Priv []byte
 }
-// Imports is a list of structures from each of the types of imported records in a wallet.dat
 type Imports struct {
 	Names []Name
 	Metadata []Metadata
@@ -51,7 +47,6 @@ type Imports struct {
 	MKeys []MKey
 	CKeys []CKey
 }
-
 // Import reads an existing wallet.dat and returns all the keys and address data in it
 func Import(filename ...string) (imp Imports, err error) {
 	var db = &DB{}

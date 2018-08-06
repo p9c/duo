@@ -1,29 +1,21 @@
 package key
-
 import (
 	"errors"
 	"sync"
 )
-
-// Pair is a public/private key pair
 type Pair struct {
 	Public  *Pub
 	Private *Priv
 }
-
 // Map of keys
 type Map map[*ID]*Pair
-
 // ScriptMap stores scripts
 type ScriptMap map[*ScriptID]*Script
-
-// Store is a basic key and script store
 type Store struct {
 	Mutex   sync.Mutex
 	Keys    Map
 	Scripts ScriptMap
 }
-
 type store interface {
 	AddKeyPair(*Priv, *Pub) error
 	AddPrivKey(*Priv) error
@@ -35,12 +27,10 @@ type store interface {
 	HaveScript(*ScriptID) bool
 	GetScript(*ScriptID) (*Script, error)
 }
-
 // NewStore creates a new basic key.Store
 func NewStore() *Store {
 	return &Store{}
 }
-
 // AddKeyPair adds a public key to a key.Store
 func (s *Store) AddKeyPair(priv *Priv, pub *Pub) (err error) {
 	s.Mutex.Lock()
@@ -49,7 +39,6 @@ func (s *Store) AddKeyPair(priv *Priv, pub *Pub) (err error) {
 	s.Keys[id] = &Pair{pub, priv}
 	return
 }
-
 // AddPrivKey adds a key
 func (s *Store) AddPrivKey(priv *Priv) (err error) {
 	s.Mutex.Lock()
@@ -61,8 +50,6 @@ func (s *Store) AddPrivKey(priv *Priv) (err error) {
 	}
 	return
 }
-
-// HaveKey returns true if the key with the id is in the store
 func (s *Store) HaveKey(id *ID) (r bool) {
 	s.Mutex.Lock()
 	defer s.Mutex.Unlock()
@@ -71,7 +58,6 @@ func (s *Store) HaveKey(id *ID) (r bool) {
 	}
 	return
 }
-
 // GetPriv gets the key matching an id
 func (s *Store) GetPriv(id *ID) (priv *Priv, err error) {
 	s.Mutex.Lock()
@@ -81,7 +67,6 @@ func (s *Store) GetPriv(id *ID) (priv *Priv, err error) {
 	}
 	return nil, errors.New("Key ID not found in key store")
 }
-
 // GetPrivs gets a set of keys matching the id's in a request
 func (s *Store) GetPrivs(ids []*ID) (privs []Priv, err error) {
 	s.Mutex.Lock()
@@ -93,7 +78,6 @@ func (s *Store) GetPrivs(ids []*ID) (privs []Priv, err error) {
 	}
 	return
 }
-
 // GetPub gets only the public key from a key with a specified ID
 func (s *Store) GetPub(id *ID) (pub *Pub) {
 	s.Mutex.Lock()
@@ -103,7 +87,6 @@ func (s *Store) GetPub(id *ID) (pub *Pub) {
 	}
 	return
 }
-
 // AddScript adds a script to the key.Store
 func (s *Store) AddScript(script *Script) (err error) {
 	s.Mutex.Lock()
@@ -111,8 +94,6 @@ func (s *Store) AddScript(script *Script) (err error) {
 	s.Scripts[script.GetID()] = script
 	return
 }
-
-// HaveScript returns whether the script with the ID is present in the store
 func (s *Store) HaveScript(id *ScriptID) (r bool) {
 	s.Mutex.Lock()
 	defer s.Mutex.Unlock()
@@ -121,7 +102,6 @@ func (s *Store) HaveScript(id *ScriptID) (r bool) {
 	}
 	return
 }
-
 // GetScript retrieves a script given an ID
 func (s *Store) GetScript(id *ScriptID) (script *Script) {
 	s.Mutex.Lock()

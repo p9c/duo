@@ -1,9 +1,7 @@
 package version
-
 import (
 	"fmt"
 )
-
 const (
 	Name          = "duod"
 	Major         = 0
@@ -24,7 +22,6 @@ const (
 	Suffix        = "regenerator"
 	Description   = "Client for Parallelcoin cryptocurrency network"
 )
-
 var (
 	Git = map[string]string{
 		"Commit": "main.GitCommit",
@@ -33,7 +30,6 @@ var (
 	}
 	BuildDate = "main.BuildDate"
 )
-
 func Print() {
 	fmt.Printf("%s %d.%d.%d.%d - %s\n\n", Name, Major, Minor, Revision, Build, Description)
 }

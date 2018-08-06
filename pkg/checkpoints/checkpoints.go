@@ -1,14 +1,11 @@
 package checkpoints
-
 import (
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 )
-
 const (
 	// SigcheckVerificationFactor is
 	SigcheckVerificationFactor float64 = 5.0
 )
-
 var (
 	// Enabled is true if checkpoints are enabled (default)
 	Enabled = true
@@ -35,11 +32,7 @@ var (
 		TransactionsPerDay:        2880,
 	}
 )
-
-// Map is a map of checkpoints
 type Map map[int]*Uint.U256
-
-// Data is the data structure for the metadata for a network
 type Data struct {
 	CheckpointsMap                                Map
 	TimeLastCheckpoint, TransactionLastCheckpoint int64

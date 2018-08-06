@@ -1,10 +1,8 @@
 // Package state gathers every variable and constant required for a parallelcoin node. In the original codebase, these are scattered through several files.
 package state
-
 import (
 	"os"
 	"sync"
-
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/alert"
 	"gitlab.com/parallelcoin/duo/pkg/algos"
@@ -14,7 +12,6 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/tx"
 	"gitlab.com/parallelcoin/duo/pkg/txdb"
 )
-
 const (
 	// Coin is the denomination of one token
 	Coin int64 = 100000000
@@ -102,13 +99,11 @@ const (
 	// BindFlagsReportError -
 	BindFlagsReportError = 2
 )
-
 var (
 	// WalletFilename is the centrally stored filename of the wallet in a server instance
 	WalletFilename string
 	// WalletMain is the main wallet of a server instance
 	// WalletMain *wallet.Wallet
-
 	// RequestShutdown is a trigger that represents whether a shutdown switch has been flipped
 	RequestShutdown = false
 	// CoinsDBView is
@@ -135,7 +130,6 @@ var (
 	WalletRegisteredMutexSet sync.RWMutex
 	// WalletRegisteredSet is the set of registered wallets
 	// WalletRegisteredSet wallet.Wallet
-
 	// MainMutex is the main mutex of the server
 	MainMutex sync.RWMutex
 	// MemPool is the transaction mempool
@@ -220,6 +214,5 @@ var (
 	// LastBlockSize is
 	LastBlockSize uint64
 )
-
 // Init sets up the client's global data structures
 func Init() {}

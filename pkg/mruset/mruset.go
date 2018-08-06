@@ -1,5 +1,4 @@
 package mruset
-
 // MRUSet - implement this for each type of set with a composition
 type MRUSet struct {
 	// MaxSize is the maximum size of an Most Recently Used list

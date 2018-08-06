@@ -1,11 +1,8 @@
 package key
-
 import (
 	"sync"
-
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 )
-
 // Various script flags
 const (
 	// SigHashAll is
@@ -35,59 +32,43 @@ const (
 	// TxMultisig is a multisignature transaction
 	TxMultisig
 )
-
-// ScriptID is the RIPEMD160 hash of a script
 type ScriptID ID
-
-// TxDestination is a variant type, implemented as an interface{} which can hold script.ID, script.NoDestination or key.ID
 type TxDestination interface{}
-
-// NoDestination is an empty destination for transactions
 type NoDestination struct{}
-
-// Script is a set of commands that makes up a transaction
 type Script []byte
-
 type script interface {
 	GetID() *ScriptID
 }
-
 // GetID computes the RIPEMD160 hash of the script
 func (s *Script) GetID() (sid *ScriptID) {
 	sid.U160 = *Uint.RIPEMD160([]byte(*s))
 	return
 }
-
 // ScriptCompressor -
 type ScriptCompressor struct {
 	specialScripts uint // 6 defined
 	script         Script
 }
-
 // SigData -
 type SigData struct {
 	Hash   Uint.U256
 	Sig    []byte
 	Pubkey Pub
 }
-
 // SignatureCache -
 type SignatureCache struct {
 	ValidSet []bool
 	Mutex    sync.RWMutex
 }
-
 // StoreIsMineVisitor -
 type StoreIsMineVisitor struct {
 	KeyStore *Store
 }
-
 // AffectedKeysVisitor -
 type AffectedKeysVisitor struct {
 	KeyStore *Store
 	Keys     []ID
 }
-
 // ScriptVisitor -
 type ScriptVisitor struct {
 	script *Script

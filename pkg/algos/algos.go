@@ -1,5 +1,4 @@
 package algos
-
 const (
 	// SHA256D is proof of work using double SHA256 hashes
 	SHA256D = iota
@@ -14,7 +13,6 @@ const (
 	// BlockVersionScrypt is
 	BlockVersionScrypt = (1 << 9)
 )
-
 // Get the type of PoW algorithm
 func Get(version int) int {
 	switch version & BlockVersionAlgo {
@@ -25,7 +23,6 @@ func Get(version int) int {
 	}
 	return SHA256D
 }
-
 // Name returns the string identifier of the PoW algorithm
 func Name(algo int) string {
 	switch algo {
@@ -36,7 +33,6 @@ func Name(algo int) string {
 	}
 	return "unknown"
 }
-
 // Code accepts the name and returns the code
 func Code(s string) int {
 	switch s {

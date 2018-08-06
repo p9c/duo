@@ -1,19 +1,15 @@
 package rpc
-
 import (
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 )
-
 var (
 	TallyItems Tally
 )
-
 type Tally struct {
 	Amount int64
 	Conf   int
 	TxIDs  []Uint.U256
 }
-
 func getnewaddress(help bool, params ...string) interface{} {
 	return nil
 }
@@ -107,7 +103,6 @@ func validateaddress(help bool, params ...string) interface{} {
 func getinfo(help bool, params ...string) interface{} {
 	return nil
 }
-
 func makekeypair(help bool, params ...string) interface{} {
 	return nil
 }

@@ -1,9 +1,7 @@
 package rpc
-
 import (
 	"sync"
 )
-
 var (
 	HTTPStatus = map[string]int{
 		"OK":                  200,
@@ -44,13 +42,11 @@ var (
 		"WalletAlreadyUnlocked":     -17,
 	}
 )
-
 type RPCCommand struct {
 	Name                   string
 	Actor                  func(help bool, params ...string) interface{}
 	OKSafeMode, ThreadSafe bool
 }
-
 var (
 	RPCUserColonPass      string
 	WalletUnlockTime      int64
@@ -127,14 +123,12 @@ var (
 		{"sendalert", sendalert, true, false},
 	}
 )
-
 func help(help bool, params ...string) interface{} {
 	return nil
 }
 func stop(help bool, params ...string) interface{} {
 	return nil
 }
-
 type SSLIOStreamDevice struct {
 	needHandshake, useSSL bool
 	// SSL socket here
@@ -151,7 +145,6 @@ type JSONRequest struct {
 type RPCTable struct {
 	Commands []RPCCommand
 }
-
 func sendalert(help bool, params ...string) interface{} {
 	return nil
 }

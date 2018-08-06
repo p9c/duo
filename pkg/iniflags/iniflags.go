@@ -1,5 +1,4 @@
 package iniflags
-
 import (
 	"bufio"
 	"flag"
@@ -15,7 +14,6 @@ import (
 	"syscall"
 	"time"
 )
-
 var (
 	allowUnknownFlags = flag.Bool("allowUnknownFlags", false,
 		"Don't terminate the app if ini file contains unknown flags.")
@@ -33,13 +31,9 @@ var (
 	importStack         []string
 	parsed              bool
 )
-
-// Generation is flags' generation number.
 //
-// It is modified on each flags' modification
 // via either -configUpdateInterval or SIGHUP.
 var Generation int
-
 // Parse obtains flag values from config file set via -config.
 //
 // It obtains flag values from command line like flag.Parse(), then overrides
@@ -90,18 +84,12 @@ func updateConfig() {
 		issueFlagChangeCallbacks(oldFlagValues)
 	}
 }
-
-// FlagChangeCallback is called when the given flag is changed.
 //
 // The callback may be registered for any flag via OnFlagChange().
 type FlagChangeCallback func()
-
-// OnFlagChange registers the callback, which is called after the given flag
-// value is initialized and/or changed.
 //
 // Flag values are initialized during iniflags.Parse() call.
 // Flag value can be changed on config re-read after obtaining SIGHUP signal
-// or if periodic config re-read is enabled with -configUpdateInterval flag.
 //
 // Note that flags set via command-line cannot be overriden via config file modifications.
 func OnFlagChange(flagName string, callback FlagChangeCallback) {
@@ -195,7 +183,6 @@ func checkImportRecursion(configPath string) bool {
 	}
 	return true
 }
-
 type flagArg struct {
 	Key      string
 	Value    string
@@ -203,7 +190,6 @@ type flagArg struct {
 	LineNum  int
 	Comment  string
 }
-
 func stripBOM(s string) string {
 	if len(s) < 3 {
 		return s
@@ -450,11 +436,9 @@ func getTrailingComment(v string) string {
 	}
 	return ""
 }
-
 // SetConfigFile sets path to config file.
 //
 // Call this function before Parse() if you need default path to config file
-// when -config command-line flag is not set.
 func SetConfigFile(path string) {
 	if parsed {
 		logger.Panicf("iniflags: SetConfigFile() must be called before Parse()")
@@ -479,19 +463,13 @@ func SetConfigUpdateInterval(interval time.Duration) {
 	}
 	*configUpdateInterval = interval
 }
-
-// Logger is a slimmed-down version of the log.Logger interface, which only includes the methods we use.
-// This interface is accepted by SetLogger() to redirect log output to another destination.
 type Logger interface {
 	Printf(format string, v ...interface{})
 	Fatalf(format string, v ...interface{})
 	Panicf(format string, v ...interface{})
 }
-
-// logger is the global Logger used to output log messages.  By default, it outputs to the same place and with the same
 // format as the standard libary log package calls.  It can be changed via SetLogger().
 var logger Logger = log.New(os.Stderr, "", log.LstdFlags)
-
 func SetLogger(l Logger) {
 	logger = l
 }

@@ -1,30 +1,22 @@
 package block
-
 import (
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/tx"
 )
-
 var (
 	// ChainIndex is a centralised index of a server's chain
 	ChainIndex Index
 )
-
-// Contents is a collection of transactions and merkle trees
 type Contents struct {
 	Txs        []tx.Transaction
 	MerkleTree []Uint.U256
 }
-
-// Header is the header for a block
 type Header struct {
 	CurrentVersion, Version       int
 	HashPrevBlock, HashMerkleRoot Uint.U256
 	Time, Bits, Nonce             uint
 	Contents
 }
-
-// Index is an index of blocks
 type Index struct {
 	HashBlock                     Uint.U256
 	Prev                          *Index
@@ -36,13 +28,10 @@ type Index struct {
 	HashMerkleRoot                Uint.U256
 	Time, Bits, Nonce             uint
 }
-
-// DiskIndex is an index of blocks as they are stored on disk
 type DiskIndex struct {
 	Index
 	HashPrev Uint.U256
 }
-
 const (
 	// ModeValid means a block is valid
 	ModeValid = iota
@@ -51,18 +40,15 @@ const (
 	// ModeError means there was an error in the block
 	ModeError
 )
-
 // ValidationState stores the state of validation of a block
 type ValidationState struct {
 	Mode int
 	DoS  int
 }
-
 // Locator allows you to quickly find a block
 type Locator struct {
 	Have []Uint.U256
 }
-
 // CoinStats stores the current state of the currency
 type CoinStats struct {
 	Height                         int
@@ -71,50 +57,38 @@ type CoinStats struct {
 	HashSerialized                 Uint.U256
 	TotalAmount                    uint64
 }
-
 // CoinsView is
 type CoinsView struct{}
-
 // CoinsViewBacked is
 type CoinsViewBacked struct {
 	base *CoinsView
 }
-
 // CoinsViewCache is
 type CoinsViewCache struct {
 	IndexTip   Index
 	CacheCoins map[*Uint.U256]tx.Coins
 }
-
 // CoinsViewMemPool is
 type CoinsViewMemPool struct {
 	MemPool tx.MemPool
 }
-
-// Block is a block
 type Block struct {
 	Transactions []tx.Transaction
 	MerkleTree   []*Uint.U256
 }
-
-// Template is the template of a block
 type Template struct {
 	Block          Block
 	TxFees, SigOps []int64
 }
-
-// Undo is an undo buffer for transactions
 type Undo struct {
 	Txs tx.Undo
 }
-
 // ScriptCheck tracks the verification of scripts
 type ScriptCheck struct {
 	ScriptPubKey        tx.Script
 	To                  tx.Transaction
 	In, Flags, HashType uint
 }
-
 // MerkleTx is
 type MerkleTx struct {
 	tx.Transaction
@@ -123,7 +97,6 @@ type MerkleTx struct {
 	Index        int
 	Verified     bool
 }
-
 // PartialMerkleTree is
 type PartialMerkleTree struct {
 	Transactions uint
@@ -131,13 +104,11 @@ type PartialMerkleTree struct {
 	Hash         []Uint.U256
 	Bad          bool
 }
-
 // FileInfo stores details about the blockchain on disk
 type FileInfo struct {
 	Blocks, Size, UndoSize, HeightFirst, HeightLast uint
 	TimeFirst, TimeLast                             uint64
 }
-
 // MerkleBlock is
 type MerkleBlock struct {
 	Header Header

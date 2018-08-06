@@ -1,11 +1,8 @@
 package net
-
 import (
 	"unsafe"
-
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 )
-
 const (
 	// NodeNetwork is
 	NodeNetwork = 1
@@ -22,7 +19,6 @@ const (
 	// MessageFilteredBlock is
 	MessageFilteredBlock = 3
 )
-
 var (
 	// TypeName is
 	TypeName = []string{
@@ -32,23 +28,17 @@ var (
 		"filtered block",
 	}
 )
-
-// MessageHeader is the header for a p2p message
 type MessageHeader struct {
 	MessageStart          [MessageStartSize]byte
 	Command               [CommandSize]byte
 	MessageSize, Checksum uint
 }
-
-// Address is the address record of a node
 type Address struct {
 	Service
 	Services uint64
 	Time     uint
 	LastTry  int64
 }
-
-// Inv is the inventory of data in a message
 type Inv struct {
 	Type int
 	Hash Uint.U256

@@ -1,13 +1,10 @@
 package rpc
-
 import (
 	// "gitlab.com/parallelcoin/duo/pkg/wallet"
 )
-
 var (
 	// MiningKey *wallet.ReserveKey
 )
-
 func getgenerate(help bool, params ...string) interface{} {
 	return nil
 }

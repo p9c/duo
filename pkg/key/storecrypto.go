@@ -1,20 +1,15 @@
 package key
-
 import (
 	"crypto/aes"
 	"errors"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
 )
-
-// CryptedKeys is a struct containing pointer to public key and the encrypted private key as bytes
 type CryptedKeys struct {
 	Pub    *Pub
 	Secret []byte
 }
-
 // CryptedKeyMap stores encrypted private keys
 type CryptedKeyMap map[*ID]*CryptedKeys
-
 // StoreCrypto keeps also encrypted keys
 type StoreCrypto struct {
 	Store
@@ -22,7 +17,6 @@ type StoreCrypto struct {
 	masterKey   crypto.KeyingMaterial
 	encrypted   bool
 }
-
 type storeCrypto interface {
 	SetCrypted() error
 	Lock() error
@@ -35,12 +29,10 @@ type storeCrypto interface {
 	GetPub(*ID) *Pub
 	EncryptKeys(crypto.KeyingMaterial) error
 }
-
 // NewStoreCrypto creates a new key.StoreCrypto
 func NewStoreCrypto() *StoreCrypto {
 	return &StoreCrypto{}
 }
-
 // SetCrypted encrypts a wallet
 func (s *StoreCrypto) SetCrypted() (err error) {
 	if s.encrypted {
@@ -54,7 +46,6 @@ func (s *StoreCrypto) SetCrypted() (err error) {
 	s.Mutex.Unlock()
 	return
 }
-
 // Lock locks the wallet
 func (s *StoreCrypto) Lock() (err error) {
 	if err = s.SetCrypted(); err != nil {
@@ -66,17 +57,12 @@ func (s *StoreCrypto) Lock() (err error) {
 	// notification needs to be sent at this point somewhere
 	return
 }
-
-// IsCrypted returns true if the wallet is encrypted
 func (s *StoreCrypto) IsCrypted() bool {
 	return s.encrypted
 }
-
-// IsLocked returns true if the wallet is locked
 func (s *StoreCrypto) IsLocked() bool {
 	return s.masterKey == nil
 }
-
 // Unlock unlocks an encrypted wallet using a passphrase
 func (s *StoreCrypto) Unlock(passphrase crypto.KeyingMaterial) (err error) {
 	if err = s.SetCrypted(); err != nil {
@@ -104,7 +90,6 @@ func (s *StoreCrypto) Unlock(passphrase crypto.KeyingMaterial) (err error) {
 	s.masterKey = cleartext
 	return
 }
-
 // AddKeyPair adds a new key pair
 func (s *StoreCrypto) AddKeyPair(priv *Priv, pub *Pub) (err error) {
 	switch {
@@ -119,7 +104,6 @@ func (s *StoreCrypto) AddKeyPair(priv *Priv, pub *Pub) (err error) {
 	err = s.AddEncryptedKey(pub, secret)
 	return
 }
-
 // AddEncryptedKey adds a new encrypted key
 func (s *StoreCrypto) AddEncryptedKey(pub *Pub, secret []byte) (err error) {
 	s.Mutex.Lock()
@@ -128,7 +112,6 @@ func (s *StoreCrypto) AddEncryptedKey(pub *Pub, secret []byte) (err error) {
 	s.Mutex.Unlock()
 	return
 }
-
 // GetPriv gets an private key
 func (s *StoreCrypto) GetPriv(id *ID) (priv *Priv, err error) {
 	s.Mutex.Lock()
@@ -151,7 +134,6 @@ func (s *StoreCrypto) GetPriv(id *ID) (priv *Priv, err error) {
 	}
 	return nil, errors.New("Key ID not found in store")
 }
-
 // GetPub gets a public key
 func (s *StoreCrypto) GetPub(id *ID) (pub *Pub) {
 	if !s.IsCrypted() {
@@ -160,7 +142,6 @@ func (s *StoreCrypto) GetPub(id *ID) (pub *Pub) {
 	pub = s.cryptedKeys[id].Pub
 	return
 }
-
 // EncryptKeys encrypts keys with a specified passphrase
 func (s *StoreCrypto) EncryptKeys(passphrase crypto.KeyingMaterial) (err error) {
 	if len(s.cryptedKeys) < 1 {

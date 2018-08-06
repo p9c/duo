@@ -1,11 +1,9 @@
 package bdb
-
 /*
 	#cgo LDFLAGS: -ldb
 	#include <stdlib.h>
 	#include <errno.h>
 	#include <db.h>
-
 	int db_env_set_encrypt(DB_ENV *env, const char *passwd, u_int32_t flags) {
 		return env->set_encrypt(env, passwd, flags);
 	}
@@ -31,7 +29,6 @@ package bdb
 		return db->get_type(db, type);
 	}
 	int db_put(DB *db, DB_TXN *txn, DBT *key, DBT *data, u_int32_t flags) {
-
 		return db->put(db, txn, key, data, flags);
 	}
 	int db_get(DB *db, DB_TXN *txn, DBT *key, DBT *data, u_int32_t flags) {
@@ -52,7 +49,6 @@ package bdb
 	int db_cursor_del(DBC *cur, u_int32_t flags) {
 		return cur->del(cur, flags);
 	}
-
 	int db_env_txn_begin(DB_ENV *env, DB_TXN *parent, DB_TXN **txn, u_int32_t flags) {
 		return env->txn_begin(env, parent, txn, flags);
 	}
@@ -67,15 +63,11 @@ package bdb
 	}
 */
 import "C"
-
 import (
 	"os"
 	"unsafe"
 )
-
-// DatabaseType is the type of database being used
 type DatabaseType int
-
 // Available database types.
 const (
 	BTree    = DatabaseType(C.DB_BTREE)
@@ -84,7 +76,6 @@ const (
 	Queue    = DatabaseType(C.DB_QUEUE)
 	Unknown  = DatabaseType(C.DB_UNKNOWN)
 )
-
 // DatabaseConfig - Database configuration.
 type DatabaseConfig struct {
 	Create          bool         // Create the database, if necessary.
@@ -95,18 +86,12 @@ type DatabaseConfig struct {
 	ReadUncommitted bool         // Enable support for read-uncommitted isolation.
 	Snapshot        bool         // Enable support for snapshot isolation.
 }
-
 // Database -
 type Database struct {
 	ptr *C.DB
 }
-
-// Errno is the error return value for barkeleydb functions
 type Errno int
-
-// EnvFlag is the settings for a barkeleydb database environment
 type EnvFlag int
-
 // Status codes representing common errors.
 const (
 	ErrAgain           = Errno(C.EAGAIN)
@@ -131,16 +116,13 @@ const (
 	DbAggressive = EnvFlag(C.DB_AGGRESSIVE)
 	DbSalvage    = EnvFlag(C.DB_SALVAGE)
 )
-
 func (db Database) is_alive(env *C.DB_ENV, pid C.pid_t, threadid C.db_threadid_t, i C.u_int32_t) (r int) {
 	return 1
 }
-
 // Error turns a status code into a human readable message.
 func (err Errno) Error() string {
 	return C.GoString(C.db_strerror(C.int(err)))
 }
-
 // Check a function result and return an error if necessary.
 func check(rc C.int) (err error) {
 	if rc != 0 {
@@ -148,7 +130,6 @@ func check(rc C.int) (err error) {
 	}
 	return
 }
-
 // EnvironmentConfig -
 type EnvironmentConfig struct {
 	Create        bool        // Create the environment, if necessary.
@@ -159,24 +140,18 @@ type EnvironmentConfig struct {
 	NoSync        bool        // Do not flush to log when committing.
 	WriteNoSync   bool        // Do not flush log when committing.
 }
-
 // Environment -
 type Environment struct {
 	ptr *C.DB_ENV
 }
-
-// NoEnvironment is a special constant to indicate no environment should be used.
 var NoEnvironment = Environment{ptr: nil}
-
 type IsolationLevel int
-
 // Available transaction isolation levels.
 const (
 	ReadCommitted   = IsolationLevel(C.DB_READ_COMMITTED)
 	ReadUncommitted = IsolationLevel(C.DB_READ_UNCOMMITTED)
 	Snapshot        = IsolationLevel(C.DB_TXN_SNAPSHOT)
 )
-
 // Transaction configuration.
 type TransactionConfig struct {
 	Parent      Transaction    // Parent transaction.
@@ -186,15 +161,12 @@ type TransactionConfig struct {
 	NoSync      bool           // Do not flush to log when committing.
 	WriteNoSync bool           // Do not flush log when committing.
 }
-
 // Transaction in a database environment.
 type Transaction struct {
 	ptr *C.DB_TXN
 }
-
 // NoTransaction indicates no transaction should be used.
 var NoTransaction = Transaction{ptr: nil}
-
 // OpenEnvironment opens a berkeleydb environment
 func OpenEnvironment(home string, config *EnvironmentConfig) (env Environment, err error) {
 	err = check(C.db_env_create(&env.ptr, 0))
@@ -208,14 +180,11 @@ func OpenEnvironment(home string, config *EnvironmentConfig) (env Environment, e
 	} else {
 		return
 	}
-
 	var mode C.int = 0
 	var flags C.u_int32_t = C.DB_THREAD
 	var chome, cpassword *C.char
-
 	chome = C.CString(home)
 	defer C.free(unsafe.Pointer(chome))
-
 	if config != nil {
 		if config.Create {
 			flags |= C.DB_CREATE
@@ -240,7 +209,6 @@ func OpenEnvironment(home string, config *EnvironmentConfig) (env Environment, e
 			flags |= C.DB_TXN_WRITE_NOSYNC
 		}
 	}
-
 	if cpassword != nil {
 		err = check(C.db_env_set_encrypt(env.ptr, cpassword, 0))
 		if err != nil {
@@ -248,16 +216,13 @@ func OpenEnvironment(home string, config *EnvironmentConfig) (env Environment, e
 		}
 	}
 	err = check(C.db_env_open(env.ptr, chome, flags, mode))
-
 	return
 }
-
 // Close the environment
 func (env Environment) Close() (err error) {
 	err = check(C.db_env_close(env.ptr, C.u_int32_t(C.DB_FORCESYNC)))
 	return
 }
-
 // OpenDatabase opens a database file
 func OpenDatabase(env Environment, txn Transaction, file string, config *DatabaseConfig) (db Database, err error) {
 	err = check(C.db_create(&db.ptr, env.ptr, 0))
@@ -271,17 +236,14 @@ func OpenDatabase(env Environment, txn Transaction, file string, config *Databas
 	} else {
 		return
 	}
-
 	var mode C.int = 0
 	var flags C.u_int32_t = C.DB_THREAD
 	var cfile, cpassword, cname *C.char
 	var dbtype C.DBTYPE = C.DB_UNKNOWN
-
 	if len(file) > 0 {
 		cfile = C.CString(file)
 		defer C.free(unsafe.Pointer(cfile))
 	}
-
 	if config != nil {
 		if config.Create {
 			flags |= C.DB_CREATE
@@ -307,25 +269,20 @@ func OpenDatabase(env Environment, txn Transaction, file string, config *Databas
 			flags |= C.DB_MULTIVERSION
 		}
 	}
-
 	if cpassword != nil {
 		err = check(C.db_set_encrypt(db.ptr, cpassword, 0))
 		if err != nil {
 			return
 		}
 	}
-
 	err = check(C.db_open(db.ptr, txn.ptr, cfile, cname, dbtype, flags, mode))
-
 	return
 }
-
 // Close the database.
 func (db Database) Close() (err error) {
 	err = check(C.db_close(db.ptr, 0))
 	return
 }
-
 // Verify the database
 func Verify(file string) (err error) {
 	var db Database
@@ -340,14 +297,11 @@ func Verify(file string) (err error) {
 	} else {
 		return
 	}
-
 	cfile := C.CString(file)
 	defer C.free(unsafe.Pointer(cfile))
-
 	err = check(C.db_verify(db.ptr, cfile, nil, nil, 0))
 	return
 }
-
 // Type returns the type of the database.
 func (db Database) Type() (dbtype DatabaseType, err error) {
 	var cdbtype C.DBTYPE
@@ -355,7 +309,6 @@ func (db Database) Type() (dbtype DatabaseType, err error) {
 	dbtype = DatabaseType(cdbtype)
 	return
 }
-
 // Put a set of records into the database
 func (db Database) Put(txn Transaction, append bool, recs ...[2][]byte) (err error) {
 	dbtype, err := db.Type()
@@ -366,7 +319,6 @@ func (db Database) Put(txn Transaction, append bool, recs ...[2][]byte) (err err
 	var flags C.u_int32_t = 0
 	if append {
 		key.flags |= C.DB_DBT_USERMEM
-
 		switch dbtype {
 		case Numbered, Queue:
 			flags |= C.DB_APPEND
@@ -384,19 +336,16 @@ func (db Database) Put(txn Transaction, append bool, recs ...[2][]byte) (err err
 		data.data = unsafe.Pointer(C.CString(string(recs[rec][1])))
 		r := C.db_put(db.ptr, txn.ptr, &key, &data, flags)
 		err = check(r)
-
 		if err != nil {
 			return
 		}
 	}
 	return
 }
-
 // Get a set of records from the database
 func (db Database) Get(txn Transaction, consume bool, recs ...[2][]byte) (err error) {
 	var key, data C.DBT
 	var flags C.u_int32_t = 0
-
 	if consume {
 		key.flags |= C.DB_DBT_USERMEM
 		flags |= C.DB_CONSUME_WAIT
@@ -410,7 +359,6 @@ func (db Database) Get(txn Transaction, consume bool, recs ...[2][]byte) (err er
 		key.data = unsafe.Pointer(C.CString(string(recs[0][rec])))
 		data.size = C.u_int32_t(len(recs[1][rec]))
 		data.data = unsafe.Pointer(C.CString(string(recs[1][rec])))
-
 		err = check(C.db_get(db.ptr, txn.ptr, &key, &data, flags))
 		if err != nil {
 			return
@@ -418,7 +366,6 @@ func (db Database) Get(txn Transaction, consume bool, recs ...[2][]byte) (err er
 	}
 	return
 }
-
 // Del deletes a set of records from the database
 func (db Database) Del(txn Transaction, recs ...[]byte) (err error) {
 	var key C.DBT
@@ -433,31 +380,25 @@ func (db Database) Del(txn Transaction, recs ...[]byte) (err error) {
 	}
 	return
 }
-
-// Cursor is used to walk through the database in key sort order
 type Cursor struct {
 	db  Database
 	ptr *C.DBC
 }
-
 // Cursor returns a cursor for the database.
 func (db Database) Cursor(txn Transaction) (cur Cursor, err error) {
 	cur.db = db
 	err = check(C.db_cursor(db.ptr, txn.ptr, &cur.ptr, 0))
 	return
 }
-
 // Close the cursor.
 func (cur Cursor) Close() (err error) {
 	err = check(C.db_cursor_close(cur.ptr))
 	return
 }
-
 // Set a record
 func (cur Cursor) Set(rec [2][]byte, exact bool) (err error) {
 	var key, data C.DBT
 	var flags C.u_int32_t = 0
-
 	if exact {
 		key.flags |= C.DB_DBT_READONLY
 		flags |= C.DB_SET
@@ -465,17 +406,14 @@ func (cur Cursor) Set(rec [2][]byte, exact bool) (err error) {
 		key.flags |= C.DB_DBT_MALLOC
 		flags |= C.DB_SET_RANGE
 	}
-
 	data.flags |= C.DB_DBT_REALLOC
 	defer C.free(data.data)
-
 	odata := key.data
 	defer func() {
 		if key.data != odata {
 			C.free(data.data)
 		}
 	}()
-
 	err = check(C.db_cursor_get(cur.ptr, &key, &data, flags))
 	if err != nil {
 		return
@@ -484,16 +422,13 @@ func (cur Cursor) Set(rec [2][]byte, exact bool) (err error) {
 	rec[1] = *(*[]byte)(unsafe.Pointer(&data.data))
 	return
 }
-
 // First etrieves the first record of the database.
 func (cur Cursor) First(rec *[2][]byte) (err error) {
 	var key, data C.DBT
-
 	key.flags |= C.DB_DBT_REALLOC
 	defer C.free(key.data)
 	data.flags |= C.DB_DBT_REALLOC
 	defer C.free(data.data)
-
 	err = check(C.db_cursor_get(cur.ptr, &key, &data, C.DB_FIRST))
 	if err != nil {
 		return
@@ -502,16 +437,13 @@ func (cur Cursor) First(rec *[2][]byte) (err error) {
 	rec[1] = *(*[]byte)(unsafe.Pointer(&data.data))
 	return
 }
-
 // Next retrieves the next record from the cursor.
 func (cur Cursor) Next(rec *[2][]byte) (err error) {
 	var key, data C.DBT
-
 	key.flags |= C.DB_DBT_REALLOC
 	defer C.free(key.data)
 	data.flags |= C.DB_DBT_REALLOC
 	defer C.free(data.data)
-
 	err = check(C.db_cursor_get(cur.ptr, &key, &data, C.DB_NEXT))
 	if err != nil {
 		return
@@ -520,16 +452,13 @@ func (cur Cursor) Next(rec *[2][]byte) (err error) {
 	rec[1] = *(*[]byte)(unsafe.Pointer(&data.data))
 	return
 }
-
 // Last retrieves the last record of the database.
 func (cur Cursor) Last(rec [2][]byte) (err error) {
 	var key, data C.DBT
-
 	key.flags |= C.DB_DBT_REALLOC
 	defer C.free(key.data)
 	data.flags |= C.DB_DBT_REALLOC
 	defer C.free(data.data)
-
 	err = check(C.db_cursor_get(cur.ptr, &key, &data, C.DB_LAST))
 	if err != nil {
 		return
@@ -538,16 +467,13 @@ func (cur Cursor) Last(rec [2][]byte) (err error) {
 	rec[1] = *(*[]byte)(unsafe.Pointer(&data.data))
 	return
 }
-
 // Prev retrieves the previous record from the cursor.
 func (cur Cursor) Prev(rec [2][]byte) (err error) {
 	var key, data C.DBT
-
 	key.flags |= C.DB_DBT_REALLOC
 	defer C.free(key.data)
 	data.flags |= C.DB_DBT_REALLOC
 	defer C.free(data.data)
-
 	err = check(C.db_cursor_get(cur.ptr, &key, &data, C.DB_PREV))
 	if err != nil {
 		return
@@ -556,7 +482,6 @@ func (cur Cursor) Prev(rec [2][]byte) (err error) {
 	rec[1] = *(*[]byte)(unsafe.Pointer(&data.data))
 	return
 }
-
 // Del deletes the current record at the cursor.
 func (cur Cursor) Del() (err error) {
 	err = check(C.db_cursor_del(cur.ptr, 0))

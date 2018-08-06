@@ -1,5 +1,4 @@
 package addr
-
 var (
 	// TriedBucketCount is the number of buckets tried
 	TriedBucketCount = 64

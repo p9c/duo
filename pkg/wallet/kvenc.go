@@ -1,5 +1,4 @@
 package wallet
-
 import (
 	"bytes"
 	"encoding/binary"
@@ -7,7 +6,6 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 )
-
 // KVEnc converts a of set variables to a key/value byte slice pair. Can be used to construct the key half only for search and delete operations, by only passing the fields that go into the key.
 func (db *DB) KVEnc(vars interface{}) (result [2][]byte) {
 	V := vars.([]interface{})

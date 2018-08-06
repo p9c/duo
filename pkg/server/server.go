@@ -1,25 +1,20 @@
 package server
-
 import (
 	"fmt"
 	"log"
 	"os"
-
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"gitlab.com/parallelcoin/duo/pkg/server/args"
 	// "gitlab.com/parallelcoin/duo/pkg/wallet"
 )
-
 const (
 	// LockFilename is the name of the lock file that indicates another duo is running on that directory
 	LockFilename = "/.lock"
 )
-
 var (
 	// Walletdb is a package centralised store for the server wallet
 	// Walletdb *wallet.DB
 )
-
 func lockDataDir() bool {
 	if _, err := os.Stat(*args.DataDir + LockFilename); os.IsNotExist(err) {
 		f, err := os.Create(*args.DataDir + LockFilename)
@@ -36,7 +31,6 @@ func lockDataDir() bool {
 	logger.Debug("Locked data directory")
 	return true
 }
-
 func unlockDataDir() bool {
 	if _, err := os.Stat(*args.DataDir + LockFilename); os.IsNotExist(err) {
 		return false
@@ -48,7 +42,6 @@ func unlockDataDir() bool {
 	logger.Debug("Unlocked data directory")
 	return true
 }
-
 // Start up a server (network client)
 func Start() {
 	logger.Debug("Starting up server ...")
@@ -70,7 +63,6 @@ func Start() {
 		Shutdown()
 	}
 }
-
 // Shutdown a server
 func Shutdown() {
 	// if err := wallet.Db.Close(); err != nil {
@@ -82,7 +74,6 @@ func Shutdown() {
 	logger.Debug("Completed shutdown")
 	os.Exit(0)
 }
-
 // GetWarnings -
 func GetWarnings(s string) string {
 	return ""

@@ -1,7 +1,5 @@
 package op
-
 // Opcodes are implemented here as maps to combine translation between commands and binary codes, as well as being able to quickly return also the human readable name associated with an opcode. They are implemented as a hash table by Go so the lookups are very fast... Plus the opcodes as constants makes ugly un-go-like all caps underscore containing names. C++ implementation has to duplicate anyway between names and strings, in Go we can just make the strings the names.
-// Code is so named so when addressing the value: op.Code["OP_CODE"], and no dirty underscore values, and no need to also add a stringer.
 var Code = map[string]byte{
 	// push value
 	"OP_0":         0x00,
@@ -135,9 +133,6 @@ var Code = map[string]byte{
 	// for what reason idk
 	"OP_INVALIDOPCODE": 0xff,
 }
-
-// Values Because some numbskull decided to make numbers and truth values the same, the reverse map is also made, with a slice for the strings. This is for decoding opcodes from the binary format for execution during verification, so it is better to spend some extra space instead of wasting time iterating for a reverse lookup.
-// Get the main string value out with Values[opcode][0]. If the interpreter is expecting a truth value get that out with Values[opcode][1]
 var Values = map[byte][]string{
 	// push value
 	0x00: []string{"OP_0", "OP_FALSE"},

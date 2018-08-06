@@ -10,7 +10,6 @@ import (
   "strings"
   "sync"
 )
-// DisableCache will disable caching of the home directory. Caching is enabled
 // by default.
 var DisableCache bool
 var homedirCache string
@@ -18,7 +17,6 @@ var cacheLock sync.RWMutex
 // Dir returns the home directory for the executing user.
 //
 // This uses an OS-specific method for discovering the home directory.
-// An error is returned if a home directory cannot be detected.
 func Dir() (string, error) {
   if !DisableCache {
     cacheLock.RLock()
@@ -45,7 +43,6 @@ func Dir() (string, error) {
   return result, nil
 }
 // Expand expands the path to include the home directory if the path
-// is prefixed with `~`. If it isn't prefixed with `~`, the path is
 // returned as-is.
 func Expand(path string) (string, error) {
   if len(path) == 0 {

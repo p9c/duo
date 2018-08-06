@@ -1,11 +1,8 @@
 package key
-
 import (
 	"crypto/aes"
 	"crypto/cipher"
 )
-
-// Check if a key is valid
 func Check(b []byte) bool {
 	Max := [32]byte{
 		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -30,7 +27,6 @@ func Check(b []byte) bool {
 	}
 	return result
 }
-
 // NewCipher creates a new aes-cbc-256 block cipher
 func NewCipher(passphrase []byte) (block cipher.Block, err error) {
 	block, err = aes.NewCipher(append(passphrase, make([]byte, len(passphrase)-32)...))

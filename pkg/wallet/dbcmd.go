@@ -1,10 +1,8 @@
 package wallet
-
 import (
 	"errors"
 	"os"
 	"time"
-
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/bdb"
 	"gitlab.com/parallelcoin/duo/pkg/block"
@@ -13,7 +11,6 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"gitlab.com/parallelcoin/duo/pkg/server/args"
 )
-
 // NewDB creates a new database file
 func NewDB(opts ...string) (db *DB, err error) {
 	db = &DB{}
@@ -55,12 +52,10 @@ func NewDB(opts ...string) (db *DB, err error) {
 	}
 	return
 }
-
 // SetFilename changes the name of the database we want to open
 func (db *DB) SetFilename(filename string) {
 	db.Filename = filename
 }
-
 // Open a wallet.dat file
 func (db *DB) Open() (err error) {
 	dbenvconf := bdb.EnvironmentConfig{
@@ -88,13 +83,11 @@ func (db *DB) Open() (err error) {
 	}
 	return
 }
-
 // Close an wallet.dat file
 func (db *DB) Close() (err error) {
 	err = db.Database.Close()
 	return
 }
-
 // Verify the consistency of a wallet.dat database
 func (db *DB) Verify() (err error) {
 	if _, err = os.Stat(db.Filename); os.IsNotExist(err) {
@@ -107,17 +100,14 @@ func (db *DB) Verify() (err error) {
 	}
 return
 }
-
 // Encrypt a wallet.dat database
 func (db *DB) Encrypt() (err error) {
 	return
 }
-
 // Unlock a wallet.dat database
 func (db *DB) Unlock() (err error) {
 	return
 }
-
 // Dump the set of keys and current stats of the chain in a string
 func (db *DB) Dump() (dump string, err error) {
 	// cursor, err := db.Cursor(bdb.NoTransaction)
@@ -148,28 +138,22 @@ func (db *DB) Dump() (dump string, err error) {
 	// }
 	return
 }
-
 // Version returns the version of the wallet
 func (db *DB) Version() int {
 	return FeatureBase
 }
-
 // GetBalance gets the balance of the wallet
 func (db *DB) GetBalance() float64 {
 	return 0.0
 }
-
 // GetOldestKeyPoolTime gets the oldest keypool time
 func (db *DB) GetOldestKeyPoolTime() int64 {
 	return 0
 }
-
 // GetKeyPoolSize gets the keypool size
 func (db *DB) GetKeyPoolSize() int {
 	return 0
 }
-
-// Find returns a list of key/value pairs according to the key label and first part of the content of the key (it must be a complete first several values including length prefixes for strings and slices). This is iterative and will take on average the cost of visiting half the database. Fortunately they are generally small but this is not ideal.
 func (db *DB) Find(label string, content []byte) (result [][2][]byte, err error) {
 	labelB := append([]byte{byte(len(label))}, []byte(label)...)
 	contentB := append([]byte{byte(len(content))}, content...)
@@ -207,7 +191,6 @@ func (db *DB) Find(label string, content []byte) (result [][2][]byte, err error)
 	}
 	return
 }
-
 // WriteName writes a new name to the database associated with an address
 func (db *DB) WriteName(addr, name string) (err error) {
 	r := db.KVEnc([]interface{}{"name", addr, name})
@@ -217,7 +200,6 @@ func (db *DB) WriteName(addr, name string) (err error) {
 	db.updateCount++
 	return
 }
-
 // EraseName deletes a name from the wallet
 func (db *DB) EraseName(addr string) (err error) {
 	r := db.KVEnc([]interface{}{"name", addr})
@@ -227,7 +209,6 @@ func (db *DB) EraseName(addr string) (err error) {
 	db.updateCount++
 	return
 }
-
 // WriteTx writes a transaction to the wallet
 func (db *DB) WriteTx(u *Uint.U256, t []byte) (err error) {
 	r := db.KVEnc([]interface{}{"tx", u, t})
@@ -237,7 +218,6 @@ func (db *DB) WriteTx(u *Uint.U256, t []byte) (err error) {
 	db.updateCount++
 	return
 }
-
 // EraseTx deletes a transaction from the wallet
 func (db *DB) EraseTx(u *Uint.U256) (err error) {
 	r := db.KVEnc([]interface{}{"tx", u})
@@ -247,7 +227,6 @@ func (db *DB) EraseTx(u *Uint.U256) (err error) {
 	db.updateCount++
 	return
 }
-
 // WriteKey writes a new key to the wallet
 func (db *DB) WriteKey(pub *key.Pub, priv *key.Priv, meta *KeyMetadata) (err error) {
 	rKey := db.KVEnc([]interface{}{"key", pub, priv})
@@ -260,7 +239,6 @@ func (db *DB) WriteKey(pub *key.Pub, priv *key.Priv, meta *KeyMetadata) (err err
 	db.updateCount++
 	return
 }
-
 func (db *DB) eraseKey(pub *key.Pub) (err error) {
 	rKey := db.KVEnc([]interface{}{"key", pub})
 	rMeta := db.KVEnc([]interface{}{"keymeta", pub})
@@ -272,13 +250,11 @@ func (db *DB) eraseKey(pub *key.Pub) (err error) {
 	db.updateCount++
 	return
 }
-
 // WriteCryptedKey writes an encrypted key to the wallet
 func (db *DB) WriteCryptedKey(*key.Pub, []byte, *KeyMetadata) (err error) {
 	db.updateCount++
 	return
 }
-
 // WriteMasterKey writes a MasterKey to the wallet
 func (db *DB) WriteMasterKey(id int64, mkey *crypto.MasterKey) (err error) {
 	r := db.KVEnc([]interface{}{"mkey", id, mkey})
@@ -288,7 +264,6 @@ func (db *DB) WriteMasterKey(id int64, mkey *crypto.MasterKey) (err error) {
 	db.updateCount++
 	return
 }
-
 func (db *DB) eraseMasterKey(id int64) (err error) {
 	r := db.KVEnc([]interface{}{"mkey", id})
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
@@ -297,7 +272,6 @@ func (db *DB) eraseMasterKey(id int64) (err error) {
 	db.updateCount++
 	return
 }
-
 // WriteScript writes a script to the wallet
 func (db *DB) WriteScript(hashID *Uint.U160, script *key.Script) (err error) {
 	r := db.KVEnc([]interface{}{"cscript", hashID, script})
@@ -307,7 +281,6 @@ func (db *DB) WriteScript(hashID *Uint.U160, script *key.Script) (err error) {
 	db.updateCount++
 	return
 }
-
 func (db *DB) eraseScript(hashID *Uint.U160) (err error) {
 	r := db.KVEnc([]interface{}{"cscript", hashID})
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
@@ -316,17 +289,14 @@ func (db *DB) eraseScript(hashID *Uint.U160) (err error) {
 	db.updateCount++
 	return
 }
-
 // WriteBestBlock writes the best block to the wallet
 func (db *DB) WriteBestBlock(*block.Locator) (err error) {
 	return
 }
-
 // ReadBestBlock returns the best block stored in the wallet
 func (db *DB) ReadBestBlock(*block.Locator) (err error) {
 	return
 }
-
 // WriteOrderPosNext moves the write position to the next
 func (db *DB) WriteOrderPosNext(p int64) (err error) {
 	r := db.KVEnc([]interface{}{"orderposnext", p})
@@ -336,7 +306,6 @@ func (db *DB) WriteOrderPosNext(p int64) (err error) {
 	db.updateCount++
 	return
 }
-
 func (db *DB) EraseOrderPosNext() (err error) {
 	r := db.KVEnc([]interface{}{"orderposnext"})
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
@@ -345,7 +314,6 @@ func (db *DB) EraseOrderPosNext() (err error) {
 	db.updateCount++
 	return
 }
-
 // WriteDefaultKey writes the default key
 func (db *DB) WriteDefaultKey(p *key.Pub) (err error) {
 	r := db.KVEnc([]interface{}{"defaultkey", p})
@@ -355,7 +323,6 @@ func (db *DB) WriteDefaultKey(p *key.Pub) (err error) {
 	db.updateCount++
 	return
 }
-
 func (db *DB) EraseDefaultKey() (err error) {
 	r := db.KVEnc([]interface{}{"defaultkey"})
 	if err = db.Del(bdb.NoTransaction, r[0]); err != nil {
@@ -364,102 +331,81 @@ func (db *DB) EraseDefaultKey() (err error) {
 	db.updateCount++
 	return
 }
-
 // ReadPool returns the KeyPool
 func (db *DB) ReadPool(int64, KeyPool) (err error) {
 	return
 }
-
 // WritePool writes to the KeyPool
 func (db *DB) WritePool(int64, KeyPool) (err error) {
 	return
 }
-
 // ErasePool erases a KeyPool
 func (db *DB) ErasePool(int64) (err error) {
 	return
 }
-
 // ReadSetting reads a setting (obsolete)
 func (db *DB) ReadSetting(string, interface{}) (err error) {
 	return
 }
-
 // WriteSetting writes a setting (obsolete)
 func (db *DB) WriteSetting(string, interface{}) (err error) {
 	return
 }
-
 // EraseSetting erases a setting (obsolete)
 func (db *DB) EraseSetting(string) (err error) {
 	return
 }
-
 // WriteMinVersion writes the MinVersion
 func (db *DB) WriteMinVersion(int) (err error) {
 	return
 }
-
 // ReadAccount returns the data of an Account
 func (db *DB) ReadAccount(accname string, acc *Account) (err error) {
 	return
 }
-
 // WriteAccount writes the data of an Account
 func (db *DB) WriteAccount(string, *Account) (err error) {
 	return
 }
-
 func (db *DB) writeAccountingEntry(uint64, *AccountingEntry) (err error) {
 	return
 }
-
 // WriteAccountingEntry writes an AccountingEntry to the wallet
 func (db *DB) WriteAccountingEntry(*AccountingEntry) (err error) {
 	return
 }
-
 // GetAccountCreditDebit gets the Account credit/debit
 func (db *DB) GetAccountCreditDebit(string) (err error) {
 	return
 }
-
 // ListAccountCreditDebit gets the list off accounts and their credit/debits
 func (db *DB) ListAccountCreditDebit(string, *[]AccountingEntry) (err error) {
 	return
 }
-
 // ReorderTransactions reorders transactions in the wallet
 func (db *DB) ReorderTransactions(*Wallet) (err error) {
 	return
 }
-
 // LoadWallet loads the wallet
 func (db *DB) LoadWallet(*Wallet) (err error) {
 	return
 }
-
 // RecoverOnlyKeys recovers only the keys from the wallet
 func (db *DB) RecoverOnlyKeys(*bdb.Environment, string) (err error) {
 	return
 }
-
-// Recover recovers the wallet if it is broken
 func (db *DB) Recover(*bdb.Environment, string) (err error) {
 	return
 }
-
 // Backup copies the current wallet to another location
 func (db *DB) Backup(*Wallet, string) (err error) {
 	return
 }
-
 // GetCursor returns a cursor to walk over the wallet database
 func (db *DB) GetCursor() *bdb.Cursor {
 	cursor, _ := db.Cursor(bdb.NoTransaction)
 	return &cursor
 }
-
 func (db *DB) GetupdateCount() uint64 {
 	return db.updateCount
 }

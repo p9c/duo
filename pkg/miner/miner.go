@@ -1,10 +1,8 @@
 package miner
-
 import (
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/tx"
 )
-
 var (
 	// SHA256InitState is the init state for SHA256
 	SHA256InitState = []uint{
@@ -15,20 +13,15 @@ var (
 	// LastBlockSize is the size of the last block
 	LastBlockSize uint64
 )
-
 // TxPriority stores priority numbers relating to each transaction
 type TxPriority struct {
 	A, B float64
 	Tx   *tx.Transaction
 }
-
-// PriorityCompare is a structure for ranking transactions by their fee value
 type PriorityCompare struct {
 	// Whether we will compare by fee or not
 	ByFee bool
 }
-
-// Orphan is a transaction that does not link to one in the consensus chain
 type Orphan struct {
 	// Tx is the transaction data
 	Tx tx.Transaction

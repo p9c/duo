@@ -1,5 +1,4 @@
 package cmds
-
 import (
 	"crypto/rand"
 	"encoding/hex"
@@ -22,8 +21,6 @@ import (
 	"strconv"
 	"strings"
 )
-
-// GetInfo is the list of fields returned by the getinfo function
 type GetInfo struct {
 	Version           int     `json:"version"`
 	Protocolversion   int     `json:"protocolversion"`
@@ -45,7 +42,6 @@ type GetInfo struct {
 	UnlockedUntil     int64   `json:"unlocked_until"`
 	Errors            string  `json:"errors"`
 }
-
 func isValidJSONArray(s string) (o []string, i bool) {
 	err := json.Unmarshal([]byte(s), &o)
 	if err != nil {
@@ -60,7 +56,6 @@ func isValidJSONMap(s string) (o map[string]interface{}, i bool) {
 	}
 	return o, true
 }
-
 func isInteger(s string) (int, bool) {
 	r, err := strconv.Atoi(s)
 	if err != nil {
@@ -68,7 +63,6 @@ func isInteger(s string) (int, bool) {
 	}
 	return r, true
 }
-
 func isFloat(s string) (float64, bool) {
 	r, err := strconv.ParseFloat(s, 64)
 	if err != nil {
@@ -76,14 +70,12 @@ func isFloat(s string) (float64, bool) {
 	}
 	return r, true
 }
-
 func isEmpty(s string) bool {
 	if s == "" {
 		return true
 	}
 	return false
 }
-
 func Failure(mode string, erri error, s ...interface{}) (r string, err error) {
 	err = erri
 	switch mode {
@@ -105,13 +97,9 @@ func Failure(mode string, erri error, s ...interface{}) (r string, err error) {
 	}
 	return
 }
-
-// Cmd is the map of the API commands
 var Cmd map[string]func(string, []string, error) (string, error)
-
 func init() {
 	Cmd = map[string]func(string, []string, error) (string, error){
-
 		"addmultisigaddress": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -141,7 +129,6 @@ func init() {
 			}
 			return
 		},
-
 		"addnode": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -169,7 +156,6 @@ func init() {
 			}
 			return
 		},
-
 		"backupwallet": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -182,7 +168,6 @@ func init() {
 			}
 			return
 		},
-
 		"createmultisig": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -214,7 +199,6 @@ func init() {
 			}
 			return
 		},
-
 		"createrawtransaction": func(mode string, f []string, erri error) (r string, err error) {
 			tx, j := isValidJSONMap(f[0])
 			addrs, a := isValidJSONArray(f[1])
@@ -240,7 +224,6 @@ func init() {
 			}
 			return
 		},
-
 		"decoderawtransaction": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -252,7 +235,6 @@ func init() {
 			}
 			return
 		},
-
 		"dumpprivkey": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -261,11 +243,9 @@ func init() {
 					return Failure(mode, err, "<parallelcoinaddress> is a required parameter")
 				}
 				r += "Dumping address '" + f[0] + "'\n"
-
 			}
 			return
 		},
-
 		"dumpwallet": func(mode string, f []string, erri error) (r string, err error) {
 			// err = erri
 			// switch mode {
@@ -300,7 +280,6 @@ func init() {
 			// }
 			return
 		},
-
 		"encryptwallet": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -312,7 +291,6 @@ func init() {
 			}
 			return
 		},
-
 		"getaccount": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -324,7 +302,6 @@ func init() {
 			}
 			return
 		},
-
 		"getaccountaddress": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -336,7 +313,6 @@ func init() {
 			}
 			return
 		},
-
 		"getaddednodeinfo": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -356,7 +332,6 @@ func init() {
 			}
 			return
 		},
-
 		"getaddressesbyaccount": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -368,7 +343,6 @@ func init() {
 			}
 			return
 		},
-
 		"getbalance": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -398,7 +372,6 @@ func init() {
 			}
 			return
 		},
-
 		"getbestblockhash": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -410,7 +383,6 @@ func init() {
 			}
 			return
 		},
-
 		"getblock": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -443,7 +415,6 @@ func init() {
 			}
 			return
 		},
-
 		"getblockcount": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -455,7 +426,6 @@ func init() {
 			}
 			return
 		},
-
 		"getblockhash": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -472,7 +442,6 @@ func init() {
 			}
 			return
 		},
-
 		"getblocktemplate": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -491,7 +460,6 @@ func init() {
 			}
 			return
 		},
-
 		"getconnectioncount": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -503,7 +471,6 @@ func init() {
 			}
 			return
 		},
-
 		"getdifficulty": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -515,7 +482,6 @@ func init() {
 			}
 			return
 		},
-
 		"getgenerate": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -527,7 +493,6 @@ func init() {
 			}
 			return
 		},
-
 		"gethashespersec": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -539,7 +504,6 @@ func init() {
 			}
 			return
 		},
-
 		"getinfo": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -575,7 +539,6 @@ func init() {
 			}
 			return
 		},
-
 		"getmininginfo": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -587,7 +550,6 @@ func init() {
 			}
 			return
 		},
-
 		"getnetworkhashps": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -617,7 +579,6 @@ func init() {
 			}
 			return
 		},
-
 		"getnewaddress": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -633,7 +594,6 @@ func init() {
 			}
 			return
 		},
-
 		"getpeerinfo": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -645,7 +605,6 @@ func init() {
 			}
 			return
 		},
-
 		"getrawmempool": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -657,7 +616,6 @@ func init() {
 			}
 			return
 		},
-
 		"getrawtransaction": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -695,7 +653,6 @@ func init() {
 			}
 			return
 		},
-
 		"getreceivedbyaccount": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -723,7 +680,6 @@ func init() {
 			}
 			return
 		},
-
 		"getreceivedbyaddress": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -748,7 +704,6 @@ func init() {
 			}
 			return
 		},
-
 		"gettransaction": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -760,7 +715,6 @@ func init() {
 			}
 			return
 		},
-
 		"gettxout": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -813,7 +767,6 @@ func init() {
 			}
 			return
 		},
-
 		"gettxoutsetinfo": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -825,7 +778,6 @@ func init() {
 			}
 			return
 		},
-
 		"getwork": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -840,7 +792,6 @@ func init() {
 			}
 			return
 		},
-
 		"help": func(mode string, f []string, erri error) (r string, err error) {
 			fmt.Println("Help")
 			err = erri
@@ -850,7 +801,6 @@ func init() {
 			}
 			return
 		},
-
 		"importprivkey": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -884,7 +834,6 @@ func init() {
 			}
 			return
 		},
-
 		"importwallet": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -896,7 +845,6 @@ func init() {
 			}
 			return
 		},
-
 		"keypoolrefill": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -908,7 +856,6 @@ func init() {
 			}
 			return
 		},
-
 		"listaccounts": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -934,7 +881,6 @@ func init() {
 			}
 			return
 		},
-
 		"listaddressgroupings": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -946,7 +892,6 @@ func init() {
 			}
 			return
 		},
-
 		"listlockunspent": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -958,7 +903,6 @@ func init() {
 			}
 			return
 		},
-
 		"listreceivedbyaccount": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -995,7 +939,6 @@ func init() {
 			}
 			return
 		},
-
 		"listreceivedbyaddress": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1032,7 +975,6 @@ func init() {
 			}
 			return
 		},
-
 		"listsinceblock": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1066,7 +1008,6 @@ func init() {
 			}
 			return
 		},
-
 		"listtransactions": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1115,7 +1056,6 @@ func init() {
 			}
 			return
 		},
-
 		"listunspent": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1179,7 +1119,6 @@ func init() {
 			}
 			return
 		},
-
 		"lockunspent": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1210,7 +1149,6 @@ func init() {
 			}
 			return
 		},
-
 		"makekeypair": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1245,7 +1183,6 @@ func init() {
 			}
 			return
 		},
-
 		"move": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1294,7 +1231,6 @@ func init() {
 			}
 			return
 		},
-
 		"sendalert": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1338,7 +1274,6 @@ func init() {
 			}
 			return
 		},
-
 		"sendfrom": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1394,7 +1329,6 @@ func init() {
 			}
 			return
 		},
-
 		"sendmany": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1438,7 +1372,6 @@ func init() {
 			}
 			return
 		},
-
 		"sendrawtransaction": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1450,7 +1383,6 @@ func init() {
 			}
 			return
 		},
-
 		"sendtoaddress": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1492,7 +1424,6 @@ func init() {
 			}
 			return
 		},
-
 		"setaccount": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1509,7 +1440,6 @@ func init() {
 			}
 			return
 		},
-
 		"setgenerate": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1521,7 +1451,6 @@ func init() {
 			}
 			return
 		},
-
 		"settxfee": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1537,7 +1466,6 @@ func init() {
 			}
 			return
 		},
-
 		"signmessage": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1551,7 +1479,6 @@ func init() {
 			}
 			return
 		},
-
 		"signrawtransaction": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1581,7 +1508,6 @@ func init() {
 							default:
 								return Failure(mode, err, "sighashtype not one of available options")
 							}
-
 						}
 						if !json.Valid([]byte(f[i])) {
 							return Failure(mode, err, "Transaction JSON was not formatted correctly")
@@ -1609,7 +1535,6 @@ func init() {
 			}
 			return
 		},
-
 		"stop": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1621,7 +1546,6 @@ func init() {
 			}
 			return
 		},
-
 		"submitblock": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1633,7 +1557,6 @@ func init() {
 			}
 			return
 		},
-
 		"validateaddress": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1645,7 +1568,6 @@ func init() {
 			}
 			return
 		},
-
 		"verifychain": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {
@@ -1668,7 +1590,6 @@ func init() {
 			}
 			return
 		},
-
 		"verifymessage": func(mode string, f []string, erri error) (r string, err error) {
 			err = erri
 			switch mode {

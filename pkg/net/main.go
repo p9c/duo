@@ -1,19 +1,15 @@
 package net
-
 import (
 	"sync"
-
 	"gitlab.com/parallelcoin/duo/pkg/semaphore"
 	"gitlab.com/parallelcoin/duo/pkg/serialize"
 )
-
 const (
 	// DumpAddressesInterval is the timeout after which an inactive node is removed from the list
 	DumpAddressesInterval = 900
 	// MaxOutboundConnections is the maximum number of connections we will make out to other nodes
 	MaxOutboundConnections = 8
 )
-
 var (
 	// Discover indicates that this server will learn its own external IP address
 	Discover bool
@@ -66,12 +62,8 @@ var (
 	// NetCleanup is
 	NetCleanup Cleanup
 )
-
-// LocalServiceInfo is a list of local services ranked by score
 type LocalServiceInfo struct {
 	Score, Port int
 }
-
-// Cleanup is a structure used for storing information during cleanup
 type Cleanup struct {
 }

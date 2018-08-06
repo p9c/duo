@@ -1,14 +1,11 @@
 package args
-
 import (
 	"flag"
 	"fmt"
 	"strings"
-
 	"gitlab.com/parallelcoin/duo/pkg/homedir"
 	"gitlab.com/parallelcoin/duo/pkg/iniflags"
 )
-
 // nolint
 var (
 	Version = flag.Bool("version",
@@ -112,7 +109,6 @@ var (
 	TestNet = flag.Bool("testnet",
 		false,
 		"Use the test network")
-
 	Debug = flag.Bool("debug",
 		false,
 		"Output extra debugging information. Implies all other -debug* options")
@@ -214,23 +210,18 @@ var (
 	// helpCommand = flag.NewFlagSet("help", flag.ExitOnError)
 	// stopCommand = flag.NewFlagSet("stop", flag.ExitOnError)
 )
-
-// MultiArg is a list of argument strings split from a CLI input
 type MultiArg struct {
 	Value []string
 }
-
 // Set adds  an argument to a list of arguments
 func (i *MultiArg) Set(value string) error {
 	i.Value = append(i.Value, value)
 	return nil
 }
-
 // String returns a list of arguments back into one string
 func (i *MultiArg) String() string {
 	return fmt.Sprint(*i)
 }
-
 func init() {
 	flag.Var(&AddNodes, "addnode", "Add a node to connect to and attempt to keep the connection open")
 	flag.Var(&Connects, "connect", "Connect only to the specified node(s)")
@@ -244,5 +235,4 @@ func init() {
 		*Conf = *DataDir + "/" + *Conf
 		iniflags.SetConfigFile(*Conf)
 	}
-
 }

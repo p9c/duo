@@ -1,11 +1,9 @@
 package net
-
 import (
 	"fmt"
 	"gitlab.com/parallelcoin/duo/pkg/server/args"
 	"sync"
 )
-
 const (
 	// NetUnrouteable means no network connection
 	NetUnrouteable = iota
@@ -20,7 +18,6 @@ const (
 	// NetMax is the limit of the type of connections list
 	NetMax
 )
-
 var (
 	// ProxyType is a map of codes representing different types of network connections
 	ProxyType = map[string]int{
@@ -43,23 +40,18 @@ var (
 	// OnionMask is the bitmask for a Tor hidden address
 	OnionMask = []byte{0xFD, 0x87, 0xD8, 0x7E, 0xEB, 0x43}
 )
-
 // Addr stores a peer network address
 type Addr struct {
 	IP [16]byte
 }
-
 // Service stores the port of a service
 type Service struct {
 	Port uint16
 }
-
-// IsValid tests whether an address is valid
 func (a *Addr) IsValid() bool {
 	// placeholder
 	return true
 }
-
 // ToStringIPPort returns the string for conneecting to a service
 func (s *Service) ToStringIPPort() string {
 	// placeholder

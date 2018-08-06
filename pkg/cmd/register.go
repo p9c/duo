@@ -1,14 +1,11 @@
 package cmds
-
 import (
 	"context"
 	"flag"
 	"fmt"
 	"gitlab.com/parallelcoin/duo/pkg/version"
-
 	"gitlab.com/parallelcoin/duo/pkg/subcmd"
 )
-
 func result(cmd string, f *flag.FlagSet, q bool, usage string) subcmd.ExitStatus {
 	r, err := Cmd[cmd]("cli", f.Args(), nil)
 	fmt.Print(r)
@@ -21,7 +18,6 @@ func result(cmd string, f *flag.FlagSet, q bool, usage string) subcmd.ExitStatus
 	}
 	return subcmd.ExitFailure
 }
-
 func init() {
 	subcmd.Register(subcmd.HelpCommand(), "")
 	subcmd.Register(subcmd.FlagsCommand(), "")
@@ -93,11 +89,9 @@ func init() {
 	subcmd.Register(&verifychain{}, "client")
 	subcmd.Register(&verifymessage{}, "client")
 }
-
 type addmultisigaddress struct {
 	Info string
 }
-
 func (a *addmultisigaddress) Name() string {
 	return "addmultisigaddress"
 }
@@ -117,11 +111,9 @@ func (a *addmultisigaddress) SetFlags(f *flag.FlagSet) {
 func (a *addmultisigaddress) Execute(c context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("multisigaddress", f, true, a.Info)
 }
-
 type addnode struct {
 	Info string
 }
-
 func (a *addnode) Name() string {
 	return "addnode"
 }
@@ -139,11 +131,9 @@ func (a *addnode) SetFlags(f *flag.FlagSet) {
 func (a *addnode) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("addnode", f, true, a.Info)
 }
-
 type backupwallet struct {
 	Info string
 }
-
 func (a *backupwallet) Name() string {
 	return "backupwallet"
 }
@@ -161,11 +151,9 @@ func (a *backupwallet) SetFlags(f *flag.FlagSet) {
 func (a *backupwallet) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("backupwallet", f, true, a.Info)
 }
-
 type createmultisig struct {
 	Info string
 }
-
 func (a *createmultisig) Name() string {
 	return "createmultisig"
 }
@@ -185,11 +173,9 @@ func (a *createmultisig) SetFlags(f *flag.FlagSet) {
 func (a *createmultisig) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("createmultisig", f, true, a.Info)
 }
-
 type createrawtransaction struct {
 	Info string
 }
-
 func (a *createrawtransaction) Name() string {
 	return "createrawtransaction"
 }
@@ -209,11 +195,9 @@ func (a *createrawtransaction) SetFlags(f *flag.FlagSet) {
 func (a *createrawtransaction) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("createrawtransaction", f, true, a.Info)
 }
-
 type decoderawtransaction struct {
 	Info string
 }
-
 func (a *decoderawtransaction) Name() string {
 	return "decoderawtransaction"
 }
@@ -231,11 +215,9 @@ func (a *decoderawtransaction) SetFlags(f *flag.FlagSet) {
 func (a *decoderawtransaction) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("decoderawtransaction", f, true, a.Info)
 }
-
 type dumpprivkey struct {
 	Info string
 }
-
 func (a *dumpprivkey) Name() string {
 	return "dumpprivkey"
 }
@@ -253,11 +235,9 @@ func (a *dumpprivkey) SetFlags(f *flag.FlagSet) {
 func (a *dumpprivkey) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("dumpprivkey", f, true, a.Info)
 }
-
 type dumpwallet struct {
 	Info string
 }
-
 func (a *dumpwallet) Name() string {
 	return "dumpwallet"
 }
@@ -275,11 +255,9 @@ func (a *dumpwallet) SetFlags(f *flag.FlagSet) {
 func (a *dumpwallet) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("dumpwallet", f, true, a.Info)
 }
-
 type encryptwallet struct {
 	Info string
 }
-
 func (a *encryptwallet) Name() string {
 	return "encryptwallet"
 }
@@ -298,11 +276,9 @@ func (a *encryptwallet) SetFlags(f *flag.FlagSet) {
 func (a *encryptwallet) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("encryptwallet", f, true, a.Info)
 }
-
 type getaccount struct {
 	Info string
 }
-
 func (a *getaccount) Name() string {
 	return "getaccount"
 }
@@ -320,11 +296,9 @@ func (a *getaccount) SetFlags(f *flag.FlagSet) {
 func (a *getaccount) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getaccount", f, true, a.Info)
 }
-
 type getaccountaddress struct {
 	Info string
 }
-
 func (a *getaccountaddress) Name() string {
 	return "getaccountaddress"
 }
@@ -342,11 +316,9 @@ func (a *getaccountaddress) SetFlags(f *flag.FlagSet) {
 func (a *getaccountaddress) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getaccountaddress", f, true, a.Info)
 }
-
 type getaddednodeinfo struct {
 	Info string
 }
-
 func (a *getaddednodeinfo) Name() string {
 	return "getaddednodeinfo"
 }
@@ -365,11 +337,9 @@ func (a *getaddednodeinfo) SetFlags(f *flag.FlagSet) {
 func (a *getaddednodeinfo) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getaddednodeinfo", f, true, a.Info)
 }
-
 type getaddressesbyaccount struct {
 	Info string
 }
-
 func (a *getaddressesbyaccount) Name() string {
 	return "getaddressesbyaccount"
 }
@@ -387,11 +357,9 @@ func (a *getaddressesbyaccount) SetFlags(f *flag.FlagSet) {
 func (a *getaddressesbyaccount) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getaddressesbyaccount", f, true, a.Info)
 }
-
 type getbalance struct {
 	Info string
 }
-
 func (a *getbalance) Name() string {
 	return "getbalance"
 }
@@ -411,11 +379,9 @@ func (a *getbalance) SetFlags(f *flag.FlagSet) {
 func (a *getbalance) Execute(_ context.Context, f *flag.FlagSet, i ...interface{}) subcmd.ExitStatus {
 	return result("getbalance", f, true, a.Info)
 }
-
 type getbestblockhash struct {
 	Info string
 }
-
 func (a *getbestblockhash) Name() string {
 	return "getbestblockhash"
 }
@@ -433,11 +399,9 @@ func (a *getbestblockhash) SetFlags(f *flag.FlagSet) {
 func (a *getbestblockhash) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getbestblockhash", f, true, a.Info)
 }
-
 type getblock struct {
 	Info string
 }
-
 func (a *getblock) Name() string {
 	return "getblock"
 }
@@ -456,11 +420,9 @@ func (a *getblock) SetFlags(f *flag.FlagSet) {
 func (a *getblock) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getblock", f, true, a.Info)
 }
-
 type getblockcount struct {
 	Info string
 }
-
 func (a *getblockcount) Name() string {
 	return "getblockcount"
 }
@@ -478,11 +440,9 @@ func (a *getblockcount) SetFlags(f *flag.FlagSet) {
 func (a *getblockcount) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getblockcount", f, true, a.Info)
 }
-
 type getblockhash struct {
 	Info string
 }
-
 func (a *getblockhash) Name() string {
 	return "getblockhash"
 }
@@ -500,11 +460,9 @@ func (a *getblockhash) SetFlags(f *flag.FlagSet) {
 func (a *getblockhash) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getblockhash", f, true, a.Info)
 }
-
 type getblocktemplate struct {
 	Info string
 }
-
 func (a *getblocktemplate) Name() string {
 	return "getblocktemplate"
 }
@@ -537,11 +495,9 @@ func (a *getblocktemplate) SetFlags(f *flag.FlagSet) {
 func (a *getblocktemplate) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getblocktemplate", f, true, a.Info)
 }
-
 type getconnectioncount struct {
 	Info string
 }
-
 func (a *getconnectioncount) Name() string {
 	return "getconnectioncount"
 }
@@ -559,11 +515,9 @@ func (a *getconnectioncount) SetFlags(f *flag.FlagSet) {
 func (a *getconnectioncount) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getconnectioncount", f, true, a.Info)
 }
-
 type getdifficulty struct {
 	Info string
 }
-
 func (a *getdifficulty) Name() string {
 	return "getdifficulty"
 }
@@ -581,11 +535,9 @@ func (a *getdifficulty) SetFlags(f *flag.FlagSet) {
 func (a *getdifficulty) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getdifficulty", f, true, a.Info)
 }
-
 type getgenerate struct {
 	Info string
 }
-
 func (a *getgenerate) Name() string {
 	return "getgenerate"
 }
@@ -603,11 +555,9 @@ func (a *getgenerate) SetFlags(f *flag.FlagSet) {
 func (a *getgenerate) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getgenerate", f, true, a.Info)
 }
-
 type gethashespersec struct {
 	Info string
 }
-
 func (a *gethashespersec) Name() string {
 	return "gethashespersec"
 }
@@ -625,11 +575,9 @@ func (a *gethashespersec) SetFlags(f *flag.FlagSet) {
 func (a *gethashespersec) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("gethashespersec", f, true, a.Info)
 }
-
 type getinfo struct {
 	Info string
 }
-
 func (a *getinfo) Name() string {
 	return "getinfo"
 }
@@ -647,11 +595,9 @@ func (a *getinfo) SetFlags(f *flag.FlagSet) {
 func (a *getinfo) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getinfo", f, true, a.Info)
 }
-
 type getmininginfo struct {
 	Info string
 }
-
 func (a *getmininginfo) Name() string {
 	return "getmininginfo"
 }
@@ -669,11 +615,9 @@ func (a *getmininginfo) SetFlags(f *flag.FlagSet) {
 func (a *getmininginfo) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getmininginfo", f, true, a.Info)
 }
-
 type getnetworkhashps struct {
 	Info string
 }
-
 func (a *getnetworkhashps) Name() string {
 	return "getnetworkhashps"
 }
@@ -693,11 +637,9 @@ func (a *getnetworkhashps) SetFlags(f *flag.FlagSet) {
 func (a *getnetworkhashps) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getnetworkhashps", f, true, a.Info)
 }
-
 type getnewaddress struct {
 	Info string
 }
-
 func (a *getnewaddress) Name() string {
 	return "getnewaddress"
 }
@@ -716,11 +658,9 @@ func (a *getnewaddress) SetFlags(f *flag.FlagSet) {
 func (a *getnewaddress) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getnewaddress", f, true, a.Info)
 }
-
 type getpeerinfo struct {
 	Info string
 }
-
 func (a *getpeerinfo) Name() string {
 	return "getpeerinfo"
 }
@@ -738,11 +678,9 @@ func (a *getpeerinfo) SetFlags(f *flag.FlagSet) {
 func (a *getpeerinfo) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getpeerinfo", f, true, a.Info)
 }
-
 type getrawmempool struct {
 	Info string
 }
-
 func (a *getrawmempool) Name() string {
 	return "getrawmempool"
 }
@@ -760,11 +698,9 @@ func (a *getrawmempool) SetFlags(f *flag.FlagSet) {
 func (a *getrawmempool) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getrawmempool", f, true, a.Info)
 }
-
 type getrawtransaction struct {
 	Info string
 }
-
 func (a *getrawtransaction) Name() string {
 	return "getrawtransaction"
 }
@@ -783,11 +719,9 @@ func (a *getrawtransaction) SetFlags(f *flag.FlagSet) {
 func (a *getrawtransaction) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getrawtransaction", f, true, a.Info)
 }
-
 type getreceivedbyaccount struct {
 	Info string
 }
-
 func (a *getreceivedbyaccount) Name() string {
 	return "getreceivedbyaccount"
 }
@@ -805,11 +739,9 @@ func (a *getreceivedbyaccount) SetFlags(f *flag.FlagSet) {
 func (a *getreceivedbyaccount) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("", f, true, a.Info)
 }
-
 type getreceivedbyaddress struct {
 	Info string
 }
-
 func (a *getreceivedbyaddress) Name() string {
 	return "getreceivedbyaddress"
 }
@@ -827,11 +759,9 @@ func (a *getreceivedbyaddress) SetFlags(f *flag.FlagSet) {
 func (a *getreceivedbyaddress) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getreceivedbyaddress", f, true, a.Info)
 }
-
 type gettransaction struct {
 	Info string
 }
-
 func (a *gettransaction) Name() string {
 	return "gettransaction"
 }
@@ -849,11 +779,9 @@ func (a *gettransaction) SetFlags(f *flag.FlagSet) {
 func (a *gettransaction) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("gettransaction", f, true, a.Info)
 }
-
 type gettxout struct {
 	Info string
 }
-
 func (a *gettxout) Name() string {
 	return "gettxout"
 }
@@ -871,11 +799,9 @@ func (a *gettxout) SetFlags(f *flag.FlagSet) {
 func (a *gettxout) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("gettxout", f, true, a.Info)
 }
-
 type gettxoutsetinfo struct {
 	Info string
 }
-
 func (a *gettxoutsetinfo) Name() string {
 	return "gettxoutsetinfo"
 }
@@ -893,11 +819,9 @@ func (a *gettxoutsetinfo) SetFlags(f *flag.FlagSet) {
 func (a *gettxoutsetinfo) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("gettxoutsetinfo", f, true, a.Info)
 }
-
 type getwork struct {
 	Info string
 }
-
 func (a *getwork) Name() string {
 	return "getwork"
 }
@@ -920,11 +844,9 @@ func (a *getwork) SetFlags(f *flag.FlagSet) {
 func (a *getwork) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("getwork", f, true, a.Info)
 }
-
 type help struct {
 	Info string
 }
-
 func (a *help) Name() string {
 	return "help"
 }
@@ -943,11 +865,9 @@ func (a *help) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) sub
 	version.Print()
 	return result("help", f, true, a.Info)
 }
-
 type importprivkey struct {
 	Info string
 }
-
 func (a *importprivkey) Name() string {
 	return "importprivkey"
 }
@@ -965,11 +885,9 @@ func (a *importprivkey) SetFlags(f *flag.FlagSet) {
 func (a *importprivkey) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("importprivkey", f, true, a.Info)
 }
-
 type importwallet struct {
 	Info string
 }
-
 func (a *importwallet) Name() string {
 	return "importwallet"
 }
@@ -987,11 +905,9 @@ func (a *importwallet) SetFlags(f *flag.FlagSet) {
 func (a *importwallet) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("importwallet", f, true, a.Info)
 }
-
 type keypoolrefill struct {
 	Info string
 }
-
 func (a *keypoolrefill) Name() string {
 	return "keypoolrefill"
 }
@@ -1009,11 +925,9 @@ func (a *keypoolrefill) SetFlags(f *flag.FlagSet) {
 func (a *keypoolrefill) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("keypoolrefill", f, true, a.Info)
 }
-
 type listaccounts struct {
 	Info string
 }
-
 func (a *listaccounts) Name() string {
 	return "listaccounts"
 }
@@ -1031,11 +945,9 @@ func (a *listaccounts) SetFlags(f *flag.FlagSet) {
 func (a *listaccounts) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("listaccounts", f, true, a.Info)
 }
-
 type listaddressgroupings struct {
 	Info string
 }
-
 func (a *listaddressgroupings) Name() string {
 	return "listaddressgroupings"
 }
@@ -1053,11 +965,9 @@ func (a *listaddressgroupings) SetFlags(f *flag.FlagSet) {
 func (a *listaddressgroupings) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("listaddressgroupings", f, true, a.Info)
 }
-
 type listlockunspent struct {
 	Info string
 }
-
 func (a *listlockunspent) Name() string {
 	return "listlockunspent"
 }
@@ -1075,11 +985,9 @@ func (a *listlockunspent) SetFlags(f *flag.FlagSet) {
 func (a *listlockunspent) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("listlockunspent", f, true, a.Info)
 }
-
 type listreceivedbyaccount struct {
 	Info string
 }
-
 func (a *listreceivedbyaccount) Name() string {
 	return "listreceivedbyaccount"
 }
@@ -1102,11 +1010,9 @@ func (a *listreceivedbyaccount) SetFlags(f *flag.FlagSet) {
 func (a *listreceivedbyaccount) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("listreceivedbyaccount", f, true, a.Info)
 }
-
 type listreceivedbyaddress struct {
 	Info string
 }
-
 func (a *listreceivedbyaddress) Name() string {
 	return "listreceivedbyaddress"
 }
@@ -1131,11 +1037,9 @@ func (a *listreceivedbyaddress) SetFlags(f *flag.FlagSet) {
 func (a *listreceivedbyaddress) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("listreceivedbyaddress", f, true, a.Info)
 }
-
 type listsinceblock struct {
 	Info string
 }
-
 func (a *listsinceblock) Name() string {
 	return "listsinceblock"
 }
@@ -1153,11 +1057,9 @@ func (a *listsinceblock) SetFlags(f *flag.FlagSet) {
 func (a *listsinceblock) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("listsinceblock", f, true, a.Info)
 }
-
 type listtransactions struct {
 	Info string
 }
-
 func (a *listtransactions) Name() string {
 	return "listtransactions"
 }
@@ -1175,11 +1077,9 @@ func (a *listtransactions) SetFlags(f *flag.FlagSet) {
 func (a *listtransactions) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("listtransactions", f, true, a.Info)
 }
-
 type listunspent struct {
 	Info string
 }
-
 func (a *listunspent) Name() string {
 	return "listunspent"
 }
@@ -1199,11 +1099,9 @@ func (a *listunspent) SetFlags(f *flag.FlagSet) {
 func (a *listunspent) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("listunspent", f, true, a.Info)
 }
-
 type lockunspent struct {
 	Info string
 }
-
 func (a *lockunspent) Name() string {
 	return "lockunspent"
 }
@@ -1221,11 +1119,9 @@ func (a *lockunspent) SetFlags(f *flag.FlagSet) {
 func (a *lockunspent) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("lockunspent", f, true, a.Info)
 }
-
 type makekeypair struct {
 	Info string
 }
-
 func (a *makekeypair) Name() string {
 	return "makekeypair"
 }
@@ -1244,11 +1140,9 @@ func (a *makekeypair) SetFlags(f *flag.FlagSet) {
 func (a *makekeypair) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("makekeypair", f, true, a.Info)
 }
-
 type move struct {
 	Info string
 }
-
 func (a *move) Name() string {
 	return "move"
 }
@@ -1266,11 +1160,9 @@ func (a *move) SetFlags(f *flag.FlagSet) {
 func (a *move) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("move", f, true, a.Info)
 }
-
 type sendalert struct {
 	Info string
 }
-
 func (a *sendalert) Name() string {
 	return "sendalert"
 }
@@ -1295,11 +1187,9 @@ func (a *sendalert) SetFlags(f *flag.FlagSet) {
 func (a *sendalert) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("sendalert", f, true, a.Info)
 }
-
 type sendfrom struct {
 	Info string
 }
-
 func (a *sendfrom) Name() string {
 	return "sendfrom"
 }
@@ -1317,11 +1207,9 @@ func (a *sendfrom) SetFlags(f *flag.FlagSet) {
 func (a *sendfrom) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("sendfrom", f, true, a.Info)
 }
-
 type sendmany struct {
 	Info string
 }
-
 func (a *sendmany) Name() string {
 	return "sendmany"
 }
@@ -1339,11 +1227,9 @@ func (a *sendmany) SetFlags(f *flag.FlagSet) {
 func (a *sendmany) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("sendmany", f, true, a.Info)
 }
-
 type sendrawtransaction struct {
 	Info string
 }
-
 func (a *sendrawtransaction) Name() string {
 	return "sendrawtransaction"
 }
@@ -1361,11 +1247,9 @@ func (a *sendrawtransaction) SetFlags(f *flag.FlagSet) {
 func (a *sendrawtransaction) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("sendrawtransaction", f, true, a.Info)
 }
-
 type sendtoaddress struct {
 	Info string
 }
-
 func (a *sendtoaddress) Name() string {
 	return "sendtoaddress"
 }
@@ -1383,11 +1267,9 @@ func (a *sendtoaddress) SetFlags(f *flag.FlagSet) {
 func (a *sendtoaddress) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("sendtoaddress", f, true, a.Info)
 }
-
 type setaccount struct {
 	Info string
 }
-
 func (a *setaccount) Name() string {
 	return "setaccount"
 }
@@ -1405,11 +1287,9 @@ func (a *setaccount) SetFlags(f *flag.FlagSet) {
 func (a *setaccount) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("setaccount", f, true, a.Info)
 }
-
 type setgenerate struct {
 	Info string
 }
-
 func (a *setgenerate) Name() string {
 	return "setgenerate"
 }
@@ -1428,11 +1308,9 @@ func (a *setgenerate) SetFlags(f *flag.FlagSet) {
 func (a *setgenerate) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("setgenerate", f, true, a.Info)
 }
-
 type settxfee struct {
 	Info string
 }
-
 func (a *settxfee) Name() string {
 	return "settxfee"
 }
@@ -1450,11 +1328,9 @@ func (a *settxfee) SetFlags(f *flag.FlagSet) {
 func (a *settxfee) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("settxfee", f, true, a.Info)
 }
-
 type signmessage struct {
 	Info string
 }
-
 func (a *signmessage) Name() string {
 	return "signmessage"
 }
@@ -1472,11 +1348,9 @@ func (a *signmessage) SetFlags(f *flag.FlagSet) {
 func (a *signmessage) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("signmessage", f, true, a.Info)
 }
-
 type signrawtransaction struct {
 	Info string
 }
-
 func (a *signrawtransaction) Name() string {
 	return "signrawtransaction"
 }
@@ -1500,11 +1374,9 @@ func (a *signrawtransaction) SetFlags(f *flag.FlagSet) {
 func (a *signrawtransaction) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("signrawtransaction", f, true, a.Info)
 }
-
 type stop struct {
 	Info string
 }
-
 func (a *stop) Name() string {
 	return "stop"
 }
@@ -1522,11 +1394,9 @@ func (a *stop) SetFlags(f *flag.FlagSet) {
 func (a *stop) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("stop", f, true, a.Info)
 }
-
 type submitblock struct {
 	Info string
 }
-
 func (a *submitblock) Name() string {
 	return "submitblock"
 }
@@ -1546,11 +1416,9 @@ func (a *submitblock) SetFlags(f *flag.FlagSet) {
 func (a *submitblock) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("submitblock", f, true, a.Info)
 }
-
 type validateaddress struct {
 	Info string
 }
-
 func (a *validateaddress) Name() string {
 	return "validateaddress"
 }
@@ -1568,11 +1436,9 @@ func (a *validateaddress) SetFlags(f *flag.FlagSet) {
 func (a *validateaddress) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("validateaddress", f, true, a.Info)
 }
-
 type verifychain struct {
 	Info string
 }
-
 func (a *verifychain) Name() string {
 	return "verifychain"
 }
@@ -1591,11 +1457,9 @@ func (a *verifychain) SetFlags(f *flag.FlagSet) {
 func (a *verifychain) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("verifychain", f, true, a.Info)
 }
-
 type verifymessage struct {
 	Info string
 }
-
 func (a *verifymessage) Name() string {
 	return "verifymessage"
 }
@@ -1613,7 +1477,6 @@ func (a *verifymessage) SetFlags(f *flag.FlagSet) {
 func (a *verifymessage) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcmd.ExitStatus {
 	return result("verifymessage", f, true, a.Info)
 }
-
 /*
   subcmd.Register(&COMMAND{}, "")
 type COMMAND struct {

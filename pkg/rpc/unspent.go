@@ -1,5 +1,4 @@
 package rpc
-
 func listunspent(help bool, params ...string) interface{} {
 	return nil
 }

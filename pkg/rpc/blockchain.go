@@ -1,10 +1,8 @@
 package rpc
-
 import (
 	"gitlab.com/parallelcoin/duo/pkg/algos"
 	"gitlab.com/parallelcoin/duo/pkg/block"
 )
-
 func getblockcount(help bool, params ...string) interface{} {
 	return nil
 }

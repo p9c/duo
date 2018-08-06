@@ -1,8 +1,6 @@
 package wallet
-
 import (
 )
-
 // KVDec reads a key/value pair from the wallet storage format
 func (db *DB) KVDec(k, v []byte) (result interface{}) {
 	// keyRem, _ := ser.Deserialize(k, id)
@@ -23,9 +21,7 @@ func (db *DB) KVDec(k, v []byte) (result interface{}) {
 	// 	keyRem = ser.GetInt(keyRem, &a.Time)
 	// 	a.OtherAccount, keyRem = ser.GetPreLenString(keyRem)
 	// 	a.Comment, keyRem = ser.GetPreLenString(keyRem)
-		
 	// 	// account, keyRem := ser.GetPreLen(keyRem)
-		
 	// 	// num := BytesToUint64(numB)
 	// 	return []interface{}{id, &a}
 	// case "keymeta":

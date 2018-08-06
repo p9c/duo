@@ -1,9 +1,7 @@
 package key
-
 import (
 	"encoding/hex"
 )
-
 var (
 	B58prefixes = map[string]map[string]string{
 		"mainnet": {

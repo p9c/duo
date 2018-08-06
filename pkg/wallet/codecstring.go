@@ -1,19 +1,17 @@
 package wallet
-
 import (
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
-	"gitlab.com/parallelcoin/duo/pkg/ec"
+	// "gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	// "gitlab.com/parallelcoin/duo/pkg/logger"
 	"strconv"
 	"strings"
 	"time"
 )
-
 // KVToString converts a key/value pair a simple string format
 func (db *DB) KVToString(rec [2][]byte) (d string) {
 	var result []interface{}
@@ -120,7 +118,6 @@ func (db *DB) KVToString(rec [2][]byte) (d string) {
 	}
 	return
 }
-
 // StringToVars converts a key/value pair in the format used in a wallet.dat to the variables stored therein
 func (db *DB) StringToVars(input string) (result interface{}) {
 	s := strings.Split(input, " ")
