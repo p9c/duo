@@ -49,6 +49,7 @@ type DB struct {
 	*jvzc.DB
 	UnlockedUntil int64
 	updateCount uint64
+	Net string
 }
 type dB interface {
 	Backup(*Wallet, string) error

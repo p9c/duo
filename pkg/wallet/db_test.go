@@ -25,7 +25,7 @@ func TestImport(t *testing.T) {
 	if err != nil {
 		t.Error("Failed to open")
 	}
-	logger.Debug(*db)
+	db.Net = "mainnet"
 	for i := range KeyNames {
 		db.NewTable(KeyNames[i])
 	}

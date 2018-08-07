@@ -203,6 +203,8 @@ func (db *DB) WriteDefaultKey(p *key.Pub) (err error) {
 }
 // WriteKey writes a new key to the wallet
 func (db *DB) WriteKey(pub *key.Pub, priv *key.Priv, meta *KeyMetadata) (err error) {
+	db.Table(KN[Fkey]).Set(pub.ToBase58Check(db.Net), priv.Get())
+	db.Table(KN[Fkeymeta]).Set(pub.ToBase58Check(db.Net), []interface{}{meta.Version, meta.CreateTime})
 	// rKey := db.KVEnc([]interface{}{"key", pub, priv})
 	// rMeta := db.KVEnc([]interface{}{"keymeta", pub, meta.Version, meta.CreateTime})
 	// if err = db.Put(bdb.NoTransaction, false, rKey); err != nil {
@@ -210,7 +212,7 @@ func (db *DB) WriteKey(pub *key.Pub, priv *key.Priv, meta *KeyMetadata) (err err
 	// } else if err = db.Put(bdb.NoTransaction, false, rMeta); err != nil {
 	// 	return
 	// }
-	// db.updateCount++
+	db.updateCount++
 	return
 }
 // WriteMasterKey writes a MasterKey to the wallet
