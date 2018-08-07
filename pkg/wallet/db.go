@@ -1,6 +1,6 @@
 package wallet
 import (
-	"github.com/ParallelCoinTeam/JVZC"
+	"github.com/parallelcointeam/javazacdb"
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/key"
@@ -8,6 +8,27 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"time"
 )
+
+const (
+	// Identifiers matching the KeyNames array for convenience
+	Name = iota
+	Ftx
+	Facentry
+	Fkey
+	Fwkey
+	Fmkey
+	Fckey
+	Fkeymeta
+	Fdefaultkey
+	Fpool
+	Fversion
+	Fcscript
+	Forderposnext
+	Faccount
+	Fbestblock
+	Fminversion
+)
+
 var (
 	// The default filename being in the data directory for the wallet file
 	Filename string
@@ -17,6 +38,8 @@ var (
 	Db DB
 	// The string identifiers of the various tables in a wallet database
 	KeyNames = []string{"name", "tx", "acentry", "key", "wkey", "mkey", "ckey", "keymeta", "defaultkey", "pool", "version", "cscript", "orderposnext", "acc", "bestblock", "minversion"}
+	// Short alias for KeyNames
+	KN = KeyNames
 )
 func init() {
 	Filename = *args.DataDir + "/" + *args.Wallet
@@ -36,7 +59,7 @@ type dB interface {
 	EraseMasterKey(int64) error
 	ErasePool(int64) error
 	EraseTx(Uint.U256)
-	Find(string, []byte) ([][2][]byte, error)
+	Find(int, interface{}) (*jvzc.Range, error)
 	Flush()
 	GetAccountCreditDebit(string) int64
 	GetBalance() float64

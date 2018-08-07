@@ -5,6 +5,7 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 )
 type KeyMetadata struct {
+	Pub *key.Pub
 	Version    uint32
 	CreateTime int64
 }

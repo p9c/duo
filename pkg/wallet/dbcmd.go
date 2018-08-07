@@ -4,6 +4,7 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
+	"github.com/parallelcointeam/javazacdb"
 )
 // Backup copies the current wallet to another location
 func (db *DB) Backup(*Wallet, string) (err error) {
@@ -89,42 +90,9 @@ func (db *DB) EraseTx(u *Uint.U256) (err error) {
 	// db.updateCount++
 	return
 }
-// Find searches the wallet database for an item with a specified label and optional first part of the key data
-func (db *DB) Find(label string, content []byte) (result [][2][]byte, err error) {
-	// labelB := append([]byte{byte(len(label))}, []byte(label)...)
-	// contentB := append([]byte{byte(len(content))}, content...)
-	// var cursor bdb.Cursor
-	// if cursor, err = db.Cursor(bdb.NoTransaction); err != nil {
-	// 	return
-	// }
-	// var rec [2][]byte
-	// if err = cursor.First(&rec); err != nil {
-	// 	return
-	// }
-	// matchfail := false
-	// for {
-	// 	for i := 0; i < len(labelB) && !matchfail; i++ {
-	// 		if rec[0][i] != labelB[i] {
-	// 			matchfail = true
-	// 		}
-	// 	}
-	// 	if content != nil {
-	// 		rem := []byte(string(rec[0]))[len(labelB):]
-	// 		for i := 0; i < len(rem) && !matchfail; i++ {
-	// 			if rem[i] != contentB[i] {
-	// 				matchfail = true
-	// 			}
-	// 		}
-	// 	}
-	// 	if matchfail {
-	// 		break
-	// 	} else {
-	// 		result = append(result, rec)
-	// 		if err = cursor.Next(&rec); err != nil {
-	// 			return result, nil
-	// 		}
-	// 	}
-	// }
+// Find searches the wallet database for an item in a specified table with a given key
+func (db *DB) Find(t int, k string) (r *jvzc.Range, err error) {
+
 	return
 }
 // Flush forces writing to disk of dirty cache
@@ -163,34 +131,6 @@ func (db *DB) ListAccountCreditDebit(string, []*AccountingEntry) (err error) {
 func (db *DB) LoadWallet(*Wallet) (err error) {
 	return
 }
-// Open a wallet database
-// func (db *DB) Open() (err error) {
-
-// 	// dbenvconf := bdb.EnvironmentConfig{
-// 	// 	Create:        true,
-// 	// 	Recover:       true,
-// 	// 	Mode:          0600,
-// 	// 	Transactional: true,
-// 	// }
-// 	// dbenv, err := bdb.OpenEnvironment(*args.DataDir, &dbenvconf)
-// 	// if err != nil {
-// 	// 	return
-// 	// }
-// 	// dbconfig := bdb.DatabaseConfig{
-// 	// 	Create: false,
-// 	// 	Mode:   0600,
-// 	// 	Name:   "main",
-// 	// }
-// 	// db1, err := bdb.OpenDatabase(dbenv, bdb.NoTransaction, db.Filename, &dbconfig)
-// 	// if err == nil {
-// 	// 	db.Database = &db1
-// 	// 	db.UnlockedUntil = time.Now().Add(Locktime).Unix()
-// 	// } else {
-// 	// 	logger.Debug("Failed to open database", err)
-// 	// 	return
-// 	// }
-// 	return
-// }
 // ReadAccount returns the data of an Account
 func (db *DB) ReadAccount(accname string, acc *Account) (err error) {
 	return
@@ -288,11 +228,8 @@ func (db *DB) WriteMinVersion(int) (err error) {
 }
 // WriteName writes a new name to the database associated with an address
 func (db *DB) WriteName(addr, name string) (err error) {
-	// r := db.KVEnc([]interface{}{"name", addr, name})
-	// if err = db.Put(bdb.NoTransaction, true, r); err != nil {
-	// 	return
-	// }
-	// db.updateCount++
+	db.Table(KN[Name]).Set(addr, name)
+	db.updateCount++
 	return
 }
 // WriteOrderPosNext moves the write position to the next
