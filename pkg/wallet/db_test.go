@@ -1,5 +1,6 @@
 package wallet
 import (
+	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"testing"
 )
 var (
@@ -7,10 +8,12 @@ var (
 )
 func TestNewDB(t *testing.T) {
 	db, err := NewDB(f)
-	
 	if err != nil {
 		t.Error("Failed to open")
 	}
-	defer db.Close()
-	db.Flush()
+	logger.Debug(*db)
+	for i := range KeyNames {
+		db.NewTable(KeyNames[i])
+	}
+	db.Close()
 }

@@ -1,7 +1,5 @@
 package wallet
 import (
-	"github.com/1lann/badger"
-	"github.com/1lann/badger/options"
 	"github.com/ParallelCoinTeam/JVZC"
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/crypto"
@@ -11,22 +9,16 @@ import (
 	"time"
 )
 var (
-	// Filename is the default filename being in the data directory for the wallet file
+	// The default filename being in the data directory for the wallet file
 	Filename string
-	// Locktime is the time delay after which the wallet will automatically lock
+	// The time delay after which the wallet will automatically lock
 	Locktime = time.Minute * 15
 	// Db is a shared wallet for the typical application using one
 	Db DB
-	// Prefix is loaded in init to contain KeyNames
-	Prefix map[string][]byte
-	// KeyNames is the list of key types stored in the wallet
+	// The string identifiers of the various tables in a wallet database
 	KeyNames = []string{"name", "tx", "acentry", "key", "wkey", "mkey", "ckey", "keymeta", "defaultkey", "pool", "version", "cscript", "orderposnext", "acc", "bestblock", "minversion"}
 )
 func init() {
-	Prefix = make(map[string][]byte)
-	for i := range KeyNames {
-		Prefix[KeyNames[i]] = append([]byte{byte(len(KeyNames[i]))}, []byte(KeyNames[i])...)
-	}
 	Filename = *args.DataDir + "/" + *args.Wallet
 }
 // DB is the structure for encryptable wallet database
@@ -54,7 +46,7 @@ type dB interface {
 	ImportWalletDat(string) error
 	ListAccountCreditDebit(*string, *[]AccountingEntry)
 	LoadWallet(Wallet) error
-	Open() error
+	// Open() error
 	ReadAccount(string, *Account) error
 	ReadBestBlock(*block.Locator) error
 	ReadPool(int64, KeyPool) error
@@ -82,15 +74,7 @@ type dB interface {
 // NewDB creates a new DB and opens it - if it already exists it just opens it
 func NewDB(path string) (db *DB, err error) {
 	db = new(DB)
-	db.DB, err = jvzc.Open(path, badger.Options{
-		Dir: path,
-		ValueDir: path,
-		SyncWrites: false,
-		TableLoadingMode: options.MemoryMap,
-	})
-	if err != nil {
-		return
-	}
+	db.DB, _ = jvzc.Open(path)
 	db.UnlockedUntil = time.Now().Unix()
-	return
+	return db, err
 }

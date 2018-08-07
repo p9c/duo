@@ -164,33 +164,33 @@ func (db *DB) LoadWallet(*Wallet) (err error) {
 	return
 }
 // Open a wallet database
-func (db *DB) Open() (err error) {
+// func (db *DB) Open() (err error) {
 
-	// dbenvconf := bdb.EnvironmentConfig{
-	// 	Create:        true,
-	// 	Recover:       true,
-	// 	Mode:          0600,
-	// 	Transactional: true,
-	// }
-	// dbenv, err := bdb.OpenEnvironment(*args.DataDir, &dbenvconf)
-	// if err != nil {
-	// 	return
-	// }
-	// dbconfig := bdb.DatabaseConfig{
-	// 	Create: false,
-	// 	Mode:   0600,
-	// 	Name:   "main",
-	// }
-	// db1, err := bdb.OpenDatabase(dbenv, bdb.NoTransaction, db.Filename, &dbconfig)
-	// if err == nil {
-	// 	db.Database = &db1
-	// 	db.UnlockedUntil = time.Now().Add(Locktime).Unix()
-	// } else {
-	// 	logger.Debug("Failed to open database", err)
-	// 	return
-	// }
-	return
-}
+// 	// dbenvconf := bdb.EnvironmentConfig{
+// 	// 	Create:        true,
+// 	// 	Recover:       true,
+// 	// 	Mode:          0600,
+// 	// 	Transactional: true,
+// 	// }
+// 	// dbenv, err := bdb.OpenEnvironment(*args.DataDir, &dbenvconf)
+// 	// if err != nil {
+// 	// 	return
+// 	// }
+// 	// dbconfig := bdb.DatabaseConfig{
+// 	// 	Create: false,
+// 	// 	Mode:   0600,
+// 	// 	Name:   "main",
+// 	// }
+// 	// db1, err := bdb.OpenDatabase(dbenv, bdb.NoTransaction, db.Filename, &dbconfig)
+// 	// if err == nil {
+// 	// 	db.Database = &db1
+// 	// 	db.UnlockedUntil = time.Now().Add(Locktime).Unix()
+// 	// } else {
+// 	// 	logger.Debug("Failed to open database", err)
+// 	// 	return
+// 	// }
+// 	return
+// }
 // ReadAccount returns the data of an Account
 func (db *DB) ReadAccount(accname string, acc *Account) (err error) {
 	return
