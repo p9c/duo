@@ -11,7 +11,7 @@ import (
 
 const (
 	// Identifiers matching the KeyNames array for convenience
-	Name = iota
+	Fname = iota
 	Ftx
 	Facentry
 	Fkey
@@ -43,6 +43,38 @@ var (
 )
 func init() {
 	Filename = *args.DataDir + "/" + *args.Wallet
+}
+type Name struct {
+	Addr string
+	Name string
+}
+type Metadata struct {
+	Pub        *key.Pub
+	Version    uint32
+	CreateTime time.Time
+}
+type Key struct {
+	Pub  *key.Pub
+	Priv *key.Priv
+}
+type WKey struct {
+	Pub         *key.Pub
+	Priv     *key.Priv
+	TimeCreated time.Time
+	TimeExpires time.Time
+	Comment     string
+}
+type MKey struct {
+	MKeyID int64
+	EncryptedKey              []byte
+	Salt                      []byte
+	Method          uint32
+	Iterations          uint32
+	Other []byte
+}
+type CKey struct {
+	Pub  *key.Pub
+	Priv []byte
 }
 // DB is the structure for encryptable wallet database
 type DB struct {
@@ -87,7 +119,7 @@ type dB interface {
 	WriteCryptedKey(*key.Pub, []byte, *KeyMetadata) error
 	WriteDefaultKey(*key.Pub) error
 	WriteKey(*key.Pub, *key.Priv, *KeyMetadata) error
-	WriteMasterKey(uint, *crypto.MasterKey) error
+	WriteMasterKey(*crypto.MasterKey) error
 	WriteMinVersion(int) error
 	WriteName(string, string) error
 	WriteOrderPosNext(int64) error

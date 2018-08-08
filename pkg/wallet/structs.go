@@ -4,11 +4,6 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 )
-type KeyMetadata struct {
-	Pub *key.Pub
-	Version    uint32
-	CreateTime int64
-}
 type MasterKeyMap map[uint]*KeyMetadata
 type KeyPool struct {
 	Time   int64
@@ -55,11 +50,6 @@ type AccountingEntry struct {
 	ValueMap              ValueMap
 	OrderPos              int64
 	EntryNo               uint64
-}
-type Key struct {
-	PrivKey                  *key.Priv
-	TimeCreated, TimeExpires int64
-	Comment                  string
 }
 type ScanState struct {
 	Keys, CKeys, KeyMeta      uint

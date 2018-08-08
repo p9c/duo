@@ -1,7 +1,7 @@
 package wallet
 import (
+	"fmt"
 	"gitlab.com/parallelcoin/duo/pkg/block"
-	"gitlab.com/parallelcoin/duo/pkg/crypto"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"github.com/parallelcointeam/javazacdb"
@@ -188,7 +188,9 @@ func (db *DB) WriteBestBlock(*block.Locator) (err error) {
 	return
 }
 // WriteCryptedKey writes an encrypted key to the wallet
-func (db *DB) WriteCryptedKey(*key.Pub, []byte, *KeyMetadata) (err error) {
+func (db *DB) WriteCryptedKey(pub *key.Pub, priv []byte, meta *KeyMetadata) (err error) {
+	db.Table(KN[Fckey]).Set(pub.ToBase58Check(db.Net), priv)
+	db.Table(KN[Fkeymeta]).Set(pub.ToBase58Check(db.Net), []interface{}{meta.Version, meta.CreateTime})
 	db.updateCount++
 	return
 }
@@ -205,23 +207,18 @@ func (db *DB) WriteDefaultKey(p *key.Pub) (err error) {
 func (db *DB) WriteKey(pub *key.Pub, priv *key.Priv, meta *KeyMetadata) (err error) {
 	db.Table(KN[Fkey]).Set(pub.ToBase58Check(db.Net), priv.Get())
 	db.Table(KN[Fkeymeta]).Set(pub.ToBase58Check(db.Net), []interface{}{meta.Version, meta.CreateTime})
-	// rKey := db.KVEnc([]interface{}{"key", pub, priv})
-	// rMeta := db.KVEnc([]interface{}{"keymeta", pub, meta.Version, meta.CreateTime})
-	// if err = db.Put(bdb.NoTransaction, false, rKey); err != nil {
-	// 	return
-	// } else if err = db.Put(bdb.NoTransaction, false, rMeta); err != nil {
-	// 	return
-	// }
 	db.updateCount++
 	return
 }
 // WriteMasterKey writes a MasterKey to the wallet
-func (db *DB) WriteMasterKey(id int64, mkey *crypto.MasterKey) (err error) {
-	// r := db.KVEnc([]interface{}{"mkey", id, mkey})
-	// if err = db.Put(bdb.NoTransaction, false, r); err != nil {
-	// 	return
-	// }
-	// db.updateCount++
+func (db *DB) WriteMasterKey(mkey MKey) (err error) {
+	db.Table(KN[Fmkey]).Set(fmt.Sprint(mkey.MKeyID), []interface{}{
+		mkey.EncryptedKey,
+		mkey.Salt,
+		mkey.Method,
+		mkey.Iterations,
+		mkey.Other})
+	db.updateCount++
 	return
 }
 // WriteMinVersion writes the MinVersion
@@ -230,7 +227,7 @@ func (db *DB) WriteMinVersion(int) (err error) {
 }
 // WriteName writes a new name to the database associated with an address
 func (db *DB) WriteName(addr, name string) (err error) {
-	db.Table(KN[Name]).Set(addr, name)
+	db.Table(KN[Fname]).Set(addr, name)
 	db.updateCount++
 	return
 }
@@ -263,5 +260,15 @@ func (db *DB) WriteTx(u *Uint.U256, t []byte) (err error) {
 	// 	return
 	// }
 	// db.updateCount++
+	return
+}
+
+// WriteWalletKey writes a 'wkey', which contains extra metadata
+func (db *DB) WriteWalletKey(wkey *WKey) (err error) {
+	db.Table(KN[Fwkey]).Set(wkey.Pub.ToBase58Check(db.Net), []interface{}{
+		wkey.Priv.Get(),
+		wkey.TimeCreated.Unix(),
+		wkey.TimeExpires.Unix(),
+		wkey.Comment})
 	return
 }

@@ -1,44 +1,12 @@
-package walletdat
+package wallet
 import (
 	"encoding/binary"
 	"gitlab.com/parallelcoin/duo/pkg/util"
 	"github.com/mitchellh/go-homedir"
 	"gitlab.com/parallelcoin/duo/pkg/bdb"
-	"gitlab.com/parallelcoin/duo/pkg/key"
 	"time"
 )
-type Name struct {
-	Addr string
-	Name string
-}
-type Metadata struct {
-	Pub        *key.Pub
-	Version    uint32
-	CreateTime time.Time
-}
-type Key struct {
-	Pub  *key.Pub
-	Priv *key.Priv
-}
-type WKey struct {
-	Pub         *key.Pub
-	Priv     *key.Priv
-	TimeCreated time.Time
-	TimeExpires time.Time
-	Comment     string
-}
-type MKey struct {
-	MKeyID int64
-	EncryptedKey              []byte
-	Salt                      []byte
-	Method          uint32
-	Iterations          uint32
-	Other []byte
-}
-type CKey struct {
-	Pub  *key.Pub
-	Priv []byte
-}
+// A collection of tables from a wallet.dat file
 type Imports struct {
 	Names []Name
 	Metadata []Metadata
@@ -49,7 +17,7 @@ type Imports struct {
 }
 // Import reads an existing wallet.dat and returns all the keys and address data in it
 func Import(filename ...string) (imp Imports, err error) {
-	var db = &DB{}
+	var db = &BDB{}
 	if len(filename) == 0 {
 		home, _ := homedir.Dir()
 		db.SetFilename(home+"/.parallelcoin/wallet.dat")
