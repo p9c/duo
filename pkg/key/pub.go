@@ -22,7 +22,7 @@ type pub interface {
 	IsCompressed() bool
 	Check([]byte) bool
 	MakeNewKey(bool) *Pub
-	ToBase58Check() string
+	ToBase58Check(string) string
 }
 // SetPub sets the public key of a Priv
 func (p *Pub) SetPub(P *ec.PublicKey) {

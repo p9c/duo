@@ -1,5 +1,7 @@
 package wallet
 import (
+	// "encoding/hex"
+	// "github.com/anaskhan96/base58check"
 	"bytes"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"testing"
@@ -65,5 +67,26 @@ func TestImport(t *testing.T) {
 		db.WriteMasterKey(&imp.MKeys[i])
 	}
 	logger.Debug("Dump:\n", db.Dump())
+
+	// logger.Debug(base58check.Decode("aXYpuRRd7Znpzg18S6cuzpLKZnAJNfNTYc"))
+	// keyz, _ := base58check.Decode("aXYpuRRd7Znpzg18S6cuzpLKZnAJNfNTYc")
+	// zyek, _ := hex.DecodeString(keyz[2:])
+	// zyekZ := make([]byte, len(zyek))	
+	// for i := range zyek {
+	// 	zyekZ[i] = zyek[len(zyek)-1-i]
+	// }
+	// logger.Debug("byteswaped", hex.EncodeToString(zyekZ))
+	// keyZ, _ := base58check.Encode(keyz[:2], keyz[2:])
+	// logger.Debug("'"+keyz[:2]+"'", "aXYpuRRd7Znpzg18S6cuzpLKZnAJNfNTYc", keyZ)
+	// keyz, _ = base58check.Decode("TPxeJEwSWnAC8RhDgCKNgfwJ6Evrxqop4cvU8qNfL9zm4Q5B2Zk9")
+	// logger.Debug(keyz[:2], keyz[2:])
+	// logger.Debug(base58check.Decode("anjV64ydyM7mFH7kxEDrh5ASndKg72RjCR"))
+	// logger.Debug(base58check.Decode("TMQxFoTDgwk31s9QTL9X8N3d2XNayrCheXLsPfP4ShnoQnfiJxLR"))
+
+
 	db.Close()
+}
+
+func TestCrypto(t *testing.T) {
+	
 }

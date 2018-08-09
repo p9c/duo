@@ -1,12 +1,21 @@
 package wallet
 import (
-	"sort"
-	"gitlab.com/parallelcoin/duo/pkg/logger"
+	"crypto/cipher"
+	"crypto/aes"
+	"strconv"
+	"gitlab.com/parallelcoin/duo/pkg/ec"
+	"github.com/anaskhan96/base58check"
+	"encoding/hex"
+	// "github.com/anaskhan96/base58check"
+	// "encoding/hex"
 	"fmt"
-	"gitlab.com/parallelcoin/duo/pkg/block"
-	"gitlab.com/parallelcoin/duo/pkg/key"
-	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"github.com/parallelcointeam/javazacdb"
+	"gitlab.com/parallelcoin/duo/pkg/block"
+	// "gitlab.com/parallelcoin/duo/pkg/ec"
+	"gitlab.com/parallelcoin/duo/pkg/key"
+	"gitlab.com/parallelcoin/duo/pkg/logger"
+	"gitlab.com/parallelcoin/duo/pkg/Uint"
+	"sort"
 )
 // Backup copies the current wallet to another location
 func (db *DB) Backup(*Wallet, string) (err error) {
@@ -17,11 +26,11 @@ func (db *DB) Close() (err error) {
 	// err = db.Database.Close()
 	return
 }
+var bc cipher.Block
 // Dump the set of keys and current stats of the chain in a string
 func (db *DB) Dump() (dump string) {
 	tableList := db.Tables()
 	sort.Strings(tableList)
-	logger.Debug(tableList)
 	for i := range tableList {
 		switch tableList[i] {
 		case K[Fname]:
@@ -30,44 +39,91 @@ func (db *DB) Dump() (dump string) {
 			for r.Next() {
 				var v interface{}
 				r.Decode(&v)
-				logger.Debug(K[Fname], r.Key(), v.(string))
+				// key, _ := base58check.Decode(r.Key())
+				// decoded, _ := base58check.Encode(r.Key()[0:2], r.Key()[2:])
+				bkey, _ := base58check.Decode(r.Key())
+				logger.Debug(K[Fname], bkey[2:], v.(string))
 			}
 		case K[Ftx]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Facentry]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Fkey]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Fwkey]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Fmkey]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
+			r := db.Table(K[Fmkey]).All()
+			for r.Next() {
+				var v interface{}
+				r.Decode(&v)
+				V := v.(map[interface{}]interface{})
+				encryptedkey := V["EncryptedKey"].([]byte)
+				salt := hex.EncodeToString(V["Salt"].([]byte))
+				method := uint32(V["Method"].(uint64))
+				iterations := uint32(V["Iterations"].(uint64))
+				other := V["Other"].([]byte)
+				// ekey, _ := base58check.Encode("", encryptedkey)
+				esalt, _ := base58check.Encode("", salt)
+				logger.Debug(
+					K[Fmkey],
+					r.Key(),
+					encryptedkey,
+					esalt,
+					method,
+					iterations,
+					other,
+				)
+				id, _ := strconv.Atoi(r.Key())
+				ek := encryptedkey
+				ss, _ := hex.DecodeString(salt)
+				m := &MKey{
+					MKeyID: int64(id),
+					EncryptedKey: ek,
+					Salt: ss,
+					Method: method,
+					Iterations: iterations,
+					Other: other,
+				}
+				dk, _ := m.Decrypt(passwd, m.EncryptedKey)
+				bc, _ = aes.NewCipher(dk[0])
+				logger.Debug(dk[0])
+			}
 		case K[Fckey]:
 			logger.Debug(tableList[i])
 			r := db.Table(K[Fckey]).All()
 			for r.Next() {
 				var v interface{}
 				r.Decode(&v)
-				logger.Debug(K[Fckey], r.Key(), v)
+				p, _ := ec.ParsePubKey([]byte(r.Key()), ec.S256())
+				pB := p.SerializeCompressed()
+				k, _ := base58check.Encode("", hex.EncodeToString(pB)[2:])
+				keyZ, _ := base58check.Encode("", hex.EncodeToString(v.([]byte)))
+				logger.Debug(
+					K[Fckey], 
+					k,
+					keyZ,
+				)
 			}
 		case K[Fkeymeta]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Fdefaultkey]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Fpool]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Fversion]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Fcscript]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Forderposnext]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Faccount]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Fbestblock]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		case K[Fminversion]:
-			logger.Debug(tableList[i])
+			// logger.Debug(tableList[i])
 		}
 	}
 	return

@@ -103,14 +103,14 @@ func Import(filename ...string) (imp Imports, err error) {
 						imp.WKeys = append(imp.WKeys, e)
 					}
 				case "mkey":
-					keyID := int64(binary.LittleEndian.Uint64(rec[0][idLen:idLen+8]))
+					keyID := int64(binary.LittleEndian.Uint32(rec[0][idLen:idLen+4]))
 					ekLen := rec[1][0]+1
 					eKey := rec[1][1:ekLen]
 					sLen := rec[1][ekLen]
-					salt := rec[1][ekLen:sLen+ekLen]
-					method := binary.LittleEndian.Uint32(rec[1][sLen+ekLen:sLen+ekLen+4])
-					iterations := binary.LittleEndian.Uint32(rec[1][sLen+ekLen+4:sLen+ekLen+8])
-					other := rec[1][sLen+ekLen+8:]
+					salt := rec[1][ekLen+1:sLen+ekLen+1]
+					method := binary.LittleEndian.Uint32(rec[1][sLen+ekLen+1:sLen+ekLen+5])
+					iterations := binary.LittleEndian.Uint32(rec[1][sLen+ekLen+5:sLen+ekLen+9])
+					other := rec[1][sLen+ekLen+9:]
 					var e MKey
 					e.MKeyID = keyID
 					e.EncryptedKey = eKey

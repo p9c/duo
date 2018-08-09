@@ -2,3 +2,4 @@ duo
 debug
 debug\.test
 config.ini
+secret.go
