@@ -25,7 +25,7 @@ func TestImport(t *testing.T) {
 		t.Error("Failed to open")
 	}
 	db.Net = "mainnet"
-	for i := range KeyNames {
+	for i := 0; i<Flast; i++ {
 		db.NewTable(KeyNames[i])
 	}
 	imp, err := Import()
@@ -33,7 +33,7 @@ func TestImport(t *testing.T) {
 		t.Error("failed to import wallet", err)
 	}
 	for i := range imp.Names {
-		db.WriteName(imp.Names[i].Addr, imp.Names[i].Name)
+		db.WriteName(&imp.Names[i])
 	}
 	md := new(KeyMetadata)
 	for i := range imp.CKeys {
@@ -56,14 +56,14 @@ func TestImport(t *testing.T) {
 				break
 			}
 		}
-		db.WriteKey(imp.Keys[i].Pub, imp.Keys[i].Priv, md) 
+		db.WriteKey(&imp.Keys[i], md) 
 	}
 	for i := range imp.WKeys {
 		db.WriteWalletKey(&imp.WKeys[i]) 
 	}
 	for i := range imp.MKeys {
-		db.WriteMasterKey(imp.MKeys[i])
+		db.WriteMasterKey(&imp.MKeys[i])
 	}
-	logger.Debug(imp)
+	logger.Debug("Dump:\n", db.Dump())
 	db.Close()
 }

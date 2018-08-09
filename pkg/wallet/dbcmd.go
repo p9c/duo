@@ -1,5 +1,7 @@
 package wallet
 import (
+	"sort"
+	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"fmt"
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/key"
@@ -16,34 +18,59 @@ func (db *DB) Close() (err error) {
 	return
 }
 // Dump the set of keys and current stats of the chain in a string
-func (db *DB) Dump() (dump string, err error) {
-	// cursor, err := db.Cursor(bdb.NoTransaction)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// rec := [2][]byte{}
-	// err = cursor.First(&rec)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// dbt, _ := db.Type()
-	// dump += "databasetype " + DBTypes[dbt] + "\n"
-	// for {
-	// 	dump1 := db.KVToString(rec)
-	// 	if dump1 != "" {
-	// 		dump += dump1
-	// 	} else {
-	// 		dump += "key " + strconv.Itoa(len(rec[0])) + " " + hex.EncodeToString(rec[0]) +
-	// 			" " + string(rec[0]) + "\n"
-	// 		dump += "value " + strconv.Itoa(len(rec[1])) + " " + hex.EncodeToString(rec[1]) + "\n"
-	// 	}
-	// 	err = cursor.Next(&rec)
-	// 	if err != nil {
-		// 		err = cursor.Close()
-		// 		break
-		// 	}
-		// }
-		return
+func (db *DB) Dump() (dump string) {
+	tableList := db.Tables()
+	sort.Strings(tableList)
+	logger.Debug(tableList)
+	for i := range tableList {
+		switch tableList[i] {
+		case K[Fname]:
+			logger.Debug(tableList[i])
+			r := db.Table(K[Fname]).All()
+			for r.Next() {
+				var v interface{}
+				r.Decode(&v)
+				logger.Debug(K[Fname], r.Key(), v.(string))
+			}
+		case K[Ftx]:
+			logger.Debug(tableList[i])
+		case K[Facentry]:
+			logger.Debug(tableList[i])
+		case K[Fkey]:
+			logger.Debug(tableList[i])
+		case K[Fwkey]:
+			logger.Debug(tableList[i])
+		case K[Fmkey]:
+			logger.Debug(tableList[i])
+		case K[Fckey]:
+			logger.Debug(tableList[i])
+			r := db.Table(K[Fckey]).All()
+			for r.Next() {
+				var v interface{}
+				r.Decode(&v)
+				logger.Debug(K[Fckey], r.Key(), v)
+			}
+		case K[Fkeymeta]:
+			logger.Debug(tableList[i])
+		case K[Fdefaultkey]:
+			logger.Debug(tableList[i])
+		case K[Fpool]:
+			logger.Debug(tableList[i])
+		case K[Fversion]:
+			logger.Debug(tableList[i])
+		case K[Fcscript]:
+			logger.Debug(tableList[i])
+		case K[Forderposnext]:
+			logger.Debug(tableList[i])
+		case K[Faccount]:
+			logger.Debug(tableList[i])
+		case K[Fbestblock]:
+			logger.Debug(tableList[i])
+		case K[Fminversion]:
+			logger.Debug(tableList[i])
+		}
+	}
+	return
 }
 // Encrypt a wallet.dat database
 func (db *DB) Encrypt() (err error) {
@@ -189,8 +216,8 @@ func (db *DB) WriteBestBlock(*block.Locator) (err error) {
 }
 // WriteCryptedKey writes an encrypted key to the wallet
 func (db *DB) WriteCryptedKey(pub *key.Pub, priv []byte, meta *KeyMetadata) (err error) {
-	db.Table(KN[Fckey]).Set(pub.ToBase58Check(db.Net), priv)
-	db.Table(KN[Fkeymeta]).Set(pub.ToBase58Check(db.Net), []interface{}{meta.Version, meta.CreateTime})
+	db.Table(K[Fckey]).Set(string(pub.Key()), priv)
+	db.Table(K[Fkeymeta]).Set(string(pub.Key()), meta)
 	db.updateCount++
 	return
 }
@@ -204,20 +231,15 @@ func (db *DB) WriteDefaultKey(p *key.Pub) (err error) {
 	return
 }
 // WriteKey writes a new key to the wallet
-func (db *DB) WriteKey(pub *key.Pub, priv *key.Priv, meta *KeyMetadata) (err error) {
-	db.Table(KN[Fkey]).Set(pub.ToBase58Check(db.Net), priv.Get())
-	db.Table(KN[Fkeymeta]).Set(pub.ToBase58Check(db.Net), []interface{}{meta.Version, meta.CreateTime})
+func (db *DB) WriteKey(key *Key, meta *KeyMetadata) (err error) {
+	db.Table(K[Fkey]).Set(string(key.Pub.Key()), key)
+	db.Table(K[Fkeymeta]).Set(string(key.Pub.Key()), meta)
 	db.updateCount++
 	return
 }
 // WriteMasterKey writes a MasterKey to the wallet
-func (db *DB) WriteMasterKey(mkey MKey) (err error) {
-	db.Table(KN[Fmkey]).Set(fmt.Sprint(mkey.MKeyID), []interface{}{
-		mkey.EncryptedKey,
-		mkey.Salt,
-		mkey.Method,
-		mkey.Iterations,
-		mkey.Other})
+func (db *DB) WriteMasterKey(mkey *MKey) (err error) {
+	db.Table(K[Fmkey]).Set(fmt.Sprint(mkey.MKeyID), mkey)
 	db.updateCount++
 	return
 }
@@ -226,8 +248,8 @@ func (db *DB) WriteMinVersion(int) (err error) {
 	return
 }
 // WriteName writes a new name to the database associated with an address
-func (db *DB) WriteName(addr, name string) (err error) {
-	db.Table(KN[Fname]).Set(addr, name)
+func (db *DB) WriteName(n *Name) (err error) {
+	db.Table(K[Fname]).Set(n.Addr, n.Name)
 	db.updateCount++
 	return
 }
@@ -265,10 +287,6 @@ func (db *DB) WriteTx(u *Uint.U256, t []byte) (err error) {
 
 // WriteWalletKey writes a 'wkey', which contains extra metadata
 func (db *DB) WriteWalletKey(wkey *WKey) (err error) {
-	db.Table(KN[Fwkey]).Set(wkey.Pub.ToBase58Check(db.Net), []interface{}{
-		wkey.Priv.Get(),
-		wkey.TimeCreated.Unix(),
-		wkey.TimeExpires.Unix(),
-		wkey.Comment})
+	db.Table(K[Fwkey]).Set(string(wkey.Pub.Key()), wkey)
 	return
 }

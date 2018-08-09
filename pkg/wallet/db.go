@@ -27,6 +27,7 @@ const (
 	Faccount
 	Fbestblock
 	Fminversion
+	Flast
 )
 
 var (
@@ -38,8 +39,7 @@ var (
 	Db DB
 	// The string identifiers of the various tables in a wallet database
 	KeyNames = []string{"name", "tx", "acentry", "key", "wkey", "mkey", "ckey", "keymeta", "defaultkey", "pool", "version", "cscript", "orderposnext", "acc", "bestblock", "minversion"}
-	// Short alias for KeyNames
-	KN = KeyNames
+	K = KeyNames
 )
 func init() {
 	Filename = *args.DataDir + "/" + *args.Wallet
@@ -47,6 +47,14 @@ func init() {
 type Name struct {
 	Addr string
 	Name string
+}
+type name interface {
+	ToString() string
+}
+// Returns a string containing one line space separated values for a name record
+func (n *Name) ToString() (r  string) {
+	r = n.Addr + " " + n.Name
+	return
 }
 type Metadata struct {
 	Pub        *key.Pub
@@ -86,7 +94,7 @@ type DB struct {
 type dB interface {
 	Backup(*Wallet, string) error
 	Close() error
-	Dump() (string, error)
+	Dump() string
 	Encrypt() error
 	EraseName(string) error
 	EraseMasterKey(int64) error
