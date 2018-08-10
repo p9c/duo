@@ -5,7 +5,7 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/ec"
 )
 type Pub struct {
-	pub                 *ec.PublicKey
+	pub                 ec.PublicKey
 	compressed, invalid bool
 }
 type pub interface {
@@ -25,12 +25,12 @@ type pub interface {
 	ToBase58Check(string) string
 }
 // SetPub sets the public key of a Priv
-func (p *Pub) SetPub(P *ec.PublicKey) {
+func (p *Pub) SetPub(P ec.PublicKey) {
 	p.pub = P
 }
 // GetPub returns the key stored in a Priv
 func (p *Pub) GetPub() (P *ec.PublicKey) {
-	return p.pub
+	return &p.pub
 }
 // Size returns the size of the key if it were requested as bytes
 func (p *Pub) Size() int {

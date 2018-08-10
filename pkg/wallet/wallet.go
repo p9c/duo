@@ -17,7 +17,7 @@ const (
 )
 // Wallet controls access to a wallet.db file containing keys and data relating to accounts and addresses
 type Wallet struct {
-	key.StoreCrypto
+	key.Store
 	DB        *DB
 	version, maxVersion int
 	FileBacked          bool

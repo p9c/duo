@@ -1,5 +1,6 @@
 package server
 import (
+	"gitlab.com/parallelcoin/duo/pkg/wallet"
 	"fmt"
 	"log"
 	"os"
@@ -13,7 +14,7 @@ const (
 )
 var (
 	// Walletdb is a package centralised store for the server wallet
-	// Walletdb *wallet.DB
+	Walletdb *wallet.DB
 )
 func lockDataDir() bool {
 	if _, err := os.Stat(*args.DataDir + LockFilename); os.IsNotExist(err) {

@@ -55,23 +55,23 @@ func Append(b *[]byte, B ...[]byte) {
 }
 func ToPub(pubEC *ec.PublicKey) (pub *key.Pub) {
 	pub = &key.Pub{}
-	pub.SetPub(pubEC)
+	pub.SetPub(*pubEC)
 	return
 }
 func ParsePub(pub []byte) (key *ec.PublicKey, err error) {
 	return ec.ParsePubKey(pub, ec.S256())
 }
-func SetPriv(priv []byte) (result *key.Priv) {
-	result = &key.Priv{}
-	result.Set(priv)
-	return
-}
+// func SetPriv(priv []byte) (result *key.Priv) {
+// 	result = &key.Priv{}
+// 	result.Set(priv)
+// 	return
+// }
 func PubToHex(pub interface{}) string {
 	return hex.EncodeToString(pub.(*key.Pub).GetPub().SerializeUncompressed())
 }
-func PrivToHex(priv interface{}) string {
-	return hex.EncodeToString(priv.(*key.Priv).Get())
-}
+// func PrivToHex(priv interface{}) string {
+// 	return hex.EncodeToString(priv.(*key.Priv).Get())
+// }
 func BytesToHex(b []byte) string {
 	return hex.EncodeToString(b)
 }

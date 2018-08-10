@@ -1,5 +1,7 @@
 package wallet
 import (
+	"github.com/awnumar/memguard"
+	"gitlab.com/parallelcoin/duo/pkg/key"
 	"encoding/binary"
 	"gitlab.com/parallelcoin/duo/pkg/util"
 	"github.com/mitchellh/go-homedir"
@@ -56,7 +58,8 @@ func Import(filename ...string) (imp Imports, err error) {
 					if pub, err := util.ParsePub(pubB); err != nil {
 						return Imports{}, err
 					} else {
-						priv := util.SetPriv(rec[1])
+						mg, _ := memguard.NewMutableFromBytes(rec[1])
+						priv := key.NewPrivFromBytes(mg)
 						// logger.Debug(pub, priv)
 						var e Key
 						e.Pub = util.ToPub(pub)
@@ -96,7 +99,9 @@ func Import(filename ...string) (imp Imports, err error) {
 						// logger.Debug(id, *pub, timeCreated, timeExpires, "'"+comment+"'")
 						var e WKey
 						e.Pub = util.ToPub(pub)
-						e.Priv = util.SetPriv(privB)
+						mg, _ := memguard.NewMutableFromBytes(privB)
+						priv := key.NewPrivFromBytes(mg)
+						e.Priv = priv
 						e.TimeCreated = timeCreated
 						e.TimeExpires = timeExpires
 						e.Comment = comment

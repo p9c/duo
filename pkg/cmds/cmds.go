@@ -1,14 +1,11 @@
 package cmds
 import (
-	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/anaskhan96/base58check"
 	"gitlab.com/parallelcoin/duo/pkg/algos"
 	"gitlab.com/parallelcoin/duo/pkg/block"
-	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/net"
 	"gitlab.com/parallelcoin/duo/pkg/rpc"
@@ -1161,16 +1158,10 @@ func init() {
 				default:
 					return Failure(mode, err, "Excess arguments")
 				}
-				bytes := make([]byte, 32)
-				rand.Read(bytes)
-				privKey, pubKey := ec.PrivKeyFromBytes(ec.S256(), bytes)
-				priv := key.Priv{}
-				priv.SetPriv(privKey, pubKey)
-				priv58, err := base58check.Encode("B2", hex.EncodeToString(priv.GetPriv().Get()))
-				if err != nil {
-					return Failure(mode, err, "Base58check encoding failure")
-				}
-				pub := hex.EncodeToString(pubKey.SerializeUncompressed())
+				priv, _ := key.NewPriv()
+				fmt.Println("creating new key...")
+				priv58, _ := priv.ToBase58Check("mainnet")
+				pub := hex.EncodeToString(priv.GetPub().Key())
 				keymap := map[string]string{
 					"PublicKey":  pub,
 					"PrivateKey": priv58,

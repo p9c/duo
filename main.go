@@ -82,6 +82,7 @@ func cleanup() {
 }
 	
 func main() {
+	memguard.DisableUnixCoreDumps()
 	state.Init()
 	if _, err := os.Stat(*args.Conf); os.IsNotExist(err) {
 		createconf()
@@ -91,16 +92,16 @@ func main() {
 	switch {
 	case *args.Version:
 		printversioninfo()
-		os.Exit(1)
+		memguard.SafeExit(0)
 	case *args.Help:
 		version.Print()
 		fmt.Printf("%s [-options] [command] [command args...]\n", os.Args[0])
 		fmt.Printf("Usage:\n\n")
 		flag.Usage()
-		os.Exit(0)
+		memguard.SafeExit(0)
 	case *args.TestNet && *args.RegTest:
 		printerr("Error: testnet and regtest cannot be set at the same time\n")
-		os.Exit(1)
+		memguard.SafeExit(1)
 	case *args.CreateConf:
 		fmt.Println(*args.CreateConf)
 		createconf()
