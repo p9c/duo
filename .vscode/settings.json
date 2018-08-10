@@ -10,8 +10,8 @@
     "git.autofetch": true,
     "explorer.confirmDelete": false,
     "workbench.activityBar.visible": true,
-    "editor.fontSize": 11,
-    "editor.tabSize": 2,
+    "editor.fontSize": 10,
+    "editor.tabSize": 4,
     "go.testFlags": [
         "-v"
     ],
@@ -48,7 +48,7 @@
     "zenMode.hideTabs": false,
     "zenMode.centerLayout": false,
     "zenMode.fullScreen": true,
-    "editor.lineHeight": 20,
+    "editor.lineHeight": 16,
     "zenMode.hideActivityBar": false,
     "bookmarks.saveBookmarksInProject": true,
     "bookmarks.treeview.visible": true,

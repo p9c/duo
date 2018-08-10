@@ -20,7 +20,6 @@ func TestNewDB(t *testing.T) {
 	}
 	db.Close()
 }
-
 func TestImport(t *testing.T) {
 	db, err := NewDB(f)
 	if err != nil {
