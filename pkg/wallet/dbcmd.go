@@ -31,6 +31,32 @@ var bc cipher.Block
 func (db *DB) Dump() (dump string) {
 	tableList := db.Tables()
 	sort.Strings(tableList)
+	r := db.Table(K[Fmkey]).All()
+	for r.Next() {
+		var v interface{}
+		r.Decode(&v)
+		V := v.(map[interface{}]interface{})
+		encryptedkey := V["EncryptedKey"].([]byte)
+		salt := hex.EncodeToString(V["Salt"].([]byte))
+		method := uint32(V["Method"].(uint64))
+		iterations := uint32(V["Iterations"].(uint64))
+		other := V["Other"].([]byte)
+		// ekey, _ := base58check.Encode("", encryptedkey)
+		id, _ := strconv.Atoi(r.Key())
+		ek := encryptedkey
+		ss, _ := hex.DecodeString(salt)
+		m := &MKey{
+			MKeyID: int64(id),
+			EncryptedKey: ek,
+			Salt: ss,
+			Method: method,
+			Iterations: iterations,
+			Other: other,
+		}
+		dk, _ := m.Decrypt(passwd, m.EncryptedKey)
+		bc, _ = aes.NewCipher(dk[0])
+		logger.Debug(dk[0])
+	}
 	for i := range tableList {
 		switch tableList[i] {
 		case K[Fname]:
@@ -42,7 +68,7 @@ func (db *DB) Dump() (dump string) {
 				// key, _ := base58check.Decode(r.Key())
 				// decoded, _ := base58check.Encode(r.Key()[0:2], r.Key()[2:])
 				bkey, _ := base58check.Decode(r.Key())
-				logger.Debug(K[Fname], bkey[2:], v.(string))
+				logger.Debug(K[Fname], bkey, v.(string))
 			}
 		case K[Ftx]:
 			// logger.Debug(tableList[i])
@@ -52,44 +78,6 @@ func (db *DB) Dump() (dump string) {
 			// logger.Debug(tableList[i])
 		case K[Fwkey]:
 			// logger.Debug(tableList[i])
-		case K[Fmkey]:
-			// logger.Debug(tableList[i])
-			r := db.Table(K[Fmkey]).All()
-			for r.Next() {
-				var v interface{}
-				r.Decode(&v)
-				V := v.(map[interface{}]interface{})
-				encryptedkey := V["EncryptedKey"].([]byte)
-				salt := hex.EncodeToString(V["Salt"].([]byte))
-				method := uint32(V["Method"].(uint64))
-				iterations := uint32(V["Iterations"].(uint64))
-				other := V["Other"].([]byte)
-				// ekey, _ := base58check.Encode("", encryptedkey)
-				esalt, _ := base58check.Encode("", salt)
-				logger.Debug(
-					K[Fmkey],
-					r.Key(),
-					encryptedkey,
-					esalt,
-					method,
-					iterations,
-					other,
-				)
-				id, _ := strconv.Atoi(r.Key())
-				ek := encryptedkey
-				ss, _ := hex.DecodeString(salt)
-				m := &MKey{
-					MKeyID: int64(id),
-					EncryptedKey: ek,
-					Salt: ss,
-					Method: method,
-					Iterations: iterations,
-					Other: other,
-				}
-				dk, _ := m.Decrypt(passwd, m.EncryptedKey)
-				bc, _ = aes.NewCipher(dk[0])
-				logger.Debug(dk[0])
-			}
 		case K[Fckey]:
 			logger.Debug(tableList[i])
 			r := db.Table(K[Fckey]).All()
@@ -100,9 +88,13 @@ func (db *DB) Dump() (dump string) {
 				pB := p.SerializeCompressed()
 				k, _ := base58check.Encode("", hex.EncodeToString(pB)[2:])
 				keyZ, _ := base58check.Encode("", hex.EncodeToString(v.([]byte)))
+				kD := make([]byte, 16)
+				bc.Decrypt(kD, pB[1:])
+				tk, _ := base58check.Encode("53", hex.EncodeToString(kD))
 				logger.Debug(
 					K[Fckey], 
 					k,
+					tk,
 					keyZ,
 				)
 			}
