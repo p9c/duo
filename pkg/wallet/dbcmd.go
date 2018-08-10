@@ -56,6 +56,7 @@ func (db *DB) Dump() (dump string) {
 		dk, _ := m.Decrypt(passwd, m.EncryptedKey)
 		bc, _ = aes.NewCipher(dk[0])
 		logger.Debug(dk[0])
+		
 	}
 	for i := range tableList {
 		switch tableList[i] {

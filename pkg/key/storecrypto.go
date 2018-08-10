@@ -1,8 +1,8 @@
 package key
 import (
+	"github.com/awnumar/memguard"
 	"crypto/aes"
 	"errors"
-	"gitlab.com/parallelcoin/duo/pkg/crypto"
 )
 type CryptedKeys struct {
 	Pub    *Pub
@@ -14,20 +14,22 @@ type CryptedKeyMap map[*ID]*CryptedKeys
 type StoreCrypto struct {
 	Store
 	cryptedKeys CryptedKeyMap
-	masterKey   crypto.KeyingMaterial
+	masterKey   memguard.LockedBuffer
+	cipher memguard.LockedBuffer
 	encrypted   bool
+	locked bool
 }
 type storeCrypto interface {
 	SetCrypted() error
 	Lock() error
 	IsCrypted() bool
 	IsLocked() bool
-	Unlock(crypto.KeyingMaterial) error
+	Unlock(memguard.LockedBuffer) error
 	AddKeyPair(*Priv, *Pub) error
 	AddEncryptedKey(*Pub, []byte) error
 	GetPriv(*ID) *Priv
 	GetPub(*ID) *Pub
-	EncryptKeys(crypto.KeyingMaterial) error
+	EncryptKeys(memguard.LockedBuffer) error
 }
 // NewStoreCrypto creates a new key.StoreCrypto
 func NewStoreCrypto() *StoreCrypto {
@@ -52,25 +54,27 @@ func (s *StoreCrypto) Lock() (err error) {
 		return
 	}
 	s.Mutex.Lock()
-	s.masterKey.Clear()
+	s.masterKey.Destroy()
 	s.Mutex.Unlock()
 	// notification needs to be sent at this point somewhere
 	return
 }
+// Returns true if the wallet is encrypted
 func (s *StoreCrypto) IsCrypted() bool {
 	return s.encrypted
 }
+// Returns true if the wallet is locked
 func (s *StoreCrypto) IsLocked() bool {
-	return s.masterKey == nil
+	return s.locked
 }
-// Unlock unlocks an encrypted wallet using a passphrase
-func (s *StoreCrypto) Unlock(passphrase crypto.KeyingMaterial) (err error) {
+// Unlocks an encrypted wallet using a passphrase
+func (s *StoreCrypto) Unlock(passphrase memguard.LockedBuffer) (err error) {
 	if err = s.SetCrypted(); err != nil {
 		return
 	}
 	s.Mutex.Lock()
 	defer s.Mutex.Unlock()
-	block, err := NewCipher(passphrase)
+	block, err := NewCipher(passphrase.Buffer())
 	if err != nil {
 		return
 	}
@@ -87,10 +91,12 @@ func (s *StoreCrypto) Unlock(passphrase crypto.KeyingMaterial) (err error) {
 			}
 		}
 	}
-	s.masterKey = cleartext
+	s.cipher.MakeMutable()
+	s.cipher.Copy(cleartext)
+	s.cipher.MakeImmutable()
 	return
 }
-// AddKeyPair adds a new key pair
+// Add a new key pair
 func (s *StoreCrypto) AddKeyPair(priv *Priv, pub *Pub) (err error) {
 	switch {
 	case !s.IsCrypted():
@@ -98,7 +104,7 @@ func (s *StoreCrypto) AddKeyPair(priv *Priv, pub *Pub) (err error) {
 	case s.IsLocked():
 		return errors.New("Cannot add keys to locked wallet")
 	}
-	block, err := NewCipher(s.masterKey)
+	block, err := NewCipher(s.masterKey.Buffer())
 	var secret []byte
 	block.Encrypt(secret, priv.Get())
 	err = s.AddEncryptedKey(pub, secret)
@@ -123,7 +129,7 @@ func (s *StoreCrypto) GetPriv(id *ID) (priv *Priv, err error) {
 		return nil, errors.New("Wallet is locked")
 	}
 	if _, ok := s.cryptedKeys[id]; ok {
-		block, err := aes.NewCipher(s.masterKey)
+		block, err := aes.NewCipher(s.masterKey.Buffer())
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +149,7 @@ func (s *StoreCrypto) GetPub(id *ID) (pub *Pub) {
 	return
 }
 // EncryptKeys encrypts keys with a specified passphrase
-func (s *StoreCrypto) EncryptKeys(passphrase crypto.KeyingMaterial) (err error) {
+func (s *StoreCrypto) EncryptKeys(passphrase memguard.LockedBuffer) (err error) {
 	if len(s.cryptedKeys) < 1 {
 		return errors.New("There is no keys to encrypt")
 	}
@@ -153,7 +159,7 @@ func (s *StoreCrypto) EncryptKeys(passphrase crypto.KeyingMaterial) (err error) 
 	s.Mutex.Lock()
 	defer s.Mutex.Unlock()
 	s.encrypted = true
-	block, err := aes.NewCipher(passphrase)
+	block, err := aes.NewCipher(passphrase.Buffer())
 	if err != nil {
 		return
 	}
