@@ -38,8 +38,6 @@ Signatures are worth something. They are worth as much as what they are put upon
 
 People are more prone to flamboyance behind a screen, so in itself, a transparent record of reputation has some kind of value, as it would shift the balance further towards the centre against those with the power to punish complainers.
 
-Secondly, it is possible, at a cost of discounted reputation, to register approval/disapproval without declaring this publicly.
-
 ## The forum as the centre of reputation discovery
 
 Commerce is a very broadly applicable word. In essence, in most dictionaries, it means any kind of social interaction. In commerce there is specialisations. Thus a user would have several reputation scores for each of the forums they interact with. A forum is an environment in which commerce occurs.
@@ -52,11 +50,21 @@ Forums include:
 
 ...and many more things also - though the specifics might vary the general character of being commerce will be present.
 
-It covers everything. Someone gives you stellar table service, you can spend a big whack of your rep balance on them. The transaction will finalise a reward a week later based on the amount of reputation spent.
+Each field has its own reputation score and derived token due to the significant differences in purpose of a forum - simple posts of text or media expressing an opinion are the most general form, but for a marketplace, there is a market reputation, and for a software development governance platform, there might be language and framework related scores and an accumulation of the general score based on the value of the tokens issued related to that specialisation. Quality checking itself is a useful service for software/media development, and a user could earn tokens for being a good quality checker, spotting errors, and so on.
+
+It covers everything. Someone gives you stellar table service, you can spend a big whack of your rep balance on them. The transaction will finalise a reward a week later based on the amount of reputation spent, they get paid and they now have the ability to spend the reputation credits they earned during the prediction market reward on rewarding other content producers.
 
 The reputation credit balances of accounts dictates only how much potential change they can effect in the distribution of new tokens. Reputation is issued in proportion to the balance to maintain a constant ceiling on the supply. Many actions cause the supply to be burned, causing subtle, system-wide alterations, shifting value evenly and fairly towards those who basically spend less of their reputation than they earn.
 
-Reputation is used by default as one of the sorting methods for viewing the forum, and secondary to many others. A client can of course prefer it some other way with a specific request but defaults tend to promote good practices in software systems. Reputation scores thus will have a significant effect also on the utilisation of infrastructure you provide so being charismatic and personable is important if you want to make 'passive' income from running servers. By doing this also we can reduce the target surface for campaigns at information suppression, as wherever it is possible, people both practically and ethically decline to inspect or interfere with the data of those using their service.
+## Reputation as a baseline means of allocating rewards based on approval
+
+Reputation is used by default as one of the sorting methods for viewing the forum, and secondary to many others. A client can of course prefer it some other way with a specific request but defaults tend to promote good practices in software systems.
+
+## Infrastructure providers reward sharing to monetise
+
+Rather than depend on a small and potentially fragile network of more large scale server infrastructure, the network can be run on anything and clustered in any way desired. From little computers resembling routers up to buildings floor to ceiling with server racks. To earn income from this, the provider delivers database access and a web application interface, and the host of a session is set as a beneficiary of the token reward distributed after the week long voting cycle.
+
+In order to keep infrastructure providers in order, reputation scores thus will have a significant effect also the frequency their node acts as a middleman during a user session, and by this out of the network consensus, a proportion of the reward for the post.. By doing this also we can reduce the target surface for campaigns at information suppression, as wherever it is possible, people both practically and ethically decline to inspect or interfere with the data of those using their service. Users can customise the selection criteria used and even lock in one or a small cluster of specific nodes, the logic can be added as a plugin, for various degrees of automation based on data sources. But for most users, it will be preferable simply to connect to the nearest node, but when there is a higher reputation credit balance, by default this node will be chosen over a lower one. Users also will automatically reject to do business with any user they have a hold on (shun).
 
 ## The problem of Sybil Attacks
 
