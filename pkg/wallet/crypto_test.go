@@ -24,7 +24,21 @@ func TestCrypto(t *testing.T) {
       b[i] = imp.CKeys[i].Priv
    }
    r, _ := imp.MKeys[0].Decrypt(pass, b...)
+   fmt.Println("Decrypted")
    for i := range r {
       fmt.Println(imp.CKeys[i].Pub, r[i])
    }
+   pub := make([][]byte, len(imp.CKeys))
+   for i := range imp.CKeys {
+      pub[i] = append(imp.CKeys[i].Pub, make([]byte, 31)...)
+      for j := 33; j < 64; j++ {
+         pub[i][j] = 31
+      }
+   }
+   fmt.Println("\nEncrypted:")
+   s, _ := imp.MKeys[0].Encrypt(pass, pub...)
+   for i := range s {
+      fmt.Println(s[i], r[i])
+   }
+
 }
