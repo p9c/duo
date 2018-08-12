@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"github.com/awnumar/memguard"
 	"bytes"
 	"crypto/cipher"
 	"crypto/aes"
@@ -21,7 +22,8 @@ func TestCrypto(t *testing.T) {
 		t.Error("failed to import wallet", err)
    }
    fmt.Println("encrypted masterkey: ", imp.MKeys[0].EncryptedKey)
-   ckey, iv, err := imp.MKeys[0].DeriveCipher(passwd)
+   pass, err := memguard.NewImmutableFromBytes([]byte(passwd))
+   ckey, iv, err := imp.MKeys[0].DeriveCipher(pass)
    fmt.Println("Master key ciphertext", ckey.Buffer())
    block, err := aes.NewCipher(ckey.Buffer()[:32])
    dec := cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])

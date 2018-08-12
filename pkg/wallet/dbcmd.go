@@ -1,5 +1,6 @@
 package wallet
 import (
+	"github.com/awnumar/memguard"
 	"crypto/cipher"
 	"crypto/aes"
 	"strconv"
@@ -53,7 +54,8 @@ func (db *DB) Dump() (dump string) {
 			Iterations: iterations,
 			Other: other,
 		}
-		dk, _ := m.Decrypt(passwd, m.EncryptedKey)
+		pass, _ := memguard.NewImmutableFromBytes([]byte(passwd))
+		dk, _ := m.Decrypt(pass, m.EncryptedKey)
 		bc, _ = aes.NewCipher(dk[0])
 		logger.Debug(dk[0])
 		

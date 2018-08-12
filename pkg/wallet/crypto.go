@@ -8,15 +8,15 @@ import (
 	"crypto/cipher"
 )
 // Encrypts plaintext using the masterkey and a password
-func (m *MKey) Encrypt(p string, b ...[]byte) (r [][]byte, err error) {
+func (m *MKey) Encrypt(p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
 	return m.encDec(true, p, b...)
 }
 
 // Decrypts a ciphertext using the masterkey and password
-func (m *MKey) Decrypt(p string, b ...[]byte) (r [][]byte, err error) {
+func (m *MKey) Decrypt(p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
 	return m.encDec(false, p, b...)
 }
-func (m *MKey) encDec(enc bool, p string, b ...[]byte) (r [][]byte, err error) {
+func (m *MKey) encDec(enc bool, p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
 	source, iv, err := m.DeriveCipher(p)
 	if block, err := aes.NewCipher(source.Buffer()); err != nil {
 		return nil, err
@@ -40,9 +40,9 @@ func (m *MKey) encDec(enc bool, p string, b ...[]byte) (r [][]byte, err error) {
 	return
 }
 
-func (m *MKey) DeriveCipher(pass string) (k *memguard.LockedBuffer, iv []byte, err error) {
+func (m *MKey) DeriveCipher(pass *memguard.LockedBuffer) (k *memguard.LockedBuffer, iv []byte, err error) {
 	var seed *memguard.LockedBuffer
-	pLen, sLen := len(pass), len(m.Salt)
+	pLen, sLen := len(pass.Buffer()), len(m.Salt)
 	if pLen + sLen > 64 {
 		sLen = 128 - pLen - sLen
 		seed, err = memguard.NewMutable(128)
@@ -53,8 +53,8 @@ func (m *MKey) DeriveCipher(pass string) (k *memguard.LockedBuffer, iv []byte, e
 		return
 	}
 	buf := seed.Buffer()
-	for i := range pass {
-		buf[i] = pass[i]
+	for i := range pass.Buffer() {
+		buf[i] = pass.Buffer()[i]
 	}
 	for i := range m.Salt {
 		buf[i+pLen] = m.Salt[i]
