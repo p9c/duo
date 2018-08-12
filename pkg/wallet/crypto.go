@@ -16,27 +16,15 @@ func (m *MKey) Encrypt(p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err e
 func (m *MKey) Decrypt(p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
 	return m.encDec(false, p, b...)
 }
-func (m *MKey) encDec(enc bool, p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
-	source, iv, err := m.DeriveCipher(p)
-	if block, err := aes.NewCipher(source.Buffer()); err != nil {
-		return nil, err
-	} else {
-		for i := range b {
-			if enc {
-				mode := cipher.NewCBCEncrypter(block, iv)
-				mode.CryptBlocks(r[i], b[i])
-			} else {
-				mode := cipher.NewCBCDecrypter(block, iv)
-				mode.CryptBlocks(r[i], b[i])
-			}
-		}
-		for i := range source.Buffer() { source.Buffer()[i] = 0 }
-		for i := range b { 
-			for j := range b[i] {
-				b[i][j] = 0
-			}
-		}
-	}	
+func (m *MKey) encDec(enc bool, pass *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
+	ckey, iv, err := m.DeriveCipher(pass)
+	block, err := aes.NewCipher(ckey.Buffer()[:32])
+   de := cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])
+	r = make([][]byte, len(b))
+	for i := range b {
+      r[i] = make([]byte, len(b[i]))
+      de.CryptBlocks(r[i], b[i])
+   }
 	return
 }
 
