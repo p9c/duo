@@ -126,15 +126,11 @@ func Import(filename ...string) (imp Imports, err error) {
 					imp.MKeys = append(imp.MKeys, e)
 				case "ckey":
 					pubLen := rec[0][idLen]+1
-					pubB := rec[0][idLen+1:pubLen+idLen]
-					pub, err := util.ParsePub(pubB)
-					if err != nil {
-						return Imports{}, err
-					}
-					pLen := rec[1][0]+1
-					priv := rec[1][1:pLen]
+					pub := rec[0][idLen+1:pubLen+idLen]
+					privLen := rec[1][0]+1
+					priv := rec[1][1:privLen]
 					var e CKey
-					e.Pub = util.ToPub(pub)
+					e.Pub = pub
 					e.Priv = priv
 					imp.CKeys = append(imp.CKeys, e)
 				}

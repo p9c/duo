@@ -81,7 +81,7 @@ type MKey struct {
 	Other []byte
 }
 type CKey struct {
-	Pub  *key.Pub
+	Pub  []byte
 	Priv []byte
 }
 // DB is the structure for encryptable wallet database

@@ -37,17 +37,17 @@ func TestImport(t *testing.T) {
 		db.WriteName(&imp.Names[i])
 	}
 	md := new(KeyMetadata)
-	for i := range imp.CKeys {
-		for j := range imp.Metadata {
-			if bytes.Compare(imp.CKeys[i].Pub.Key(), imp.Metadata[j].Pub.Key()) == 0 {
-				md.Pub = imp.CKeys[i].Pub
-				md.Version = imp.Metadata[j].Version
-				md.CreateTime = imp.Metadata[j].CreateTime.Unix()
-				break
-			}
-		}
-		db.WriteCryptedKey(imp.CKeys[i].Pub, imp.CKeys[i].Priv, md) 
-	}
+	// for i := range imp.CKeys {
+	// 	for j := range imp.Metadata {
+	// 		if bytes.Compare(imp.CKeys[i].Pub.Key(), imp.Metadata[j].Pub.Key()) == 0 {
+	// 			md.Pub = imp.CKeys[i].Pub
+	// 			md.Version = imp.Metadata[j].Version
+	// 			md.CreateTime = imp.Metadata[j].CreateTime.Unix()
+	// 			break
+	// 		}
+	// 	}
+	// 	db.WriteCryptedKey(imp.CKeys[i].Pub, imp.CKeys[i].Priv, md) 
+	// }
 	for i := range imp.Keys {
 		for j := range imp.Metadata {
 			if bytes.Compare(imp.Keys[i].Pub.Key(), imp.Metadata[j].Pub.Key()) == 0 {
@@ -84,8 +84,4 @@ func TestImport(t *testing.T) {
 
 
 	db.Close()
-}
-
-func TestCrypto(t *testing.T) {
-	
 }
