@@ -54,6 +54,10 @@ Forums include:
 
 It covers everything. Someone gives you stellar table service, you can spend a big whack of your rep balance on them. The transaction will finalise a reward a week later based on the amount of reputation spent.
 
+The reputation credit balances of accounts dictates only how much potential change they can effect in the distribution of new tokens. Reputation is issued in proportion to the balance to maintain a constant ceiling on the supply. Many actions cause the supply to be burned, causing subtle, system-wide alterations, shifting value evenly and fairly towards those who basically spend less of their reputation than they earn.
+
+Reputation is used by default as one of the sorting methods for viewing the forum, and secondary to many others. A client can of course prefer it some other way with a specific request but defaults tend to promote good practices in software systems. Reputation scores thus will have a significant effect also on the utilisation of infrastructure you provide so being charismatic and personable is important if you want to make 'passive' income from running servers. By doing this also we can reduce the target surface for campaigns at information suppression, as wherever it is possible, people both practically and ethically decline to inspect or interfere with the data of those using their service.
+
 ## The problem of Sybil Attacks
 
 Social networks, being a similar category and architecture to democracy, are vulnerable to deliberate distortion of the population, vote stuffing, and the social network equivalent, a second, intentionally dissociated identity through which attacks are launched.

@@ -14,10 +14,6 @@ func (m *MKey) Decrypt(p string, b ...[]byte) (r [][]byte, err error) {
 	return m.encDec(false, p, b...)
 }
 func (m *MKey) encDec(enc bool, p string, b ...[]byte) (r [][]byte, err error) {
-	r = make([][]byte, len(b))
-	for i := range r {
-		r[i] = make([]byte, 16)
-	}
 	s := append([]byte(p), m.Salt...)
 	sLen := len(s)
 	var source [64]byte
@@ -31,11 +27,7 @@ func (m *MKey) encDec(enc bool, p string, b ...[]byte) (r [][]byte, err error) {
 	for i := 0; i < int(m.Iterations); i++ {
 		source = sha512.Sum512(source[:])
 	}
-	S := make([]byte, 32)
-	for i := range S {
-		S[i] = source[i]
-	}
-	if block, err := aes.NewCipher(S); err != nil {
+	if block, err := aes.NewCipher(source[:]); err != nil {
 		return nil, err
 	} else {
 		for i := range b {
@@ -46,12 +38,12 @@ func (m *MKey) encDec(enc bool, p string, b ...[]byte) (r [][]byte, err error) {
 			}
 		}
 		for i := range source { source[i] = 0 }
-		for i := range S { S[i] = 0 }
 		for i := range b { 
 			for j := range b[i] {
 				b[i][j] = 0
 			}
 		}
-		}	
+	}	
 	return
 }
+
