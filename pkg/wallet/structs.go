@@ -1,9 +1,11 @@
 package wallet
+
 import (
+	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/key"
-	"gitlab.com/parallelcoin/duo/pkg/Uint"
 )
+
 type MasterKeyMap map[uint]*KeyMetadata
 type KeyPool struct {
 	Time   int64
@@ -15,6 +17,7 @@ type ReserveKey struct {
 	PubKey key.Pub
 }
 type ValueMap map[string]string
+
 // Orders are a key value pair
 type Orders struct {
 	Key, Value string

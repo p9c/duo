@@ -19,9 +19,9 @@
         "*"
     ],
     "go.formatFlags": [
-        "-s -style \"inlineblocks=keep\""
+        "-s"
     ],
-    "go.formatTool": "gofmt",
+    "go.formatTool": "goformat",
     "editor.renderLineHighlight": "all",
     "terminal.integrated.experimentalTextureCachingStrategy": "dynamic",
     "editor.codeLens": true,
