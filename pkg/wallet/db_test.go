@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"fmt"
 	"github.com/awnumar/memguard"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"testing"
@@ -36,6 +35,6 @@ func TestImport(t *testing.T) {
 	if err != nil {
 		t.Error("failed to import wallet", err)
 	}
-	fmt.Println(imp)
+	_ = imp.ToBinaryFormatted()
 	db.Close()
 }

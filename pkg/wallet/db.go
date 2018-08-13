@@ -1,7 +1,7 @@
 package wallet
 
 import (
-	"github.com/awnumar/memguard"
+	"crypto/cipher"
 	"github.com/parallelcointeam/javazacdb"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/block"
@@ -80,49 +80,53 @@ type CKey struct {
 	Pub  []byte
 	Priv []byte
 }
+type DefaultKey struct {
+	Key []byte
+}
 type BAddressBook struct {
-	Pub   *memguard.LockedBuffer
-	Label *memguard.LockedBuffer
+	Pub   []byte
+	Label []byte
 }
 type BMetadata struct {
-	Pub        *memguard.LockedBuffer
+	Pub        []byte
 	Version    uint32
-	CreateTime *memguard.LockedBuffer
+	CreateTime []byte
 }
 type BKey struct {
-	Pub  *memguard.LockedBuffer
-	Priv *memguard.LockedBuffer
+	Pub  []byte
+	Priv []byte
 }
 type BWdata struct {
-	Pub     *memguard.LockedBuffer
-	Created *memguard.LockedBuffer
-	Expires *memguard.LockedBuffer
-	Comment *memguard.LockedBuffer
+	Pub     []byte
+	Created []byte
+	Expires []byte
+	Comment []byte
 }
 type BTx struct {
-	TxHash *memguard.LockedBuffer
-	TxData *memguard.LockedBuffer
+	TxHash []byte
+	TxData []byte
 }
 type BPool struct {
 	Index   uint64
 	Version uint32
-	Time    *memguard.LockedBuffer
-	Pub     *memguard.LockedBuffer
+	Time    []byte
+	Pub     []byte
 }
 type BScript struct {
-	ID   *memguard.LockedBuffer
-	Data *memguard.LockedBuffer
+	ID   []byte
+	Data []byte
 }
 type BAccount struct {
-	Account *memguard.LockedBuffer
+	Account []byte
 	Version int32
-	Pub     *memguard.LockedBuffer
+	Pub     []byte
 }
 type BSetting struct {
 	Name  string
 	Value []byte
 }
 type BinaryFormatted struct {
+	en, de       cipher.BlockMode
 	MasterKey    []MKey
 	AddressBook  []BAddressBook
 	Metadata     []BMetadata
@@ -133,7 +137,7 @@ type BinaryFormatted struct {
 	Script       []BScript
 	Account      []BAccount
 	Setting      []BSetting
-	DefaultKey   *memguard.LockedBuffer
+	DefaultKey   []byte
 	BestBlock    []byte
 	OrderPosNext int64
 	Version      uint32

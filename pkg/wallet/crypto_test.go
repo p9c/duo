@@ -41,5 +41,4 @@ func TestCrypto(t *testing.T) {
 	for i := range s {
 		fmt.Println(s[i], r[i])
 	}
-
 }
