@@ -123,6 +123,7 @@ type BSetting struct {
 	Value []byte
 }
 type BinaryFormatted struct {
+	MasterKey    []MKey
 	AddressBook  []BAddressBook
 	Metadata     []BMetadata
 	Key          []BKey

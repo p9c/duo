@@ -205,6 +205,33 @@ func (imp *Imports) ToBinaryFormatted() (bf *BinaryFormatted) {
 		imp.EncryptData(bf.Key[Len].Pub, imp.WKeys[i].Pub.Key())
 		imp.EncryptData(bf.Key[Len].Priv, imp.WKeys[i].Priv.Key())
 		bf.Wdata = append(bf.Wdata, *new(BWdata))
+		imp.EncryptData(bf.Wdata[i].Pub, imp.WKeys[i].Pub.Key())
+		var tc, te []byte
+		binary.LittleEndian.PutUint64(tc, uint64(imp.WKeys[i].TimeCreated.Unix()))
+		binary.LittleEndian.PutUint64(te, uint64(imp.WKeys[i].TimeExpires.Unix()))
+		imp.EncryptData(bf.Wdata[i].Created, tc)
+		imp.EncryptData(bf.Wdata[i].Expires, te)
+		imp.EncryptData(bf.Wdata[i].Comment, []byte(imp.WKeys[i].Comment))
+	}
+	for i := range imp.Metadata {
+		bf.Metadata = append(bf.Metadata, *new(BMetadata))
+		imp.Metadata[i].Pub.Compress()
+		imp.EncryptData(bf.Metadata[i].Pub, imp.Metadata[i].Pub.Key())
+		bf.Metadata[i].Version = imp.Metadata[i].Version
+		var ct []byte
+		binary.LittleEndian.PutUint64(ct, uint64(imp.Metadata[i].CreateTime.Unix()))
+		imp.EncryptData(bf.Metadata[i].CreateTime, ct)
+	}
+	for i := range imp.MKeys {
+		bf.MasterKey[i] = imp.MKeys[i]
+		// = MKey{
+		// 	MKeyID:       imp.MKeys[i].MKeyID,
+		// 	EncryptedKey: imp.MKeys[i].EncryptedKey,
+		// 	Salt:         imp.MKeys[i].Salt,
+		// 	Method:       imp.MKeys[i].Method,
+		// 	Iterations:   imp.MKeys[i].Iterations,
+		// 	Other:        imp.MKeys[i].Other,
+		// }
 	}
 	return
 }
