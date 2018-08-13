@@ -125,7 +125,8 @@ type BSetting struct {
 	Name  string
 	Value []byte
 }
-type BinaryFormatted struct {
+type EncryptedStore struct {
+	LastLocked   time.Time
 	en, de       cipher.BlockMode
 	MasterKey    []MKey
 	AddressBook  []BAddressBook
@@ -150,7 +151,7 @@ type DB struct {
 	UnlockedUntil int64
 	updateCount   uint64
 	Net           string
-	Data          BinaryFormatted
+	Data          EncryptedStore
 }
 type dB interface {
 	Backup(*Wallet, string) error

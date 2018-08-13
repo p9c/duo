@@ -35,6 +35,6 @@ func TestImport(t *testing.T) {
 	if err != nil {
 		t.Error("failed to import wallet", err)
 	}
-	_ = imp.ToBinaryFormatted()
+	_ = imp.ToEncryptedStore()
 	db.Close()
 }

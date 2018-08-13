@@ -25,7 +25,7 @@ type Imports struct {
 	DefaultKey DefaultKey
 }
 type imports interface {
-	ToBinaryFormatted() (bf BinaryFormatted)
+	ToEncryptedStore() (bf EncryptedStore)
 	EncryptData(dst *memguard.LockedBuffer, src []byte)
 }
 
@@ -185,7 +185,7 @@ func (imp *Imports) EncryptData(dst, src []byte) {
 }
 
 // Converts the raw, unencrypted imports into the secure binary format which has all sensitive data encrypted, for writing the initial wallet when importing from a legacy wallet.dat
-func (imp *Imports) ToBinaryFormatted() (bf BinaryFormatted) {
+func (imp *Imports) ToEncryptedStore() (bf EncryptedStore) {
 	bf.AddressBook = make([]BAddressBook, len(imp.Names))
 	for i := range imp.Names {
 		pub := make([]byte, 48)
