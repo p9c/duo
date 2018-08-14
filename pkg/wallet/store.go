@@ -18,7 +18,7 @@ type Serializable struct {
 type serializable interface {
 	EncryptData()
 	DecryptData()
-	Wipe()
+	Destroy()
 }
 
 // Encrypts data from one variable into another if the encrypter is armed
@@ -33,16 +33,19 @@ func (s *Serializable) EncryptData(dst, src []byte) {
 // Decrypts data from one variable into another if the encrypter is armed
 func (s *Serializable) DecryptData(dst, src []byte) {
 	if s.en != nil {
-		(*s.en).CryptBlocks(dst, src)
+		(*s.de).CryptBlocks(dst, src)
 	} else {
 		dst = src
 	}
 }
 
 // Destroys the sensitive data that may have been created for an AddressBook entry
-func (s *Serializable) Wipe() {
-	for i := range *s.safe {
-		(*s.safe)[i].Destroy()
+func (s *Serializable) Destroy() {
+	if s.safe != nil {
+		r := s.safe
+		for i := range *(r) {
+			(*r)[i].Destroy()
+		}
 	}
 }
 
@@ -83,7 +86,8 @@ type AddressBook struct {
 }
 
 type addressBook interface {
-	Decrypt() (a *AddressBook, err error)
+	Decrypt() (a *AddressBook)
+	Encrypt() (a *AddressBook)
 }
 
 // Decrypt an addressbook record
@@ -91,11 +95,31 @@ func (a *AddressBook) Decrypt() (A AddressBook) {
 	d := make([]*memguard.LockedBuffer, 2)
 	d[0], _ = memguard.NewMutable(len(a.Pub))
 	d[1], _ = memguard.NewMutable(len(a.Label))
-	a.safe = &d
-	a.DecryptData((*a.safe)[0].Buffer(), a.Pub)
-	a.DecryptData((*a.safe)[1].Buffer(), a.Label)
-	A.Pub = (*a.safe)[0].Buffer()
-	A.Label = (*a.safe)[1].Buffer()
+	A.safe = &d
+	A.de, A.en = a.de, a.en
+	A.DecryptData((*A.safe)[0].Buffer(), a.Pub)
+	A.DecryptData((*A.safe)[1].Buffer(), a.Label)
+	A.Pub = (*A.safe)[0].Buffer()[:34]
+	A.Label = (*A.safe)[1].Buffer()
+	return
+}
+
+// Encrypt an addressbook record
+func (a *AddressBook) Encrypt() (A AddressBook) {
+	if a.en != nil {
+		A.Pub, A.Label = make([]byte, 48), make([]byte, len(a.Label))
+		pub := make([]byte, 48)
+		for j := range a.Pub {
+			pub[j] = a.Pub[j]
+		}
+		for j := len(a.Pub); j < 48; j++ {
+			pub[j] = byte(48 - len(a.Pub))
+		}
+		a.EncryptData(A.Pub, pub)
+		a.EncryptData(A.Label, a.Label)
+	} else {
+		A.Pub, A.Label = a.Pub, a.Label
+	}
 	return
 }
 
@@ -112,6 +136,23 @@ type Metadata struct {
 	CreateTime []byte
 }
 
+type metadata interface {
+	Decrypt() (a Metadata)
+}
+
+// Decrypt an addressbook record
+func (m *Metadata) Decrypt() (M Metadata) {
+	d := make([]*memguard.LockedBuffer, 2)
+	d[0], _ = memguard.NewMutable(len(m.Pub))
+	d[1], _ = memguard.NewMutable(len(m.CreateTime))
+	M.safe = &d
+	m.DecryptData((*M.safe)[0].Buffer(), m.Pub)
+	m.DecryptData((*M.safe)[1].Buffer(), m.CreateTime)
+	M.Pub = (*M.safe)[0].Buffer()
+	M.CreateTime = (*M.safe)[1].Buffer()
+	return
+}
+
 // Creates a new
 func NewMetadata() (e Metadata) {
 	return
@@ -122,6 +163,23 @@ type Key struct {
 	Serializable
 	Pub  []byte
 	Priv []byte
+}
+
+type ikey interface {
+	Decrypt() (a Metadata)
+}
+
+// Decrypt an addressbook record
+func (k *Key) Decrypt() (K Key) {
+	d := make([]*memguard.LockedBuffer, 2)
+	K.safe = &d
+	d[0], _ = memguard.NewMutable(len(k.Pub))
+	k.DecryptData((*K.safe)[0].Buffer(), k.Pub)
+	K.Pub = (*K.safe)[0].Buffer()
+	d[1], _ = memguard.NewMutable(len(k.Priv))
+	k.DecryptData((*K.safe)[1].Buffer(), k.Priv)
+	K.Priv = (*K.safe)[1].Buffer()
+	return
 }
 
 // Creates a new Key

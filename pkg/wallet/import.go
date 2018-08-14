@@ -199,6 +199,12 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (imp Imports) {
 			}
 		}
 		if pass != nil {
+			ckey, iv, _ := (*imp.masterKey)[0].DeriveCipher(pass)
+			block, _ := aes.NewCipher(ckey.Buffer()[:32])
+			de := cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])
+			en := cipher.NewCBCEncrypter(block, iv[:block.BlockSize()])
+			imp.de = &de
+			imp.en = &en
 			b := make([][]byte, len(imp.CKeys))
 			for i := range b {
 				b[i] = imp.CKeys[i].Priv
@@ -207,12 +213,6 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (imp Imports) {
 			for i := range b {
 				imp.CKeys[i].Priv = r[i]
 			}
-			ckey, iv, _ := (*imp.masterKey)[0].DeriveCipher(pass)
-			block, _ := aes.NewCipher(ckey.Buffer()[:32])
-			de := cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])
-			en := cipher.NewCBCEncrypter(block, iv[:block.BlockSize()])
-			imp.de = &de
-			imp.en = &en
 		} else {
 
 		}
@@ -228,14 +228,20 @@ func (imp *Imports) ToEncryptedStore() (es EncryptedStore) {
 	es.LastLocked = time.Now()
 	for i := range imp.Names {
 		pub := make([]byte, 48)
-		lmod := len(imp.Names[i].Name) % 16
-		llen := len(imp.Names[i].Name) + 16 - lmod
-		label := make([]byte, llen)
 		for j := range imp.Names[i].Addr {
 			pub[j] = imp.Names[i].Addr[j]
 		}
+		for j := len(imp.Names[i].Addr); j < 48; j++ {
+			pub[j] = byte(48 - len(imp.Names[i].Addr))
+		}
+		lmod := len(imp.Names[i].Name) % 16
+		llen := len(imp.Names[i].Name) + 16 - lmod
+		label := make([]byte, llen)
 		for j := range imp.Names[i].Name {
 			label[j] = imp.Names[i].Name[j]
+		}
+		for j := len(imp.Names[i].Name); j < llen; j++ {
+			label[j] = byte(llen - len(imp.Names[i].Name))
 		}
 		es.AddressBook = append(es.AddressBook, NewAddressBook())
 		es.AddressBook[i].Pub = make([]byte, 48)

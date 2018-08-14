@@ -38,12 +38,28 @@ func TestImport(t *testing.T) {
 	}
 	es := imp.ToEncryptedStore()
 	for i := range es.AddressBook {
-		fmt.Println(ToJSON(es.AddressBook[i]))
+		fmt.Println("original   ", string(imp.Names[i].Addr))
+		fmt.Println("encrypted  ", (es.AddressBook[i].Pub))
+		a := es.AddressBook[i].Decrypt()
+		fmt.Println("decrypted  ", string(a.Pub))
+		// a = a.Encrypt()
+		b := make([]byte, 14)
+		for j := range b {
+			b[j] = 14
+		}
+		pub := make([]byte, 48)
+		es.EncryptData(pub, append(a.Pub, b...))
+		fmt.Println("reencrypted", pub)
+		a.Destroy()
 	}
-	for i := range es.AddressBook {
-		fmt.Println(ToJSON(es.AddressBook[i].Decrypt()))
-		es.AddressBook[i].Wipe()
-	}
+	test := []byte("this is a test! ")
+	fmt.Println(len(test), test, string(test))
+	testenc := make([]byte, 16)
+	testdec := make([]byte, 32)
+	es.EncryptData(testenc, test)
+	fmt.Println(len(testenc), testenc, string(testenc))
+	es.DecryptData(testdec, testenc)
+	fmt.Println(len(testdec), testdec, string(testdec))
 	db.Close()
 }
 
