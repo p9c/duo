@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"crypto/cipher"
 	"github.com/parallelcointeam/javazacdb"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/block"
@@ -48,101 +47,33 @@ func init() {
 	Filename = *args.DataDir + "/" + *args.Wallet
 }
 
-type Name struct {
+type BName struct {
 	Addr []byte
 	Name []byte
-}
-type Metadata struct {
-	Pub        *key.Pub
-	Version    uint32
-	CreateTime time.Time
-}
-type Key struct {
-	Pub  *key.Pub
-	Priv *key.Priv
-}
-type WKey struct {
-	Pub         *key.Pub
-	Priv        *key.Priv
-	TimeCreated time.Time
-	TimeExpires time.Time
-	Comment     string
-}
-type MKey struct {
-	MKeyID       int64
-	EncryptedKey []byte
-	Salt         []byte
-	Method       uint32
-	Iterations   uint32
-	Other        []byte
-}
-type CKey struct {
-	Pub  []byte
-	Priv []byte
-}
-type DefaultKey struct {
-	Key []byte
-}
-type BAddressBook struct {
-	Pub   []byte
-	Label []byte
 }
 type BMetadata struct {
 	Pub        []byte
 	Version    uint32
-	CreateTime []byte
+	CreateTime time.Time
 }
 type BKey struct {
 	Pub  []byte
 	Priv []byte
 }
-type BWdata struct {
-	Pub     []byte
-	Created []byte
-	Expires []byte
-	Comment []byte
+type BWKey struct {
+	Pub         []byte
+	Priv        []byte
+	TimeCreated time.Time
+	TimeExpires time.Time
+	Comment     string
 }
-type BTx struct {
-	TxHash []byte
-	TxData []byte
+
+type BCKey struct {
+	Pub  []byte
+	Priv []byte
 }
-type BPool struct {
-	Index   uint64
-	Version uint32
-	Time    []byte
-	Pub     []byte
-}
-type BScript struct {
-	ID   []byte
-	Data []byte
-}
-type BAccount struct {
-	Account []byte
-	Version int32
-	Pub     []byte
-}
-type BSetting struct {
-	Name  string
-	Value []byte
-}
-type EncryptedStore struct {
-	LastLocked   time.Time
-	en, de       cipher.BlockMode
-	MasterKey    []MKey
-	AddressBook  []BAddressBook
-	Metadata     []BMetadata
-	Key          []BKey
-	Wdata        []BWdata
-	Tx           []BTx
-	Pool         []BPool
-	Script       []BScript
-	Account      []BAccount
-	Setting      []BSetting
-	DefaultKey   []byte
-	BestBlock    []byte
-	OrderPosNext int64
-	Version      uint32
-	MinVersion   uint32
+type BDefaultKey struct {
+	Key []byte
 }
 
 // DB is the structure for encryptable wallet database

@@ -18,7 +18,7 @@ func (w *Wallet) AddToWallet(Tx) (success bool) { return }
 // AddToWalletIfInvolvingMe -
 func (w *Wallet) AddToWalletIfInvolvingMe(*Uint.U256, *tx.Transaction, *block.Block, bool, bool) (success bool) { return }
 // AvailableCoins -
-func (w *Wallet) AvailableCoins([]Output, bool) { }
+func (w *Wallet) AvailableCoins([]TxOutput, bool) { }
 // CanSupportFeature -
 func (w *Wallet) CanSupportFeature(int) (success bool) { return }
 // ChangeWalletPassphrase -
@@ -130,7 +130,7 @@ func (w *Wallet) ReturnKey(int64) { }
 // ScanForWalletTransactions -
 func (w *Wallet) ScanForWalletTransactions(*block.Index, bool) int { return 0 }
 // SelectCoinsMinConf -
-func (w *Wallet) SelectCoinsMinConf(int64, int, int, []Output) (err error) { return }
+func (w *Wallet) SelectCoinsMinConf(int64, int, int, []TxOutput) (err error) { return }
 // SendMoney -
 func (w *Wallet) SendMoney(*key.Script, int64, *Tx, bool) string { return "" }
 // SendMoneyToDestination -

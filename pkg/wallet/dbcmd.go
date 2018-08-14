@@ -51,7 +51,7 @@ func (db *DB) Dump() (dump string) {
 		id, _ := strconv.Atoi(r.Key())
 		ek := encryptedkey
 		ss, _ := hex.DecodeString(salt)
-		m := &MKey{
+		m := &MasterKey{
 			MKeyID:       int64(id),
 			EncryptedKey: ek,
 			Salt:         ss,
@@ -318,14 +318,14 @@ func (db *DB) WriteDefaultKey(p *key.Pub) (err error) {
 
 // WriteKey writes a new key to the wallet
 func (db *DB) WriteKey(key *Key, meta *KeyMetadata) (err error) {
-	db.Table(K[Fkey]).Set(string(key.Pub.Key()), key)
-	db.Table(K[Fkeymeta]).Set(string(key.Pub.Key()), meta)
+	db.Table(K[Fkey]).Set(string(key.Pub), key)
+	db.Table(K[Fkeymeta]).Set(string(key.Pub), meta)
 	db.updateCount++
 	return
 }
 
 // WriteMasterKey writes a MasterKey to the wallet
-func (db *DB) WriteMasterKey(mkey *MKey) (err error) {
+func (db *DB) WriteMasterKey(mkey *MasterKey) (err error) {
 	db.Table(K[Fmkey]).Set(fmt.Sprint(mkey.MKeyID), mkey)
 	db.updateCount++
 	return
@@ -337,8 +337,8 @@ func (db *DB) WriteMinVersion(int) (err error) {
 }
 
 // WriteName writes a new name to the database associated with an address
-func (db *DB) WriteName(n *Name) (err error) {
-	db.Table(K[Fname]).Set(string(n.Addr), n.Name)
+func (db *DB) WriteName(n *AddressBook) (err error) {
+	db.Table(K[Fname]).Set(string(n.Pub), n.Label)
 	db.updateCount++
 	return
 }
@@ -379,7 +379,7 @@ func (db *DB) WriteTx(u *Uint.U256, t []byte) (err error) {
 }
 
 // WriteWalletKey writes a 'wkey', which contains extra metadata
-func (db *DB) WriteWalletKey(wkey *WKey) (err error) {
-	db.Table(K[Fwkey]).Set(string(wkey.Pub.Key()), wkey)
-	return
-}
+// func (db *DB) WriteWalletKey(wkey *WKey) (err error) {
+// db.Table(K[Fwkey]).Set(string(wkey.Pub.Key()), wkey)
+// 	return
+// }

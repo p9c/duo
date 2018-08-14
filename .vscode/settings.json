@@ -42,7 +42,7 @@
         "-v"
     ],
     "go.testTimeout": "30s",
-    "editor.minimap.enabled": false,
+    "editor.minimap.enabled": true,
     "workbench.sideBar.location": "left",
     "editor.wordWrap": "on",
     "editor.cursorStyle": "block",

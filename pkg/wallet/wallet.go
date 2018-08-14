@@ -1,10 +1,12 @@
 package wallet
+
 import (
+	"gitlab.com/parallelcoin/duo/pkg/Uint"
 	"gitlab.com/parallelcoin/duo/pkg/block"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/tx"
-	"gitlab.com/parallelcoin/duo/pkg/Uint"
 )
+
 const (
 	// FeatureBase is the base version number for a wallet
 	FeatureBase = 10500
@@ -15,10 +17,11 @@ const (
 	// FeatureLatest is the newest version of the wallet
 	FeatureLatest = 60000
 )
+
 // Wallet controls access to a wallet.db file containing keys and data relating to accounts and addresses
 type Wallet struct {
-	key.Store
-	DB        *DB
+	EncryptedStore
+	DB                  *DB
 	version, maxVersion int
 	FileBacked          bool
 	File                string
@@ -41,7 +44,7 @@ type wallet interface {
 	AddScript(*key.Script) bool
 	AddToWallet(Tx) bool
 	AddToWalletIfInvolvingMe(*Uint.U256, *tx.Transaction, *block.Block, bool, bool) bool
-	AvailableCoins([]Output, bool)
+	AvailableCoins([]TxOutput, bool)
 	CanSupportFeature(int) bool
 	ChangeWalletPassphrase(string, string) bool
 	CommitTransaction(*Tx, *ReserveKey) bool
@@ -97,7 +100,7 @@ type wallet interface {
 	ReserveKeyFromKeyPool(int64, *KeyPool)
 	ReturnKey(int64)
 	ScanForWalletTransactions(*block.Index, bool) int
-	SelectCoinsMinConf(int64, int, int, []Output) error
+	SelectCoinsMinConf(int64, int, int, []TxOutput) error
 	SendMoney(*key.Script, int64, *Tx, bool) string
 	SendMoneyToDestination(*key.TxDestination) string
 	SetAddressBookName(*key.TxDestination, string) bool
@@ -112,6 +115,7 @@ type wallet interface {
 	UpdatedTransaction(*Uint.U256)
 	WalletUpdateSpent(*tx.Transaction)
 }
+
 // New returns a new Wallet
 func New() *Wallet {
 	return &Wallet{
@@ -122,6 +126,7 @@ func New() *Wallet {
 		OrderPosNext:   0,
 	}
 }
+
 // NewFromFile makes a new wallet by importing a wallet.dat file
 func NewFromFile(filename string) *Wallet {
 	return &Wallet{

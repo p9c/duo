@@ -1,37 +1,39 @@
 package wallet
 
 import (
-	"unsafe"
-	"github.com/awnumar/memguard"
 	"crypto/aes"
-	"crypto/sha512"
 	"crypto/cipher"
+	"crypto/sha512"
+	"github.com/awnumar/memguard"
+	"unsafe"
 )
+
 // Encrypts plaintext using the masterkey and a password
-func (m *MKey) Encrypt(p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
+func (m *MasterKey) Encrypt(p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
 	return m.encDec(true, p, b...)
 }
 
-// Decrypts a ciphertext using the masterkey and password
-func (m *MKey) Decrypt(p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
+//
+func (m *MasterKey) Decrypt(p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
 	return m.encDec(false, p, b...)
 }
-func (m *MKey) encDec(enc bool, pass *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
+func (m *MasterKey) encDec(enc bool, pass *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
 	ckey, iv, err := m.DeriveCipher(pass)
 	block, err := aes.NewCipher(ckey.Buffer()[:32])
-   de := cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])
+	de := cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])
 	r = make([][]byte, len(b))
 	for i := range b {
-      r[i] = make([]byte, len(b[i]))
-      de.CryptBlocks(r[i], b[i])
-   }
+		r[i] = make([]byte, len(b[i]))
+		de.CryptBlocks(r[i], b[i])
+	}
 	return
 }
 
-func (m *MKey) DeriveCipher(pass *memguard.LockedBuffer) (k *memguard.LockedBuffer, iv []byte, err error) {
+// Decrypts a ciphertext using the masterkey and password
+func (m *MasterKey) DeriveCipher(pass *memguard.LockedBuffer) (k *memguard.LockedBuffer, iv []byte, err error) {
 	var seed *memguard.LockedBuffer
 	pLen, sLen := len(pass.Buffer()), len(m.Salt)
-	if pLen + sLen > 64 {
+	if pLen+sLen > 64 {
 		sLen = 128 - pLen - sLen
 		seed, err = memguard.NewMutable(128)
 	} else {
@@ -66,10 +68,9 @@ func (m *MKey) DeriveCipher(pass *memguard.LockedBuffer) (k *memguard.LockedBuff
 	ckey, ivb, err := memguard.Split(k, 32)
 	block, err := aes.NewCipher(ckey.Buffer())
 	iv = ivb.Buffer()[:block.BlockSize()]
-   mode := cipher.NewCBCDecrypter(block, iv)
+	mode := cipher.NewCBCDecrypter(block, iv)
 	mode.CryptBlocks(k.Buffer(), m.EncryptedKey)
 	l.Destroy()
 	seed.Destroy()
 	return
 }
-

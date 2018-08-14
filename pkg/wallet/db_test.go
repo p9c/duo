@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"fmt"
 	"github.com/awnumar/memguard"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"testing"
@@ -35,6 +36,14 @@ func TestImport(t *testing.T) {
 	if err != nil {
 		t.Error("failed to import wallet", err)
 	}
-	_ = imp.ToEncryptedStore()
+	// j, _ := json.MarshalIndent(imp, "", "    ")
+	// fmt.Println(string(j))
+	j := string(imp.ToEncryptedStore().ToJSON())
+	fmt.Println(j)
 	db.Close()
+}
+
+func TestJSON(t *testing.T) {
+	es := new(EncryptedStore)
+	fmt.Println(string(es.ToJSON()))
 }
