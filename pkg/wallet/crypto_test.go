@@ -24,7 +24,7 @@ func TestCrypto(t *testing.T) {
 	for i := range imp.CKeys {
 		b[i] = imp.CKeys[i].Priv
 	}
-	r, _ := imp.masterKey[0].Decrypt(pass, b...)
+	r, _ := (*imp.masterKey)[0].Decrypt(pass, b...)
 	fmt.Println("Decrypted")
 	for i := range r {
 		fmt.Println(imp.CKeys[i].Pub, r[i])
@@ -37,7 +37,7 @@ func TestCrypto(t *testing.T) {
 		}
 	}
 	fmt.Println("\nEncrypted:")
-	s, _ := imp.masterKey[0].Encrypt(pass, pub...)
+	s, _ := (*imp.masterKey)[0].Encrypt(pass, pub...)
 	for i := range s {
 		fmt.Println(s[i], r[i])
 	}

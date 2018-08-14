@@ -37,12 +37,17 @@ func TestImport(t *testing.T) {
 		t.Error("failed to import wallet", err)
 	}
 	es := imp.ToEncryptedStore()
-	es.SetParent(&es)
-	fmt.Println(es.ToJSON())
+	for i := range es.AddressBook {
+		fmt.Println(ToJSON(es.AddressBook[i]))
+	}
+	for i := range es.AddressBook {
+		fmt.Println(ToJSON(es.AddressBook[i].Decrypt()))
+		es.AddressBook[i].Wipe()
+	}
 	db.Close()
 }
 
 func TestJSON(t *testing.T) {
 	es := new(EncryptedStore)
-	fmt.Println(string(es.ToJSON()))
+	fmt.Println(string(ToJSON(es)))
 }

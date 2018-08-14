@@ -53,7 +53,7 @@ type BDefaultKey struct {
 
 // A collection of tables from a wallet.dat file with optional en/decryptors
 type Imports struct {
-	*Serializable
+	Serializable
 	Names      []BName
 	Metadata   []BMetadata
 	Keys       []BKey
@@ -62,13 +62,12 @@ type Imports struct {
 	DefaultKey BDefaultKey
 }
 type imports interface {
-	ToEncryptedStore() (bf EncryptedStore)
+	ToEncryptedStore() (es EncryptedStore)
 	EncryptData(dst *memguard.LockedBuffer, src []byte)
 }
 
 // Import reads an existing wallet.dat and returns all the keys and address data in it. If a password is given, the private keys in the CKeys array are decrypted and the encrypter/decrypter functions are armed.
 func Import(pass *memguard.LockedBuffer, filename ...string) (imp Imports) {
-	imp.Serializable = new(Serializable)
 	var db = &BDB{}
 	if len(filename) == 0 {
 		home, _ := homedir.Dir()
@@ -172,7 +171,11 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (imp Imports) {
 					e.Method = method
 					e.Iterations = iterations
 					e.Other = other
-					imp.masterKey = append(imp.masterKey, e)
+					if imp.masterKey == nil {
+						imp.masterKey = new([]*MasterKey)
+					}
+					mk := append(*imp.masterKey, e)
+					(*imp.masterKey) = mk
 				case "ckey":
 					pubLen := rec[0][idLen] + 1
 					pub := rec[0][idLen+1 : pubLen+idLen]
@@ -200,32 +203,29 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (imp Imports) {
 			for i := range b {
 				b[i] = imp.CKeys[i].Priv
 			}
-			r, _ := imp.masterKey[0].Decrypt(pass, b...)
+			r, _ := (*imp.masterKey)[0].Decrypt(pass, b...)
 			for i := range b {
 				imp.CKeys[i].Priv = r[i]
 			}
-			ckey, iv, _ := imp.masterKey[0].DeriveCipher(pass)
+			ckey, iv, _ := (*imp.masterKey)[0].DeriveCipher(pass)
 			block, _ := aes.NewCipher(ckey.Buffer()[:32])
-			imp.de = cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])
-			imp.en = cipher.NewCBCEncrypter(block, iv[:block.BlockSize()])
+			de := cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])
+			en := cipher.NewCBCEncrypter(block, iv[:block.BlockSize()])
+			imp.de = &de
+			imp.en = &en
+		} else {
+
 		}
 	}
 	return
 }
 
-// Encrypts data from one variable into another if the encrypter is armed
-func (imp *Imports) EncryptData(dst, src []byte) {
-	if imp.en != nil {
-		imp.en.CryptBlocks(dst, src)
-	} else {
-		dst = src
-	}
-}
-
 // Converts the raw, unencrypted imports into the secure binary format which has all sensitive data encrypted, for writing the initial wallet when importing from a legacy wallet.dat
-func (imp *Imports) ToEncryptedStore() (bf *EncryptedStore) {
-	bf = new(EncryptedStore)
-	bf.LastLocked = time.Now()
+func (imp *Imports) ToEncryptedStore() (es EncryptedStore) {
+	es.en = imp.en
+	es.de = imp.de
+	es.masterKey = imp.masterKey
+	es.LastLocked = time.Now()
 	for i := range imp.Names {
 		pub := make([]byte, 48)
 		lmod := len(imp.Names[i].Name) % 16
@@ -237,58 +237,76 @@ func (imp *Imports) ToEncryptedStore() (bf *EncryptedStore) {
 		for j := range imp.Names[i].Name {
 			label[j] = imp.Names[i].Name[j]
 		}
-		bf.AddressBook = append(bf.AddressBook, *new(AddressBook))
-		bf.AddressBook[i].Pub = make([]byte, 48)
-		bf.AddressBook[i].Label = make([]byte, llen)
-		imp.EncryptData(bf.AddressBook[i].Pub, pub)
-		imp.EncryptData(bf.AddressBook[i].Label, label)
+		es.AddressBook = append(es.AddressBook, NewAddressBook())
+		es.AddressBook[i].Pub = make([]byte, 48)
+		es.AddressBook[i].Label = make([]byte, llen)
+		es.EncryptData(es.AddressBook[i].Pub, pub)
+		es.EncryptData(es.AddressBook[i].Label, label)
+		es.AddressBook[i].en = imp.en
+		es.AddressBook[i].de = imp.de
+		es.AddressBook[i].masterKey = imp.masterKey
 	}
 	for i := range imp.Keys {
+		es.Key = append(es.Key, NewKey())
 		pub := append(imp.Keys[i].Pub, make([]byte, 15)...)
 		priv := imp.Keys[i].Priv
-		imp.EncryptData(bf.Key[i].Pub, pub)
-		imp.EncryptData(bf.Key[i].Priv, priv)
+		es.EncryptData(es.Key[i].Pub, pub)
+		es.EncryptData(es.Key[i].Priv, priv)
+		es.Key[i].en = imp.en
+		es.Key[i].de = imp.de
+		es.Key[i].masterKey = imp.masterKey
+
 	}
 	for i := range imp.CKeys {
-		Len := len(bf.Key)
-		bf.Key = append(bf.Key, *new(Key))
-		bf.Key[Len].Pub = make([]byte, 48)
-		bf.Key[Len].Priv = make([]byte, 48)
-		imp.EncryptData(bf.Key[Len].Pub, append(imp.CKeys[i].Pub, make([]byte, 15)...))
-		imp.EncryptData(bf.Key[Len].Priv, imp.CKeys[i].Priv)
+		Len := len(es.Key)
+		es.Key = append(es.Key, NewKey())
+		es.Key[Len].Pub = make([]byte, 48)
+		es.Key[Len].Priv = make([]byte, 48)
+		es.EncryptData(es.Key[Len].Pub, append(imp.CKeys[i].Pub, make([]byte, 15)...))
+		es.EncryptData(es.Key[Len].Priv, imp.CKeys[i].Priv)
+		es.Key[i].en = imp.en
+		es.Key[i].de = imp.de
+		es.Key[i].masterKey = imp.masterKey
+
 	}
 	for i := range imp.WKeys {
-		bf.Key = append(bf.Key, *new(Key))
-		k := bf.Key
+		es.Key = append(es.Key, NewKey())
+		k := es.Key
 		Len := len(k)
-		imp.EncryptData(k[Len].Pub, imp.WKeys[i].Pub)
-		imp.EncryptData(k[Len].Priv, imp.WKeys[i].Priv)
-		bf.Wdata = append(bf.Wdata, *new(Wdata))
-		imp.EncryptData(bf.Wdata[i].Pub, imp.WKeys[i].Pub)
+		es.EncryptData(k[Len].Pub, imp.WKeys[i].Pub)
+		es.EncryptData(k[Len].Priv, imp.WKeys[i].Priv)
+		es.Wdata = append(es.Wdata, *new(Wdata))
+		es.EncryptData(es.Wdata[i].Pub, imp.WKeys[i].Pub)
 		var tc, te []byte
 		binary.LittleEndian.PutUint64(tc, uint64(imp.WKeys[i].TimeCreated.Unix()))
 		binary.LittleEndian.PutUint64(te, uint64(imp.WKeys[i].TimeExpires.Unix()))
-		imp.EncryptData(bf.Wdata[i].Created, tc)
-		imp.EncryptData(bf.Wdata[i].Expires, te)
-		imp.EncryptData(bf.Wdata[i].Comment, []byte(imp.WKeys[i].Comment))
+		es.EncryptData(es.Wdata[i].Created, tc)
+		es.EncryptData(es.Wdata[i].Expires, te)
+		es.EncryptData(es.Wdata[i].Comment, []byte(imp.WKeys[i].Comment))
+		es.Key[i].en = imp.en
+		es.Key[i].de = imp.de
+		es.Key[i].masterKey = imp.masterKey
 	}
 	for i := range imp.Metadata {
-		bf.Metadata = append(bf.Metadata, *new(Metadata))
+		es.Metadata = append(es.Metadata, *new(Metadata))
 		pub := imp.Metadata[i].Pub
-		bf.Metadata[i].Pub = make([]byte, 48)
-		imp.EncryptData(bf.Metadata[i].Pub, append(pub, make([]byte, 15)...))
-		bf.Metadata[i].Version = imp.Metadata[i].Version
+		es.Metadata[i].Pub = make([]byte, 48)
+		es.EncryptData(es.Metadata[i].Pub, append(pub, make([]byte, 15)...))
+		es.Metadata[i].Version = imp.Metadata[i].Version
 		ct := make([]byte, 8)
 		binary.LittleEndian.PutUint64(ct, uint64(imp.Metadata[i].CreateTime.Unix()))
-		bf.Metadata[i].CreateTime = make([]byte, 16)
-		imp.EncryptData(bf.Metadata[i].CreateTime, append(ct, make([]byte, 8)...))
+		es.Metadata[i].CreateTime = make([]byte, 16)
+		es.EncryptData(es.Metadata[i].CreateTime, append(ct, make([]byte, 8)...))
+		es.Metadata[i].en = imp.en
+		es.Metadata[i].de = imp.de
+		es.Metadata[i].masterKey = imp.masterKey
 	}
-	for i := range imp.masterKey {
-		bf.masterKey = append(bf.masterKey, new(MasterKey))
-		bf.masterKey[i] = imp.masterKey[i]
+	for i := range *imp.masterKey {
+		mk := NewMasterKey()
+		*es.masterKey = append(*es.masterKey, &mk)
+		(*es.masterKey)[i] = (*imp.masterKey)[i]
 	}
-	bf.MasterKey = bf.masterKey
-	bf.DefaultKey = make([]byte, 48)
-	imp.EncryptData(bf.DefaultKey, append(imp.DefaultKey.Key, make([]byte, 15)...))
+	es.DefaultKey = make([]byte, 48)
+	es.EncryptData(es.DefaultKey, append(imp.DefaultKey.Key, make([]byte, 15)...))
 	return
 }
