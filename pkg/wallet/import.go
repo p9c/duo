@@ -12,15 +12,52 @@ import (
 	"time"
 )
 
+// Stores an address book entry in a wallet.dat
+type BName struct {
+	Addr []byte
+	Name []byte
+}
+
+// Stores key metadata in a wallet.dat
+type BMetadata struct {
+	Pub        []byte
+	Version    uint32
+	CreateTime time.Time
+}
+
+// Stores unencrypted keys in a wallet.dat
+type BKey struct {
+	Pub  []byte
+	Priv []byte
+}
+
+// An unencrypted key pair with extra metadata for managing expiry in a wallet.dat
+type BWKey struct {
+	Pub         []byte
+	Priv        []byte
+	TimeCreated time.Time
+	TimeExpires time.Time
+	Comment     string
+}
+
+// A key pair with plaintext public key and AES-256-CBC encrypted private key
+type BCKey struct {
+	Pub  []byte
+	Priv []byte
+}
+
+// Stores the default key that will appear in a wallet interface when creating a payment request
+type BDefaultKey struct {
+	Key []byte
+}
+
 // A collection of tables from a wallet.dat file with optional en/decryptors
 type Imports struct {
-	en         cipher.BlockMode
-	de         cipher.BlockMode
+	*Serializable
 	Names      []BName
 	Metadata   []BMetadata
 	Keys       []BKey
 	WKeys      []BWKey
-	MKeys      []MasterKey
 	CKeys      []BCKey
 	DefaultKey BDefaultKey
 }
@@ -31,6 +68,7 @@ type imports interface {
 
 // Import reads an existing wallet.dat and returns all the keys and address data in it. If a password is given, the private keys in the CKeys array are decrypted and the encrypter/decrypter functions are armed.
 func Import(pass *memguard.LockedBuffer, filename ...string) (imp Imports) {
+	imp.Serializable = new(Serializable)
 	var db = &BDB{}
 	if len(filename) == 0 {
 		home, _ := homedir.Dir()
@@ -127,14 +165,14 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (imp Imports) {
 					method := binary.LittleEndian.Uint32(rec[1][sLen+ekLen+1 : sLen+ekLen+5])
 					iterations := binary.LittleEndian.Uint32(rec[1][sLen+ekLen+5 : sLen+ekLen+9])
 					other := rec[1][sLen+ekLen+9:]
-					var e MasterKey
+					e := new(MasterKey)
 					e.MKeyID = keyID
 					e.EncryptedKey = eKey
 					e.Salt = salt
 					e.Method = method
 					e.Iterations = iterations
 					e.Other = other
-					imp.MKeys = append(imp.MKeys, e)
+					imp.masterKey = append(imp.masterKey, e)
 				case "ckey":
 					pubLen := rec[0][idLen] + 1
 					pub := rec[0][idLen+1 : pubLen+idLen]
@@ -162,11 +200,11 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (imp Imports) {
 			for i := range b {
 				b[i] = imp.CKeys[i].Priv
 			}
-			r, _ := imp.MKeys[0].Decrypt(pass, b...)
+			r, _ := imp.masterKey[0].Decrypt(pass, b...)
 			for i := range b {
 				imp.CKeys[i].Priv = r[i]
 			}
-			ckey, iv, _ := imp.MKeys[0].DeriveCipher(pass)
+			ckey, iv, _ := imp.masterKey[0].DeriveCipher(pass)
 			block, _ := aes.NewCipher(ckey.Buffer()[:32])
 			imp.de = cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])
 			imp.en = cipher.NewCBCEncrypter(block, iv[:block.BlockSize()])
@@ -245,10 +283,11 @@ func (imp *Imports) ToEncryptedStore() (bf *EncryptedStore) {
 		bf.Metadata[i].CreateTime = make([]byte, 16)
 		imp.EncryptData(bf.Metadata[i].CreateTime, append(ct, make([]byte, 8)...))
 	}
-	for i := range imp.MKeys {
-		bf.MasterKey = append(bf.MasterKey, *new(MasterKey))
-		bf.MasterKey[i] = imp.MKeys[i]
+	for i := range imp.masterKey {
+		bf.masterKey = append(bf.masterKey, new(MasterKey))
+		bf.masterKey[i] = imp.masterKey[i]
 	}
+	bf.MasterKey = bf.masterKey
 	bf.DefaultKey = make([]byte, 48)
 	imp.EncryptData(bf.DefaultKey, append(imp.DefaultKey.Key, make([]byte, 15)...))
 	return

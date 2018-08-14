@@ -34,10 +34,6 @@ const (
 var (
 	// The default filename being in the data directory for the wallet file
 	Filename string
-	// The time delay after which the wallet will automatically lock
-	Locktime = time.Minute * 15
-	// Db is a shared wallet for the typical application using one
-	Db DB
 	// The string identifiers of the various tables in a wallet database
 	KeyNames = []string{"name", "tx", "acentry", "key", "wkey", "mkey", "ckey", "keymeta", "defaultkey", "pool", "version", "cscript", "orderposnext", "acc", "bestblock", "minversion"}
 	K        = KeyNames
@@ -45,35 +41,6 @@ var (
 
 func init() {
 	Filename = *args.DataDir + "/" + *args.Wallet
-}
-
-type BName struct {
-	Addr []byte
-	Name []byte
-}
-type BMetadata struct {
-	Pub        []byte
-	Version    uint32
-	CreateTime time.Time
-}
-type BKey struct {
-	Pub  []byte
-	Priv []byte
-}
-type BWKey struct {
-	Pub         []byte
-	Priv        []byte
-	TimeCreated time.Time
-	TimeExpires time.Time
-	Comment     string
-}
-
-type BCKey struct {
-	Pub  []byte
-	Priv []byte
-}
-type BDefaultKey struct {
-	Key []byte
 }
 
 // DB is the structure for encryptable wallet database

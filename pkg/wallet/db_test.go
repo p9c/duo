@@ -36,10 +36,9 @@ func TestImport(t *testing.T) {
 	if err != nil {
 		t.Error("failed to import wallet", err)
 	}
-	// j, _ := json.MarshalIndent(imp, "", "    ")
-	// fmt.Println(string(j))
-	j := string(imp.ToEncryptedStore().ToJSON())
-	fmt.Println(j)
+	es := imp.ToEncryptedStore()
+	es.SetParent(&es)
+	fmt.Println(es.ToJSON())
 	db.Close()
 }
 
