@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"crypto/aes"
 	"crypto/cipher"
 	"encoding/json"
 	"github.com/awnumar/memguard"
@@ -9,44 +10,34 @@ import (
 
 // Abstract interface embeddable in other types that you wish to convert to other encodings such as JSON and potentially any type of desired encoding, as well as to enable encryption of sensitive data while it is not being utilised
 type Serializable struct {
-	masterKey *[]*MasterKey
-	en        *cipher.BlockMode
-	de        *cipher.BlockMode
-	safe      *[]*memguard.LockedBuffer
+	armed     *MasterKey
+	masterKey []*MasterKey
+	safe      []*memguard.LockedBuffer
+	ckey      *memguard.LockedBuffer
+	iv        []byte
 }
 
 type serializable interface {
-	EncryptData()
-	DecryptData()
-	Destroy()
+	Lock()
+	Unlock(p *memguard.LockedBuffer)
+	Copy() (S *Serializable)
 }
 
-// Encrypts data from one variable into another if the encrypter is armed
-func (s *Serializable) EncryptData(dst, src []byte) {
-	if s.en != nil {
-		(*s.en).CryptBlocks(dst, src)
-	} else {
-		dst = src
-	}
-}
-
-// Decrypts data from one variable into another if the encrypter is armed
-func (s *Serializable) DecryptData(dst, src []byte) {
-	if s.en != nil {
-		(*s.de).CryptBlocks(dst, src)
-	} else {
-		dst = src
-	}
-}
-
-// Destroys the sensitive data that may have been created for an AddressBook entry
-func (s *Serializable) Destroy() {
+// Locks the sensitive data that may have been created for an serializable object
+func (s *Serializable) Lock() {
 	if s.safe != nil {
-		r := s.safe
-		for i := range *(r) {
-			(*r)[i].Destroy()
-		}
+		DeleteBuffers(s.safe...)
+		DeleteBuffer(s.ckey)
 	}
+}
+
+// Copies an armed Serializable so the copy has the same cipher info
+func (s *Serializable) Copy() (S Serializable) {
+	S.armed = s.armed
+	S.ckey = s.ckey
+	S.iv = s.iv
+	// S.masterKey = &s.masterKey
+	return
 }
 
 // Converts an object into a JSON string
@@ -64,13 +55,57 @@ func (s *Serializable) FromJSON(j string) (J string, err error) {
 
 // Stores the details of an encryption master key for a wallet
 type MasterKey struct {
-	Serializable
 	MKeyID       int64
 	EncryptedKey []byte
 	Salt         []byte
 	Method       uint32
 	Iterations   uint32
 	Other        []byte
+}
+
+// Encrypts plaintext using the masterkey and a password
+func (m *MasterKey) Encrypt(ckey *memguard.LockedBuffer, iv []byte, b ...*memguard.LockedBuffer) (r []*memguard.LockedBuffer, err error) {
+	return encDec(true, ckey, iv, b...)
+}
+
+//Decrypts ciphertext using the masterkey and a password
+func (m *MasterKey) Decrypt(ckey *memguard.LockedBuffer, iv []byte, b ...[]byte) (r []*memguard.LockedBuffer, err error) {
+	B := make([]*memguard.LockedBuffer, len(b))
+	for i := range b {
+		B[i], err = NewBufferFromBytes(b[i])
+		if err != nil {
+			return
+		}
+	}
+	r, err = encDec(false, ckey, iv, B...)
+	DeleteBuffers(B...)
+	return
+}
+func encDec(enc bool, ckey *memguard.LockedBuffer, iv []byte, b ...*memguard.LockedBuffer) (r []*memguard.LockedBuffer, err error) {
+	if block, err := aes.NewCipher(ckey.Buffer()[:32]); err != nil {
+		return nil, err
+	} else {
+		var blockmode cipher.BlockMode
+		if enc {
+			blockmode = cipher.NewCBCEncrypter(block, iv[:block.BlockSize()])
+		} else {
+			blockmode = cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])
+		}
+		for i := range b {
+			if enc {
+				b[i], err = PKCS7.Padding(b[i], blockmode.BlockSize())
+				r = append(r, b[i])
+			}
+			blockmode.CryptBlocks(r[i].Buffer(), b[i].Buffer())
+			if !enc {
+				if r[i], err = PKCS7.Unpadding(r[i], blockmode.BlockSize()); err != nil {
+					return nil, err
+				}
+			}
+			// DeleteBuffers(b...)
+		}
+	}
+	return
 }
 
 // Creates a new MasterKey
@@ -93,38 +128,34 @@ type addressBook interface {
 // Decrypt an addressbook record
 func (a *AddressBook) Decrypt() (A AddressBook) {
 	d := make([]*memguard.LockedBuffer, 2)
-	d[0], _ = memguard.NewMutable(len(a.Pub))
-	d[1], _ = memguard.NewMutable(len(a.Label))
-	A.safe = &d
-	A.de, A.en = a.de, a.en
-	A.DecryptData((*A.safe)[0].Buffer(), a.Pub)
-	A.DecryptData((*A.safe)[1].Buffer(), a.Label)
-	A.Pub = (*A.safe)[0].Buffer()[:34]
-	A.Label = (*A.safe)[1].Buffer()
+	d[0], _ = NewBuffer(len(a.Pub))
+	d[1], _ = NewBuffer(len(a.Label))
+	A.Serializable = a.Serializable.Copy()
+	A.safe = d
+	r, _ := a.armed.Decrypt(a.ckey, a.iv, d[0].Buffer(), d[1].Buffer())
+	A.Pub = r[0].Buffer()
+	A.Label = r[1].Buffer()
 	return
 }
 
 // Encrypt an addressbook record
 func (a *AddressBook) Encrypt() (A AddressBook) {
-	if a.en != nil {
-		A.Pub, A.Label = make([]byte, 48), make([]byte, len(a.Label))
-		pub := make([]byte, 48)
-		for j := range a.Pub {
-			pub[j] = a.Pub[j]
-		}
-		for j := len(a.Pub); j < 48; j++ {
-			pub[j] = byte(48 - len(a.Pub))
-		}
-		a.EncryptData(A.Pub, pub)
-		a.EncryptData(A.Label, a.Label)
+	if a.armed != nil {
+		p, _ := NewBufferFromBytes(a.Pub)
+		l, _ := NewBufferFromBytes(a.Label)
+		r, _ := a.armed.Encrypt(a.ckey, a.iv, p, l)
+		r[0].Copy(A.Pub)
+		r[1].Copy(A.Label)
 	} else {
-		A.Pub, A.Label = a.Pub, a.Label
+		A.Pub = a.Pub
+		A.Label = a.Label
 	}
 	return
 }
 
 // Creates a new AddressBook
-func NewAddressBook() (e AddressBook) {
+func NewAddressBook(s Serializable) (e AddressBook) {
+	e.Serializable = s.Copy()
 	return
 }
 
@@ -140,21 +171,21 @@ type metadata interface {
 	Decrypt() (a Metadata)
 }
 
-// Decrypt an addressbook record
+// Decrypt an metadata record
 func (m *Metadata) Decrypt() (M Metadata) {
 	d := make([]*memguard.LockedBuffer, 2)
-	d[0], _ = memguard.NewMutable(len(m.Pub))
-	d[1], _ = memguard.NewMutable(len(m.CreateTime))
-	M.safe = &d
-	m.DecryptData((*M.safe)[0].Buffer(), m.Pub)
-	m.DecryptData((*M.safe)[1].Buffer(), m.CreateTime)
-	M.Pub = (*M.safe)[0].Buffer()
-	M.CreateTime = (*M.safe)[1].Buffer()
+	d[0], _ = NewBuffer(len(m.Pub))
+	d[1], _ = NewBuffer(len(m.CreateTime))
+	M.safe = d
+	d, _ = m.armed.Decrypt(m.ckey, m.iv, m.Pub, m.CreateTime)
+	M.Pub = d[0].Buffer()
+	M.CreateTime = d[1].Buffer()
 	return
 }
 
 // Creates a new
-func NewMetadata() (e Metadata) {
+func NewMetadata(s Serializable) (m Metadata) {
+	m.Serializable = s.Copy()
 	return
 }
 
@@ -169,21 +200,21 @@ type ikey interface {
 	Decrypt() (a Metadata)
 }
 
-// Decrypt an addressbook record
+// Decrypt an Key record
 func (k *Key) Decrypt() (K Key) {
 	d := make([]*memguard.LockedBuffer, 2)
-	K.safe = &d
-	d[0], _ = memguard.NewMutable(len(k.Pub))
-	k.DecryptData((*K.safe)[0].Buffer(), k.Pub)
-	K.Pub = (*K.safe)[0].Buffer()
-	d[1], _ = memguard.NewMutable(len(k.Priv))
-	k.DecryptData((*K.safe)[1].Buffer(), k.Priv)
-	K.Priv = (*K.safe)[1].Buffer()
+	d[0], _ = NewBuffer(len(k.Pub))
+	d[1], _ = NewBuffer(len(k.Priv))
+	K.safe = d
+	d, _ = k.armed.Decrypt(k.ckey, k.iv, k.Pub, k.Priv)
+	K.Pub = d[0].Buffer()
+	K.Priv = d[1].Buffer()
 	return
 }
 
 // Creates a new Key
-func NewKey() (e Key) {
+func NewKey(s Serializable) (k Key) {
+	k.Serializable = s.Copy()
 	return
 }
 
@@ -197,7 +228,8 @@ type Wdata struct {
 }
 
 // Creates a new Wdata
-func NewWdata() (e Wdata) {
+func NewWdata(s Serializable) (w Wdata) {
+	w.Serializable = s.Copy()
 	return
 }
 
@@ -209,7 +241,8 @@ type Tx struct {
 }
 
 // Creates a new Tx
-func NewTx() (e Tx) {
+func NewTx(s *Serializable) (t Tx) {
+	t.Serializable = s.Copy()
 	return
 }
 
@@ -223,7 +256,8 @@ type Pool struct {
 }
 
 // Creates a new Pool
-func NewPool() (e Pool) {
+func NewPool(s Serializable) (p Pool) {
+	p.Serializable = s.Copy()
 	return
 }
 
@@ -235,7 +269,8 @@ type Script struct {
 }
 
 // Creates a new Script
-func NewScript() (e Script) {
+func NewScript(s Serializable) (S Script) {
+	S.Serializable = s.Copy()
 	return
 }
 
@@ -248,7 +283,8 @@ type Account struct {
 }
 
 // Creates a new Account
-func NewAccount() (e Account) {
+func NewAccount(s Serializable) (a Account) {
+	a.Serializable = s.Copy()
 	return
 }
 
@@ -260,14 +296,15 @@ type Setting struct {
 }
 
 // Creates a new Setting
-func NewSetting() (e Setting) {
+func NewSetting(s Serializable) (S Setting) {
+	S.Serializable = s.Copy()
 	return
 }
 
 // A store of all the data related to a wallet with the ability to be encrypted and exported to other data formats
 type EncryptedStore struct {
 	Serializable
-	MasterKey    []*MasterKey
+	MasterKey    *[]*MasterKey
 	LastLocked   time.Time
 	AddressBook  []AddressBook
 	Metadata     []Metadata
@@ -289,6 +326,7 @@ type encryptedStore interface {
 }
 
 // Creates a new EncryptedStore
-func NewEncryptedStore() (e EncryptedStore) {
+func NewEncryptedStore(s Serializable) (e EncryptedStore) {
+	e.Serializable = s.Copy()
 	return
 }

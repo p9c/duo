@@ -4,20 +4,16 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
-	"github.com/anaskhan96/base58check"
-	"github.com/awnumar/memguard"
-	"gitlab.com/parallelcoin/duo/pkg/ec"
-	"strconv"
-	// "github.com/anaskhan96/base58check"
-	// "encoding/hex"
 	"fmt"
+	"github.com/anaskhan96/base58check"
 	"github.com/parallelcointeam/javazacdb"
-	"gitlab.com/parallelcoin/duo/pkg/block"
-	// "gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/Uint"
+	"gitlab.com/parallelcoin/duo/pkg/block"
+	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"sort"
+	"strconv"
 )
 
 // Backup copies the current wallet to another location
@@ -59,9 +55,9 @@ func (db *DB) Dump() (dump string) {
 			Iterations:   iterations,
 			Other:        other,
 		}
-		pass, _ := memguard.NewImmutableFromBytes([]byte(passwd))
+		pass, _ := NewBufferFromBytes([]byte(passwd))
 		dk, _ := m.Decrypt(pass, m.EncryptedKey)
-		bc, _ = aes.NewCipher(dk[0])
+		bc, _ = aes.NewCipher(dk[0].Buffer())
 		logger.Debug(dk[0])
 
 	}

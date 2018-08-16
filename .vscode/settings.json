@@ -1,23 +1,5 @@
 {
-    "workbench.iconTheme": "eq-material-theme-icons-darker",
     "workbench.editor.enablePreviewFromQuickOpen": false,
-    "materialTheme.fixIconsRunning": false,
-    "C_Cpp.clang_format_style": "Google",
-    "C_Cpp.clang_format_fallbackStyle": "Google",
-    "symbolOutline.sortOrder": [
-        "Class",
-        "Module",
-        "Constant",
-        "Interface",
-        "*",
-        "Constructor",
-        "Function",
-        "Method"
-    ],
-    "symbolOutline.doSort": true,
-    "symbolOutline.topLevel": [
-        "*"
-    ],
     "go.formatFlags": [
         "-s"
     ],
@@ -76,13 +58,11 @@
     "zenMode.fullScreen": true,
     "editor.lineHeight": 18,
     "zenMode.hideActivityBar": false,
-    "bookmarks.saveBookmarksInProject": true,
-    "bookmarks.treeview.visible": true,
     "terminal.integrated.rendererType": "dom",
     "workbench.editor.closeEmptyGroups": false,
     "workbench.editor.enablePreview": false,
-    "editor.formatOnPaste": true,
-    "editor.formatOnType": true,
+    "editor.formatOnPaste": false,
+    "editor.formatOnType": false,
     "go.lintOnSave": "package",
     "go.lintTool": "golint"
 }

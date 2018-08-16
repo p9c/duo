@@ -4,73 +4,109 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha512"
+	"errors"
+	"fmt"
 	"github.com/awnumar/memguard"
 	"unsafe"
 )
 
-// Encrypts plaintext using the masterkey and a password
-func (m *MasterKey) Encrypt(p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
-	return m.encDec(true, p, b...)
+var (
+	ErrPaddingSize = errors.New("padding size error")
+	PKCS5          = &pkcs5{}
+	// difference with pkcs5 only block must be 8
+	PKCS7 = &pkcs5{}
+)
+
+// pkcs5Padding is a pkcs5 padding struct.
+type pkcs5 struct{}
+
+// Padding implements the Padding interface Padding method.
+func (p *pkcs5) Padding(s *memguard.LockedBuffer, blockSize int) (r *memguard.LockedBuffer, err error) {
+	srcLen := len(s.Buffer())
+	padLen := blockSize - (srcLen % blockSize)
+	var S *memguard.LockedBuffer
+	S, err = NewBuffer(padLen)
+	if err != nil {
+		return
+	}
+	for i := range S.Buffer() {
+		S.Buffer()[i] = byte(padLen)
+	}
+	r, err = memguard.Concatenate(s, S)
+	if err != nil {
+		return
+	}
+	DeleteBuffers(S, s)
+	return
 }
 
-//
-func (m *MasterKey) Decrypt(p *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
-	return m.encDec(false, p, b...)
-}
-func (m *MasterKey) encDec(enc bool, pass *memguard.LockedBuffer, b ...[]byte) (r [][]byte, err error) {
-	ckey, iv, err := m.DeriveCipher(pass)
-	block, err := aes.NewCipher(ckey.Buffer()[:32])
-	de := cipher.NewCBCDecrypter(block, iv[:block.BlockSize()])
-	r = make([][]byte, len(b))
-	for i := range b {
-		r[i] = make([]byte, len(b[i]))
-		de.CryptBlocks(r[i], b[i])
+// Unpadding implements the Padding interface Unpadding method.
+func (p *pkcs5) Unpadding(s *memguard.LockedBuffer, blockSize int) (r *memguard.LockedBuffer, err error) {
+	srcLen := s.Size()
+	paddingLen := int(s.Buffer()[srcLen-1])
+	if paddingLen >= srcLen || paddingLen > blockSize {
+		err = ErrPaddingSize
+		return
 	}
+	r, err = memguard.Trim(s, srcLen, paddingLen)
+	DeleteBuffer(s)
 	return
 }
 
 // Decrypts a ciphertext using the masterkey and password
-func (m *MasterKey) DeriveCipher(pass *memguard.LockedBuffer) (k *memguard.LockedBuffer, iv []byte, err error) {
-	var seed *memguard.LockedBuffer
-	pLen, sLen := len(pass.Buffer()), len(m.Salt)
-	if pLen+sLen > 64 {
-		sLen = 128 - pLen - sLen
-		seed, err = memguard.NewMutable(128)
-	} else {
-		seed, err = memguard.NewMutable(64)
+func (s *Serializable) DeriveCipher(pass *memguard.LockedBuffer) (mk *MasterKey, k *memguard.LockedBuffer, iv []byte, err error) {
+	fmt.Println("Deriving cipher...")
+	var mode cipher.BlockMode
+	for i := range s.masterKey {
+		pLen, sLen := len(pass.Buffer()), len((s.masterKey)[i].Salt)
+		var Buf *memguard.LockedBuffer
+		Buf, err = NewBuffer(pLen + sLen + 13)
+		buf := Buf.Buffer()
+		if err != nil {
+			return
+		}
+		for j := range pass.Buffer() {
+			buf[j] = pass.Buffer()[j]
+		}
+		for j := range s.masterKey[i].Salt {
+			buf[j+pLen] = s.masterKey[i].Salt[j]
+		}
+		PKCS7.Padding(Buf, 8)
+		var l *memguard.LockedBuffer
+		l, err = NewBuffer(64)
+		if err != nil {
+			return
+		}
+		var source *[64]byte
+		source = (*[64]byte)(unsafe.Pointer(&l.Buffer()[0]))
+		*source = sha512.Sum512(buf)
+		for j := 0; j < int(s.masterKey[i].Iterations-1); j++ {
+			*source = sha512.Sum512(l.Buffer())
+		}
+		k, err = NewBuffer(64)
+		if err != nil {
+			return
+		}
+		for j := range k.Buffer() {
+			k.Buffer()[j] = source[j]
+		}
+		DeleteBuffers(k, l)
+		var ckey, ivb *memguard.LockedBuffer
+		ckey, ivb, err = memguard.Split(k, 32)
+		if err != nil {
+			return
+		}
+		block, err := aes.NewCipher(ckey.Buffer())
+		if err != nil {
+			break
+		}
+		iv = ivb.Buffer()[:block.BlockSize()]
+		mode = cipher.NewCBCDecrypter(block, iv)
+		mode.CryptBlocks(k.Buffer(), (s.masterKey)[i].EncryptedKey)
+		mk = (s.masterKey)[i]
 	}
-	if err != nil {
-		return
+	if mk == nil {
+		err = errors.New("Password did not unlock any of the available master keys")
 	}
-	buf := seed.Buffer()
-	for i := range pass.Buffer() {
-		buf[i] = pass.Buffer()[i]
-	}
-	for i := range m.Salt {
-		buf[i+pLen] = m.Salt[i]
-	}
-	// PKCS#5 padding - pad byte is number of pad bytes max 64
-	pad := len(buf) - pLen - sLen
-	for i := pLen + sLen; i < len(buf); i++ {
-		buf[i] = byte(pad)
-	}
-	var source *[64]byte
-	l, err := memguard.NewMutable(64)
-	source = (*[64]byte)(unsafe.Pointer(&l.Buffer()[0]))
-	*source = sha512.Sum512(buf)
-	for i := 0; i < int(m.Iterations-1); i++ {
-		*source = sha512.Sum512(l.Buffer())
-	}
-	k, err = memguard.NewMutable(64)
-	for i := range k.Buffer() {
-		k.Buffer()[i] = source[i]
-	}
-	ckey, ivb, err := memguard.Split(k, 32)
-	block, err := aes.NewCipher(ckey.Buffer())
-	iv = ivb.Buffer()[:block.BlockSize()]
-	mode := cipher.NewCBCDecrypter(block, iv)
-	mode.CryptBlocks(k.Buffer(), m.EncryptedKey)
-	l.Destroy()
-	seed.Destroy()
 	return
 }

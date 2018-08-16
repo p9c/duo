@@ -1,15 +1,17 @@
 // A collection of utility functions used by many libraries in duo
 package util
+
 import (
-	"os"
-	"sync"
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"gitlab.com/parallelcoin/duo/pkg/ec"
 	"gitlab.com/parallelcoin/duo/pkg/key"
+	"os"
 	"strconv"
+	"sync"
 )
+
 var (
 	ArgsMap         map[string]string
 	MultiArgsMap    map[string][]string
@@ -47,6 +49,7 @@ var (
 		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 	MockTime int64 = 0
 )
+
 // Reverse changes big endian to little endian and vice versa
 func Reverse(bytes []byte) (result []byte) {
 	result = make([]byte, len(bytes))
@@ -56,11 +59,13 @@ func Reverse(bytes []byte) (result []byte) {
 	}
 	return
 }
+
 // FormatString prepends a byte with the length of a string for wire/storage formatting
 func FormatString(s string) (result []byte) {
 	result = append([]byte{byte(len(s))}, s...)
 	return
 }
+
 // FormatBytes prepends a byte with the length of a byte slice for wire/storage formatting
 func FormatBytes(b []byte) (result []byte) {
 	result = append([]byte{byte(len(b))}, b...)
@@ -96,6 +101,7 @@ func Uint64ToBytes(in uint64) (result []byte) {
 	binary.LittleEndian.PutUint64(result, in)
 	return
 }
+
 // Append a byte slice to a byte slice in the caller's scope
 func Append(b *[]byte, B ...[]byte) {
 	for i := range B {

@@ -2,8 +2,8 @@ package wallet
 
 import (
 	"fmt"
-	"github.com/awnumar/memguard"
-	"gitlab.com/parallelcoin/duo/pkg/logger"
+	"os"
+	"reflect"
 	"testing"
 )
 
@@ -12,17 +12,18 @@ var (
 )
 
 func TestNewDB(t *testing.T) {
+	os.RemoveAll(f)
 	db, err := NewDB(f)
 	if err != nil {
 		t.Error("Failed to open")
 	}
-	logger.Debug(*db)
 	for i := range KeyNames {
 		db.NewTable(KeyNames[i])
 	}
 	db.Close()
 }
 func TestImport(t *testing.T) {
+	os.RemoveAll(f)
 	db, err := NewDB(f)
 	if err != nil {
 		t.Error("Failed to open")
@@ -31,35 +32,15 @@ func TestImport(t *testing.T) {
 	for i := 0; i < Flast; i++ {
 		db.NewTable(KeyNames[i])
 	}
-	pass, err := memguard.NewImmutableFromBytes([]byte(passwd))
-	imp := Import(pass)
+	pass, err := NewBufferFromBytes([]byte(passwd))
+	es := Import(pass)
 	if err != nil {
 		t.Error("failed to import wallet", err)
 	}
-	es := imp.ToEncryptedStore()
-	for i := range es.AddressBook {
-		fmt.Println("original   ", string(imp.Names[i].Addr))
-		fmt.Println("encrypted  ", (es.AddressBook[i].Pub))
-		a := es.AddressBook[i].Decrypt()
-		fmt.Println("decrypted  ", string(a.Pub))
-		// a = a.Encrypt()
-		b := make([]byte, 14)
-		for j := range b {
-			b[j] = 14
-		}
-		pub := make([]byte, 48)
-		es.EncryptData(pub, append(a.Pub, b...))
-		fmt.Println("reencrypted", pub)
-		a.Destroy()
+	v := reflect.ValueOf(es)
+	for i := 0; i < v.NumField(); i++ {
+		fmt.Println(v.Field(i).Interface())
 	}
-	test := []byte("this is a test! ")
-	fmt.Println(len(test), test, string(test))
-	testenc := make([]byte, 16)
-	testdec := make([]byte, 32)
-	es.EncryptData(testenc, test)
-	fmt.Println(len(testenc), testenc, string(testenc))
-	es.DecryptData(testdec, testenc)
-	fmt.Println(len(testdec), testdec, string(testdec))
 	db.Close()
 }
 
