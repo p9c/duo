@@ -304,7 +304,7 @@ func NewSetting(s Serializable) (S Setting) {
 // A store of all the data related to a wallet with the ability to be encrypted and exported to other data formats
 type EncryptedStore struct {
 	Serializable
-	MasterKey    *[]*MasterKey
+	MasterKey    []*MasterKey
 	LastLocked   time.Time
 	AddressBook  []AddressBook
 	Metadata     []Metadata

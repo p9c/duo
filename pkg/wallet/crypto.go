@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/sha512"
 	"errors"
-	"fmt"
 	"github.com/awnumar/memguard"
 	"unsafe"
 )
@@ -33,6 +32,9 @@ func (p *pkcs5) Padding(s *memguard.LockedBuffer, blockSize int) (r *memguard.Lo
 		S.Buffer()[i] = byte(padLen)
 	}
 	r, err = memguard.Concatenate(s, S)
+	AllLockedBuffers = append(AllLockedBuffers, r)
+	AllocatedBufferCount++
+	AllocatedBufferTotalSize += r.Size()
 	if err != nil {
 		return
 	}
@@ -55,12 +57,11 @@ func (p *pkcs5) Unpadding(s *memguard.LockedBuffer, blockSize int) (r *memguard.
 
 // Decrypts a ciphertext using the masterkey and password
 func (s *Serializable) DeriveCipher(pass *memguard.LockedBuffer) (mk *MasterKey, k *memguard.LockedBuffer, iv []byte, err error) {
-	fmt.Println("Deriving cipher...")
 	var mode cipher.BlockMode
 	for i := range s.masterKey {
 		pLen, sLen := len(pass.Buffer()), len((s.masterKey)[i].Salt)
 		var Buf *memguard.LockedBuffer
-		Buf, err = NewBuffer(pLen + sLen + 13)
+		Buf, err = NewBuffer(pLen + sLen)
 		buf := Buf.Buffer()
 		if err != nil {
 			return
@@ -71,7 +72,7 @@ func (s *Serializable) DeriveCipher(pass *memguard.LockedBuffer) (mk *MasterKey,
 		for j := range s.masterKey[i].Salt {
 			buf[j+pLen] = s.masterKey[i].Salt[j]
 		}
-		PKCS7.Padding(Buf, 8)
+		seed, _ := PKCS7.Padding(Buf, 8)
 		var l *memguard.LockedBuffer
 		l, err = NewBuffer(64)
 		if err != nil {
@@ -79,7 +80,7 @@ func (s *Serializable) DeriveCipher(pass *memguard.LockedBuffer) (mk *MasterKey,
 		}
 		var source *[64]byte
 		source = (*[64]byte)(unsafe.Pointer(&l.Buffer()[0]))
-		*source = sha512.Sum512(buf)
+		*source = sha512.Sum512(seed.Buffer())
 		for j := 0; j < int(s.masterKey[i].Iterations-1); j++ {
 			*source = sha512.Sum512(l.Buffer())
 		}
@@ -90,7 +91,6 @@ func (s *Serializable) DeriveCipher(pass *memguard.LockedBuffer) (mk *MasterKey,
 		for j := range k.Buffer() {
 			k.Buffer()[j] = source[j]
 		}
-		DeleteBuffers(k, l)
 		var ckey, ivb *memguard.LockedBuffer
 		ckey, ivb, err = memguard.Split(k, 32)
 		if err != nil {
@@ -102,8 +102,9 @@ func (s *Serializable) DeriveCipher(pass *memguard.LockedBuffer) (mk *MasterKey,
 		}
 		iv = ivb.Buffer()[:block.BlockSize()]
 		mode = cipher.NewCBCDecrypter(block, iv)
-		mode.CryptBlocks(k.Buffer(), (s.masterKey)[i].EncryptedKey)
-		mk = (s.masterKey)[i]
+		mode.CryptBlocks(k.Buffer(), s.masterKey[i].EncryptedKey)
+		mk = s.masterKey[i]
+		// DeleteBuffers(k, l)
 	}
 	if mk == nil {
 		err = errors.New("Password did not unlock any of the available master keys")

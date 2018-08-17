@@ -3,7 +3,6 @@ package wallet
 import (
 	"fmt"
 	"os"
-	"reflect"
 	"testing"
 )
 
@@ -22,6 +21,7 @@ func TestNewDB(t *testing.T) {
 	}
 	db.Close()
 }
+
 func TestImport(t *testing.T) {
 	os.RemoveAll(f)
 	db, err := NewDB(f)
@@ -37,10 +37,7 @@ func TestImport(t *testing.T) {
 	if err != nil {
 		t.Error("failed to import wallet", err)
 	}
-	v := reflect.ValueOf(es)
-	for i := 0; i < v.NumField(); i++ {
-		fmt.Println(v.Field(i).Interface())
-	}
+	fmt.Println(string(ToJSON(es)))
 	db.Close()
 }
 

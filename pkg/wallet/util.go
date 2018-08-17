@@ -19,7 +19,6 @@ func NewBuffer(size int) (B *memguard.LockedBuffer, err error) {
 	AllLockedBuffers = append(AllLockedBuffers, B)
 	AllocatedBufferCount++
 	AllocatedBufferTotalSize += B.Size()
-	fmt.Println("Allocated buffer, current count:", AllocatedBufferCount)
 	return
 }
 
@@ -33,13 +32,12 @@ func NewBufferFromBytes(b []byte) (B *memguard.LockedBuffer, err error) {
 	AllLockedBuffers = append(AllLockedBuffers, B)
 	AllocatedBufferCount++
 	AllocatedBufferTotalSize += B.Size()
-	fmt.Println("Allocated buffer, current count:", AllocatedBufferCount)
 	return
 }
 
 // Deallocates a memguard LockedBuffer and removes it from its register
 func DeleteBuffer(b *memguard.LockedBuffer) {
-	if AllocatedBufferCount == 0 {
+	if AllocatedBufferCount < 2 {
 		fmt.Println("Who is trying to delete an item we aren't tracking???")
 		memguard.SafeExit(1)
 	}
@@ -61,7 +59,6 @@ func DeleteBuffer(b *memguard.LockedBuffer) {
 	AllocatedBufferCount--
 	AllocatedBufferTotalSize -= b.Size()
 	b.Destroy()
-	fmt.Println("Deleted buffer, current count:", AllocatedBufferCount)
 }
 
 // Deallocates a slice of buffers
