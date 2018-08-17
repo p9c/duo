@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"fmt"
+	"github.com/awnumar/memguard"
 	"os"
 	"testing"
 )
@@ -32,8 +33,10 @@ func TestImport(t *testing.T) {
 	for i := 0; i < Flast; i++ {
 		db.NewTable(KeyNames[i])
 	}
-	pass, err := NewBufferFromBytes([]byte(passwd))
-	es := Import(pass)
+	var pass *memguard.LockedBuffer
+	pass, err = NewBufferFromBytes([]byte(passwd))
+	var es *EncryptedStore
+	es, err = Import(pass)
 	if err != nil {
 		t.Error("failed to import wallet", err)
 	}

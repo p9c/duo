@@ -31,15 +31,6 @@ func (s *Serializable) Lock() {
 	}
 }
 
-// Copies an armed Serializable so the copy has the same cipher info
-func (s *Serializable) Copy() (S Serializable) {
-	S.armed = s.armed
-	S.ckey = s.ckey
-	S.iv = s.iv
-	// S.masterKey = &s.masterKey
-	return
-}
-
 // Converts an object into a JSON string
 func ToJSON(p interface{}) (j string) {
 	J, _ := json.MarshalIndent(p, "", "    ")
@@ -115,7 +106,7 @@ func NewMasterKey() (e MasterKey) {
 
 // Stores the details of human readable labels for own and others addresses
 type AddressBook struct {
-	Serializable
+	*Serializable
 	Pub   []byte
 	Label []byte
 }
@@ -130,7 +121,7 @@ func (a *AddressBook) Decrypt() (A AddressBook) {
 	d := make([]*memguard.LockedBuffer, 2)
 	d[0], _ = NewBuffer(len(a.Pub))
 	d[1], _ = NewBuffer(len(a.Label))
-	A.Serializable = a.Serializable.Copy()
+	A.Serializable = a.Serializable
 	A.safe = d
 	r, _ := a.armed.Decrypt(a.ckey, a.iv, d[0].Buffer(), d[1].Buffer())
 	A.Pub = r[0].Buffer()
@@ -154,14 +145,15 @@ func (a *AddressBook) Encrypt() (A AddressBook) {
 }
 
 // Creates a new AddressBook
-func NewAddressBook(s Serializable) (e AddressBook) {
-	e.Serializable = s.Copy()
+func NewAddressBook(s *Serializable) (a *AddressBook) {
+	a = new(AddressBook)
+	a.Serializable = s
 	return
 }
 
 // Stores version and create time for keys
 type Metadata struct {
-	Serializable
+	*Serializable
 	Pub        []byte
 	Version    uint32
 	CreateTime []byte
@@ -172,7 +164,7 @@ type metadata interface {
 }
 
 // Decrypt an metadata record
-func (m *Metadata) Decrypt() (M Metadata) {
+func (m *Metadata) Decrypt() (M *Metadata) {
 	d := make([]*memguard.LockedBuffer, 2)
 	d[0], _ = NewBuffer(len(m.Pub))
 	d[1], _ = NewBuffer(len(m.CreateTime))
@@ -184,14 +176,15 @@ func (m *Metadata) Decrypt() (M Metadata) {
 }
 
 // Creates a new
-func NewMetadata(s Serializable) (m Metadata) {
-	m.Serializable = s.Copy()
+func NewMetadata(s *Serializable) (m *Metadata) {
+	m = new(Metadata)
+	m.Serializable = s
 	return
 }
 
 // A public/private key pair corresponding to a wallet address
 type Key struct {
-	Serializable
+	*Serializable
 	Pub  []byte
 	Priv []byte
 }
@@ -213,14 +206,15 @@ func (k *Key) Decrypt() (K Key) {
 }
 
 // Creates a new Key
-func NewKey(s Serializable) (k Key) {
-	k.Serializable = s.Copy()
+func NewKey(s *Serializable) (k *Key) {
+	k = new(Key)
+	k.Serializable = s
 	return
 }
 
 // Extra metadata for key expiry management
 type Wdata struct {
-	Serializable
+	*Serializable
 	Pub     []byte
 	Created []byte
 	Expires []byte
@@ -228,27 +222,28 @@ type Wdata struct {
 }
 
 // Creates a new Wdata
-func NewWdata(s Serializable) (w Wdata) {
-	w.Serializable = s.Copy()
+func NewWdata(s *Serializable) (w *Wdata) {
+	w.Serializable = s
 	return
 }
 
 // A raw transaction related to a key pair in the wallet
 type Tx struct {
-	Serializable
+	*Serializable
 	TxHash []byte
 	TxData []byte
 }
 
 // Creates a new Tx
-func NewTx(s *Serializable) (t Tx) {
-	t.Serializable = s.Copy()
+func NewTx(s *Serializable) (t *Tx) {
+	t = new(Tx)
+	t.Serializable = s
 	return
 }
 
 // Keys in reserve for future change operations
 type Pool struct {
-	Serializable
+	*Serializable
 	Index   uint64
 	Version uint32
 	Time    []byte
@@ -256,65 +251,68 @@ type Pool struct {
 }
 
 // Creates a new Pool
-func NewPool(s Serializable) (p Pool) {
-	p.Serializable = s.Copy()
+func NewPool(s *Serializable) (p *Pool) {
+	p = new(Pool)
+	p.Serializable = s
 	return
 }
 
 // A payment script related to key pairs in the wallet
 type Script struct {
-	Serializable
+	*Serializable
 	ID   []byte
 	Data []byte
 }
 
 // Creates a new Script
-func NewScript(s Serializable) (S Script) {
-	S.Serializable = s.Copy()
+func NewScript(s *Serializable) (S *Script) {
+	S = new(Script)
+	S.Serializable = s
 	return
 }
 
 // I'm not sure what this is used for
 type Account struct {
-	Serializable
+	*Serializable
 	Account []byte
 	Version int32
 	Pub     []byte
 }
 
 // Creates a new Account
-func NewAccount(s Serializable) (a Account) {
-	a.Serializable = s.Copy()
+func NewAccount(s *Serializable) (a *Account) {
+	a.Serializable = s
 	return
 }
 
 // Stores settings related to the user's wallet
 type Setting struct {
-	Serializable
+	*Serializable
 	Name  string
 	Value []byte
 }
 
 // Creates a new Setting
-func NewSetting(s Serializable) (S Setting) {
-	S.Serializable = s.Copy()
+func NewSetting(s *Serializable) (S *Setting) {
+	S = new(Setting)
+	S.Serializable = s
 	return
 }
 
 // A store of all the data related to a wallet with the ability to be encrypted and exported to other data formats
 type EncryptedStore struct {
-	Serializable
+	*Serializable
 	MasterKey    []*MasterKey
 	LastLocked   time.Time
-	AddressBook  []AddressBook
-	Metadata     []Metadata
-	Key          []Key
-	Wdata        []Wdata
-	Tx           []Tx
-	Pool         []Pool
-	Script       []Script
-	Account      []Account
-	Setting      []Setting
+	AddressBook  []*AddressBook
+	Metadata     []*Metadata
+	Key          []*Key
+	Wdata        []*Wdata
+	Tx           []*Tx
+	Pool         []*Pool
+	Script       []*Script
+	Account      []*Account
+	Setting      []*Setting
 	DefaultKey   []byte
 	BestBlock    []byte
 	OrderPosNext int64
@@ -326,7 +324,8 @@ type encryptedStore interface {
 }
 
 // Creates a new EncryptedStore
-func NewEncryptedStore(s Serializable) (e EncryptedStore) {
-	e.Serializable = s.Copy()
+func NewEncryptedStore() (e *EncryptedStore) {
+	e = new(EncryptedStore)
+	e.Serializable = new(Serializable)
 	return
 }

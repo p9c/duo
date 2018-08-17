@@ -3,11 +3,11 @@ package wallet
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"github.com/anaskhan96/base58check"
 	"github.com/awnumar/memguard"
 	"github.com/mitchellh/go-homedir"
 	"gitlab.com/parallelcoin/duo/pkg/bdb"
-	"gitlab.com/parallelcoin/duo/pkg/util"
 	"time"
 )
 
@@ -65,22 +65,31 @@ type imports interface {
 	EncryptData(dst *memguard.LockedBuffer, src []byte)
 }
 
+var ES *EncryptedStore
+
 // Import reads an existing wallet.dat and returns all the keys and address data in it. If a password is given, the private keys in the CKeys array are decrypted and the encrypter/decrypter functions are armed.
-func Import(pass *memguard.LockedBuffer, filename ...string) (es EncryptedStore) {
-	var db = &BDB{}
+func Import(pass *memguard.LockedBuffer, filename ...string) (es *EncryptedStore, err error) {
+	es = NewEncryptedStore()
+	ES = es
+	if pass == nil {
+		err = errors.New("for reasons of security, it is not possible to have an unencrypted wallet")
+		return
+	}
+	var db BDB
+	var cursor bdb.Cursor
 	if len(filename) == 0 {
 		home, _ := homedir.Dir()
 		db.SetFilename(home + "/.parallelcoin/wallet.dat")
 	} else {
 		db.SetFilename(filename[0])
 	}
-	if err := db.Open(); err != nil {
+	if err = db.Open(); err != nil {
 		return
-	} else if cursor, err := db.Cursor(bdb.NoTransaction); err != nil {
+	} else if cursor, err = db.Cursor(bdb.NoTransaction); err != nil {
 		return
 	} else {
 		rec := [2][]byte{}
-		if err := cursor.First(&rec); err != nil {
+		if err = cursor.First(&rec); err != nil {
 			return
 		} else {
 			for {
@@ -90,7 +99,7 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (es EncryptedStore)
 				id := string(rec[0][1:idLen])
 				switch id {
 				case "mkey":
-					I := len((es.masterKey))
+					I := len(es.masterKey)
 					es.masterKey = append(es.masterKey, new(MasterKey))
 					es.masterKey[I].MKeyID = int64(binary.LittleEndian.Uint32(rec[0][idLen : idLen+4]))
 					ekLen := rec[1][0] + 1
@@ -113,9 +122,11 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (es EncryptedStore)
 					break
 				}
 			}
-			es.armed, es.ckey, es.iv, _ = es.DeriveCipher(pass)
-			es.LastLocked = time.Now()
-			if err := cursor.First(&rec); err != nil {
+			if pass != nil {
+				es.armed, es.ckey, es.iv, _ = es.DeriveCipher(pass)
+				es.LastLocked = time.Now()
+			}
+			if err = cursor.First(&rec); err != nil {
 				return
 			} else {
 				for {
@@ -137,83 +148,57 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (es EncryptedStore)
 							I := len(es.AddressBook)
 							es.AddressBook = append(es.AddressBook, NewAddressBook(es.Serializable))
 							var r []*memguard.LockedBuffer
-							if es.armed != nil {
-								r, _ = es.armed.Encrypt(es.ckey, es.iv, pub, label)
-							} else {
-								r = []*memguard.LockedBuffer{pub, label}
-							}
+							r, _ = es.armed.Encrypt(es.ckey, es.iv, pub, label)
 							es.AddressBook[I].Pub = append([]byte{}, r[0].Buffer()...)
 							es.AddressBook[I].Label = append([]byte{}, r[1].Buffer()...)
 							DeleteBuffers(r...)
 						}
 					case "key":
-						pubB := rec[0][idLen+2 : idLen+2+rec[0][idLen]]
-						if p, err := util.ParsePub(pubB); err != nil {
-							break
-						} else {
-							pub, _ := NewBufferFromBytes(p.SerializeCompressed())
-							priv, _ := NewBufferFromBytes(rec[1])
-							I := len(es.Key)
-							es.Key = append(es.Key, NewKey(es.Serializable))
-							var r []*memguard.LockedBuffer
-							if es.armed != nil {
-								r, _ = es.armed.Encrypt(es.ckey, es.iv, pub, priv)
-							} else {
-								r = []*memguard.LockedBuffer{pub, priv}
-							}
-							es.Key[I].Pub = append([]byte{}, r[0].Buffer()...)
-							es.Key[I].Priv = append([]byte{}, r[1].Buffer()...)
-							DeleteBuffers(r...)
-						}
+						pub, _ := NewBufferFromBytes(rec[0][idLen+1 : idLen+1+rec[0][idLen]])
+						priv, _ := NewBufferFromBytes(rec[1][1 : 1+rec[1][0]])
+						I := len(es.Key)
+						es.Key = append(es.Key, NewKey(es.Serializable))
+						var r []*memguard.LockedBuffer
+						r, _ = es.armed.Encrypt(es.ckey, es.iv, pub, priv)
+						es.Key[I].Pub = append([]byte{}, r[0].Buffer()...)
+						es.Key[I].Priv = append([]byte{}, r[1].Buffer()...)
+						DeleteBuffers(r...)
 					case "wkey":
-						pubB := rec[0][idLen+2 : idLen+2+rec[0][idLen]]
-						if p, err := util.ParsePub(pubB); err != nil {
-							return
+						pub, _ := NewBufferFromBytes(rec[0][idLen+1 : idLen+1+rec[0][idLen]])
+						pLen := rec[1][0] + 1
+						priv, _ := NewBufferFromBytes(rec[1][1:pLen])
+						Len := len(es.Key)
+						es.Key = append(es.Key, NewKey(es.Serializable))
+						var r []*memguard.LockedBuffer
+						if es.armed != nil {
+							r, _ = es.armed.Encrypt(es.ckey, es.iv, pub, priv)
 						} else {
-							pub, _ := NewBufferFromBytes(p.SerializeCompressed())
-							pLen := rec[1][0] + 1
-							priv, _ := NewBufferFromBytes(rec[1][1:pLen])
-							Len := len(es.Key)
-							es.Key = append(es.Key, NewKey(es.Serializable))
-							var r []*memguard.LockedBuffer
-							if es.armed != nil {
-								r, _ = es.armed.Encrypt(es.ckey, es.iv, pub, priv)
-							} else {
-								r = []*memguard.LockedBuffer{pub, priv}
-							}
-							DeleteBuffers(pub, priv)
-							es.Key[Len].Pub = append([]byte{}, r[0].Buffer()...)
-							es.Key[Len].Priv = append([]byte{}, r[1].Buffer()...)
-							DeleteBuffers(r...)
-							tc, _ := NewBufferFromBytes(rec[1][pLen : pLen+8])
-							te, _ := NewBufferFromBytes(rec[1][pLen+8 : pLen+16])
-							cLen := rec[1][pLen+16]
-							comment, _ := NewBufferFromBytes(rec[1][pLen+16 : pLen+cLen+16])
-							if es.armed != nil {
-								r, _ = es.armed.Encrypt(es.ckey, es.iv, tc, te, comment)
-							} else {
-								r = []*memguard.LockedBuffer{tc, te, comment}
-							}
-							DeleteBuffers(r...)
-							I := len(es.Wdata)
-							es.Wdata = append(es.Wdata, NewWdata(es.Serializable))
-							es.Wdata[I].Pub = es.Key[Len].Pub
-							es.Wdata[I].Created = append([]byte{}, r[0].Buffer()...)
-							es.Wdata[I].Expires = append([]byte{}, r[1].Buffer()...)
-							es.Wdata[I].Comment = append([]byte{}, r[2].Buffer()...)
-							DeleteBuffers(r...)
+							r = []*memguard.LockedBuffer{pub, priv}
 						}
+						DeleteBuffers(pub, priv)
+						es.Key[Len].Pub = append([]byte{}, r[0].Buffer()...)
+						es.Key[Len].Priv = append([]byte{}, r[1].Buffer()...)
+						DeleteBuffers(r...)
+						tc, _ := NewBufferFromBytes(rec[1][pLen : pLen+8])
+						te, _ := NewBufferFromBytes(rec[1][pLen+8 : pLen+16])
+						cLen := rec[1][pLen+16]
+						comment, _ := NewBufferFromBytes(rec[1][pLen+16 : pLen+cLen+16])
+						r, _ = es.armed.Encrypt(es.ckey, es.iv, tc, te, comment)
+						DeleteBuffers(r...)
+						I := len(es.Wdata)
+						es.Wdata = append(es.Wdata, NewWdata(es.Serializable))
+						es.Wdata[I].Pub = es.Key[Len].Pub
+						es.Wdata[I].Created = append([]byte{}, r[0].Buffer()...)
+						es.Wdata[I].Expires = append([]byte{}, r[1].Buffer()...)
+						es.Wdata[I].Comment = append([]byte{}, r[2].Buffer()...)
+						DeleteBuffers(r...)
 					case "ckey":
 						pub, _ := NewBufferFromBytes(rec[0][idLen+1 : idLen+1+rec[0][idLen]])
 						privLen := rec[1][0] + 1
 						I := len(es.Key)
 						es.Key = append(es.Key, NewKey(es.Serializable))
 						var r []*memguard.LockedBuffer
-						if es.armed != nil {
-							r, _ = es.armed.Encrypt(es.ckey, es.iv, pub)
-						} else {
-							r = []*memguard.LockedBuffer{pub}
-						}
+						r, _ = es.armed.Encrypt(es.ckey, es.iv, pub)
 						es.Key[I].Pub = append([]byte{}, r[0].Buffer()...)
 						es.Key[I].Priv = rec[1][1:privLen]
 						DeleteBuffers(r...)
@@ -225,11 +210,7 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (es EncryptedStore)
 						p, _ := NewBufferFromBytes(pub)
 						ct, _ := NewBufferFromBytes(rec[1][4:12])
 						var r []*memguard.LockedBuffer
-						if es.armed != nil {
-							r, _ = es.armed.Encrypt(es.ckey, es.iv, p, ct)
-						} else {
-							r = []*memguard.LockedBuffer{p, ct}
-						}
+						r, _ = es.armed.Encrypt(es.ckey, es.iv, p, ct)
 						es.Metadata[I].Pub = append([]byte{}, r[0].Buffer()...)
 						es.Metadata[I].Version = binary.LittleEndian.Uint32(rec[1][:4])
 						es.Metadata[I].CreateTime = append([]byte{}, r[1].Buffer()...)
@@ -238,11 +219,7 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (es EncryptedStore)
 						l := rec[1][0] + 1
 						k, _ := NewBufferFromBytes(rec[1][1:l])
 						var r []*memguard.LockedBuffer
-						if es.armed != nil {
-							r, _ = es.armed.Encrypt(es.ckey, es.iv, k)
-						} else {
-							r = []*memguard.LockedBuffer{k}
-						}
+						r, _ = es.armed.Encrypt(es.ckey, es.iv, k)
 						es.DefaultKey = append([]byte{}, r[0].Buffer()...)
 						DeleteBuffers(r...)
 					case "pool":
@@ -257,11 +234,7 @@ func Import(pass *memguard.LockedBuffer, filename ...string) (es EncryptedStore)
 						T, _ := NewBufferFromBytes(timestamp)
 						P, _ := NewBufferFromBytes(pub)
 						var r []*memguard.LockedBuffer
-						if es.armed != nil {
-							r, _ = es.armed.Encrypt(es.ckey, es.iv, T, P)
-						} else {
-							r = []*memguard.LockedBuffer{T, P}
-						}
+						r, _ = es.armed.Encrypt(es.ckey, es.iv, T, P)
 						es.Pool[I].Time = append([]byte{}, r[0].Buffer()...)
 						es.Pool[I].Pub = append([]byte{}, r[1].Buffer()...)
 						DeleteBuffers(r...)
