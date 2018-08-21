@@ -12,6 +12,7 @@ type LockedBuffer struct {
 	err   error
 }
 type lockedBuffer interface {
+	Len() int
 	WithSize(int) *LockedBuffer
 	ToLockedBuffer() *LockedBuffer
 	FromLockedBuffer(*LockedBuffer) *LockedBuffer
@@ -29,6 +30,11 @@ func NewLockedBuffer() *LockedBuffer {
 	return new(LockedBuffer)
 }
 
+// Len returns the length of the data stored in a LockedBuffer
+func (lb *LockedBuffer) Len() int {
+	return lb.value.Size()
+}
+
 // WithSize allocates a memguard LockedBuffer of a given size
 func (lb *LockedBuffer) WithSize(size int) *LockedBuffer {
 	if lb.value != nil {
@@ -39,9 +45,9 @@ func (lb *LockedBuffer) WithSize(size int) *LockedBuffer {
 }
 
 // ToLockedBuffer copies the current buffer into a new one
-func (lb *LockedBuffer) ToLockedBuffer() (out *LockedBuffer) {
-	out = new(LockedBuffer)
-	out.FromLockedBuffer(lb)
+func (lb *LockedBuffer) ToLockedBuffer() (LB *LockedBuffer) {
+	LB = NewLockedBuffer()
+	LB.value, LB.err = memguard.NewMutableFromBytes(lb.value.Buffer())
 	return
 }
 
@@ -71,6 +77,7 @@ func (lb *LockedBuffer) Delete() {
 // ToBytes copies a LockedBuffer value into a Bytes
 func (lb *LockedBuffer) ToBytes() (B *Bytes) {
 	b := lb.value.Buffer()
+	fmt.Println(b)
 	B = NewBytes().FromByteSlice(&b)
 	return
 }
@@ -81,6 +88,7 @@ func (lb *LockedBuffer) FromBytes(in *Bytes) *LockedBuffer {
 		lb.Delete()
 	}
 	b := in.ToByteSlice()
+	fmt.Println(*b)
 	lb.value, lb.err = memguard.NewMutableFromBytes(*b)
 	return lb
 }
