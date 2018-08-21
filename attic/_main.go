@@ -1,25 +1,27 @@
 // Duo is a new client for the Parallelcoin network written in Golang and using a html/json/dom/ajax progressive web application for its GUI interface
 package main
+
 import (
-	"github.com/awnumar/memguard"
 	"context"
 	"flag"
 	"fmt"
-	"gitlab.com/parallelcoin/duo/pkg/server/state"
-	"log"
-	"os"
+	"github.com/awnumar/memguard"
 	_ "gitlab.com/parallelcoin/duo/pkg/cmds"
 	"gitlab.com/parallelcoin/duo/pkg/iniflags"
 	"gitlab.com/parallelcoin/duo/pkg/logger"
 	"gitlab.com/parallelcoin/duo/pkg/server"
 	"gitlab.com/parallelcoin/duo/pkg/server/args"
+	"gitlab.com/parallelcoin/duo/pkg/server/state"
 	"gitlab.com/parallelcoin/duo/pkg/subcmd"
 	"gitlab.com/parallelcoin/duo/pkg/version"
+	"log"
+	"os"
 )
+
 var (
 	Version, GitCommit, GitBranch, GitState, BuildDate string
 )
-const ()
+
 // PrintGitInfo prints out information from git about the current build
 // Use govvv to get this to output correctly
 func PrintGitInfo() {
@@ -80,7 +82,7 @@ func cleanup() {
 	server.Shutdown()
 	memguard.SafeExit(0)
 }
-	
+
 func main() {
 	memguard.DisableUnixCoreDumps()
 	state.Init()
