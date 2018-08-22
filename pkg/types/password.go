@@ -23,7 +23,7 @@ func NewPassword() (p *Password) {
 // ToString copies the content of the Password buffer into a string.
 // WARNING: Go strings are immutable and potentially could be copied many times so be careful!
 func (p *Password) ToString() string {
-	return string(p.value.Buffer())
+	return string(*p.ToByteSlice())
 }
 
 // FromString copies a string into the LockedBuffer.
