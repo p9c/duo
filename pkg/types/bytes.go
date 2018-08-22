@@ -9,6 +9,7 @@ type Bytes struct {
 	err   error
 }
 type bytes interface {
+	Value() *[]byte
 	Len() int
 	WithSize(int) *Bytes
 	ToBytes() []byte
@@ -29,6 +30,9 @@ func NewBytes() *Bytes {
 
 // Len returns the length of the data stored in a Bytes
 func (b *Bytes) Len() int {
+	if b.value == nil {
+		return 0
+	}
 	return len(*b.value)
 }
 
@@ -84,10 +88,13 @@ func (b *Bytes) FromByteSlice(in *[]byte) *Bytes {
 			(*b.value)[i] = 0
 		}
 	}
-	B := make([]byte, len(*in))
-	for i := range *in {
-		B[i] = (*in)[i]
-		(*in)[i] = 0
+	I := *in
+	B := make([]byte, len(I))
+	if in != nil {
+		for i := range *in {
+			B[i] = (*in)[i]
+			I[i] = 0
+		}
 	}
 	b.value = &B
 	return b

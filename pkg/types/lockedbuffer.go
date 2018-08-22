@@ -32,6 +32,9 @@ func NewLockedBuffer() *LockedBuffer {
 
 // Len returns the length of the data stored in a LockedBuffer
 func (lb *LockedBuffer) Len() int {
+	if lb.value == nil {
+		return 0
+	}
 	return lb.value.Size()
 }
 
@@ -40,20 +43,27 @@ func (lb *LockedBuffer) WithSize(size int) *LockedBuffer {
 	if lb.value != nil {
 		lb.value.Destroy()
 	}
-	lb.value, lb.err = memguard.NewImmutable(size)
+	lb.value, lb.err = memguard.NewMutable(size)
 	return lb
 }
 
-// ToLockedBuffer copies the current buffer into a new one
+// ToLockedBuffer moves the current buffer into a new one
 func (lb *LockedBuffer) ToLockedBuffer() (LB *LockedBuffer) {
 	LB = NewLockedBuffer()
 	LB.value, LB.err = memguard.NewMutableFromBytes(lb.value.Buffer())
+	lb.Delete()
 	return
 }
 
 // FromLockedBuffer copies in the reference to another LockedBuffer
 func (lb *LockedBuffer) FromLockedBuffer(in *LockedBuffer) *LockedBuffer {
-	lb.value.Copy(in.value.Buffer())
+	if lb.value != nil {
+		lb.value.Destroy()
+	}
+	if in.value != nil {
+		lb.value = in.value
+		in.value = nil
+	}
 	return lb
 }
 
@@ -76,8 +86,10 @@ func (lb *LockedBuffer) Delete() {
 
 // ToBytes copies a LockedBuffer value into a Bytes
 func (lb *LockedBuffer) ToBytes() (B *Bytes) {
+	if lb.value == nil {
+		return nil
+	}
 	b := lb.value.Buffer()
-	fmt.Println(b)
 	B = NewBytes().FromByteSlice(&b)
 	return
 }
@@ -88,11 +100,33 @@ func (lb *LockedBuffer) FromBytes(in *Bytes) *LockedBuffer {
 		lb.Delete()
 	}
 	b := in.ToByteSlice()
-	fmt.Println(*b)
 	lb.value, lb.err = memguard.NewMutableFromBytes(*b)
 	return lb
 }
 
 func init() {
 	fmt.Println("pkg/types/lockedbuffer.go initialising")
+}
+
+// ----------------------------------------------------------------------------
+// Methods relating to builtin byte slices
+
+// ToByteSlice moves the byte slice inside it out
+func (lb *LockedBuffer) ToByteSlice() (out *[]byte) {
+	L := lb.value.Buffer()
+	o := make([]byte, len(L))
+	for i := range L {
+		o[i] = L[i]
+	}
+	out = &o
+	lb.Delete()
+	return
+}
+
+// FromByteSlice moves the content of a byte slice into the LockedBuffer
+func (lb *LockedBuffer) FromByteSlice(in *[]byte) *LockedBuffer {
+	if lb.value != nil {
+		lb.Delete()
+	}
+	return NewLockedBuffer().FromBytes(NewBytes().FromByteSlice(in))
 }

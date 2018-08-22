@@ -30,4 +30,5 @@ func TestBytes(t *testing.T) {
 	fmt.Println(E.Len())
 	fmt.Println(*E.FromBytes(f).ToString())
 	fmt.Println(c.ToByteSlice())
+	fmt.Println(NewBytes().Len())
 }
