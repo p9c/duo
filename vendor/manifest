@@ -1,0 +1,13 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/awnumar/memguard",
+			"repository": "https://github.com/awnumar/memguard",
+			"vcs": "git",
+			"revision": "f431f51ecd92dc926a5084ac3e9c89080ec7edf4",
+			"branch": "HEAD",
+			"notests": true
+		}
+	]
+}

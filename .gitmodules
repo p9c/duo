@@ -1,3 +1,0 @@
-[submodule "vendor/github.com/awnumar/memguard"]
-	path = vendor/github.com/awnumar/memguard
-	url = https://github.com/awnumar/memguard
