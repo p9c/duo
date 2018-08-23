@@ -37,4 +37,12 @@ func TestLockedBuffer(t *testing.T) {
 	fmt.Println("before FromByteSlice()", p.value.Buffer())
 	p.FromByteSlice(&X)
 	fmt.Println("after FromByteSlice()", p.value.Buffer())
+	s := NewLockedBuffer().WithSize(20)
+	fmt.Println(s, s.value, s.value.Buffer())
+	Sb := s.value.Buffer()
+	fmt.Println(Sb)
+	Sb[1] = 220
+	fmt.Println(Sb)
+	ss := s.Copy()
+	fmt.Println(s, ss)
 }

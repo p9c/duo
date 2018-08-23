@@ -4,12 +4,13 @@ import (
 	"fmt"
 )
 
+// Bytes is a simple wrapper around the builtin []byte type that is written to make explicit when data is being copied by an application. This is to promote security hygiene and prevent the unintended duplication of sensitive data in the memory of the process, which obviously improves the odds of an attack uncovering them.
 type Bytes struct {
 	value *[]byte
 	err   error
 }
 type bytes interface {
-	Value() *[]byte
+	Copy() *[]byte
 	Len() int
 	WithSize(int) *Bytes
 	ToBytes() []byte
@@ -28,6 +29,17 @@ func NewBytes() *Bytes {
 	return new(Bytes)
 }
 
+// Copy returns a copy of the contents of a Bytes (consumers of this library may only alter this value via functions as it is not exported). Note that this is in contrast to the To and From methods which *move* the data. This also does not use the builtin slice functions because they can cause side effects by referring to the same underlying buffer (this is why the To and From functions *move* the data also, but the consuming function should be aware of the difference because it is specified clearly).
+func (b *Bytes) Copy() *Bytes {
+	bb := NewBytes().WithSize(b.Len())
+	bv := *b.value
+	bbv := *bb.value
+	for i := range bv {
+		bbv[i] = bv[i]
+	}
+	return bb
+}
+
 // Len returns the length of the data stored in a Bytes
 func (b *Bytes) Len() int {
 	if b.value == nil {
@@ -44,12 +56,15 @@ func (b *Bytes) WithSize(size int) (B *Bytes) {
 	return
 }
 
-// ToBytes returns a copy of a bytes object
+// ToBytes moves the contents to a newly allocated buffer.
+// WARNING: The slice inside the receiver struct will be zeroed!
 func (b *Bytes) ToBytes() (B *Bytes) {
 	B = NewBytes()
 	bb := make([]byte, b.Len())
-	for i := range *b.value {
-		bb[i] = (*b.value)[i]
+	bv := *b.value
+	for i := range bv {
+		bb[i] = bv[i]
+		bv[i] = 0
 	}
 	B.value = &bb
 	return B

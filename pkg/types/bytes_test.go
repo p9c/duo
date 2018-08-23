@@ -31,4 +31,8 @@ func TestBytes(t *testing.T) {
 	fmt.Println(*E.FromBytes(f).ToString())
 	fmt.Println(c.ToByteSlice())
 	fmt.Println(NewBytes().Len())
+	h := NewBytes().FromString(&S)
+	H := h.Copy()
+	fmt.Println("original", h, "copy", H)
+	fmt.Println("original '" + *h.ToString() + "' copy '" + *H.ToString() + "'")
 }

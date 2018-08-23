@@ -12,6 +12,7 @@ type LockedBuffer struct {
 	err   error
 }
 type lockedBuffer interface {
+	Copy() *[]byte
 	Len() int
 	WithSize(int) *LockedBuffer
 	ToLockedBuffer() *LockedBuffer
@@ -28,6 +29,18 @@ type lockedBuffer interface {
 // NewLockedBuffer creates an unpopulated LockedBuffer structure
 func NewLockedBuffer() *LockedBuffer {
 	return new(LockedBuffer)
+}
+
+// Copy makes a copy and returns it.
+// WARNING: This buffer will need to be deleted later, so don't use this method without assigning it to a variable (it should always be the last in a method call chain and part of an assignment or a parameter in another function).
+func (lb *LockedBuffer) Copy() (LB *LockedBuffer) {
+	LB = NewLockedBuffer().WithSize(lb.Len())
+	b := lb.value.Buffer()
+	B := LB.value.Buffer()
+	for i := range b {
+		B[i] = b[i]
+	}
+	return
 }
 
 // Len returns the length of the data stored in a LockedBuffer
@@ -84,7 +97,7 @@ func (lb *LockedBuffer) Delete() {
 // -----------------------------------------------------------------------------
 // Methods relating to Bytes
 
-// ToBytes copies a LockedBuffer value into a Bytes
+// ToBytes moves a LockedBuffer value into a Bytes
 func (lb *LockedBuffer) ToBytes() (B *Bytes) {
 	if lb.value == nil {
 		return nil
