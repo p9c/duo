@@ -198,7 +198,6 @@ func (c *Crypt) Arm() *Crypt {
 		return c
 	}
 	ctb := *c.ciphertext.WithSize(32).Buffer()
-<<<<<<< HEAD
 	_, c.err = gcm.Open(ctb, *c.cipherIV.Buffer(), *c.crypt.Buffer(), nil)
 	if c.err != nil {
 		return c
@@ -213,20 +212,6 @@ func (c *Crypt) Arm() *Crypt {
 	if c.err != nil {
 		return c
 	}
-=======
-	_, c.err = gcm.Open(ctb, *c.IV().Buffer(), *c.crypt.Buffer(), nil)
-	if c.err != nil {
-		return c
-	}
-	block, c.err = aes.NewCipher(*c.ciphertext.Buffer())
-	if c.err != nil {
-		return c
-	}
-	gcm, c.err = cipher.NewGCM(block)
-	if c.err != nil {
-		return c
-	}
->>>>>>> 2d6a1d98d908534e5adea5c3973fa670e926b9df
 	c.gcm = &gcm
 	c.armed = true
 	return c
