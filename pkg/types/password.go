@@ -10,6 +10,7 @@ type Password struct {
 }
 type password interface {
 	Copy() *Password
+	Buffer() *Bytes
 	ToString() string
 	FromString(string) *LockedBuffer
 	ToPassword() *Password
@@ -27,6 +28,13 @@ func NewPassword() (p *Password) {
 func (p *Password) Copy() (P *Password) {
 	P = NewPassword()
 	P.LockedBuffer = p.LockedBuffer.Copy()
+	return
+}
+
+// Buffer returns a Bytes containing a link to the buffer inside the Password struct
+func (p *Password) Buffer() (B *[]byte) {
+	b := p.value.Buffer()
+	B = &b
 	return
 }
 

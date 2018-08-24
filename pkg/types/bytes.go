@@ -10,6 +10,7 @@ type Bytes struct {
 	err   error
 }
 type bytes interface {
+	Buffer() *[]byte
 	Copy() *[]byte
 	Len() int
 	WithSize(int) *Bytes
@@ -19,6 +20,7 @@ type bytes interface {
 	FromByteSlice([]byte) *Bytes
 	ToString() string
 	FromString(string) *Bytes
+	Zero() *Bytes
 }
 
 // ----------------------------------------------------------------------------
@@ -27,6 +29,11 @@ type bytes interface {
 // NewBytes creates a new Bytes object
 func NewBytes() *Bytes {
 	return new(Bytes)
+}
+
+// Buffer returns a pointer to the buffer storing the value inside the Bytes
+func (b *Bytes) Buffer() (B *[]byte) {
+	return b.value
 }
 
 // Copy returns a copy of the contents of a Bytes (consumers of this library may only alter this value via functions as it is not exported). Note that this is in contrast to the To and From methods which *move* the data. This also does not use the builtin slice functions because they can cause side effects by referring to the same underlying buffer (this is why the To and From functions *move* the data also, but the consuming function should be aware of the difference because it is specified clearly).
@@ -128,6 +135,15 @@ func (b *Bytes) FromString(s *string) *Bytes {
 	S := *s
 	B := []byte(S)
 	b.value = &B
+	return b
+}
+
+// Zero writes zero to all of the bytes of the Bytes
+func (b *Bytes) Zero() *Bytes {
+	B := *b.Buffer()
+	for i := range B {
+		B[i] = 0
+	}
 	return b
 }
 

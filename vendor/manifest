@@ -8,6 +8,24 @@
 			"revision": "f431f51ecd92dc926a5084ac3e9c89080ec7edf4",
 			"branch": "HEAD",
 			"notests": true
+		},
+		{
+			"importpath": "golang.org/x/crypto/blake2b",
+			"repository": "https://go.googlesource.com/crypto",
+			"vcs": "git",
+			"revision": "614d502a4dac94afa3a6ce146bd1736da82514c6",
+			"branch": "master",
+			"path": "/blake2b",
+			"notests": true
+		},
+		{
+			"importpath": "golang.org/x/sys/cpu",
+			"repository": "https://go.googlesource.com/sys",
+			"vcs": "git",
+			"revision": "11551d06cbcc94edc80a0facaccbda56473c19c1",
+			"branch": "master",
+			"path": "/cpu",
+			"notests": true
 		}
 	]
 }

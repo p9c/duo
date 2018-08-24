@@ -12,6 +12,7 @@ type LockedBuffer struct {
 	err   error
 }
 type lockedBuffer interface {
+	Buffer() *[]byte
 	Copy() *[]byte
 	Len() int
 	WithSize(int) *LockedBuffer
@@ -29,6 +30,12 @@ type lockedBuffer interface {
 // NewLockedBuffer creates an unpopulated LockedBuffer structure
 func NewLockedBuffer() *LockedBuffer {
 	return new(LockedBuffer)
+}
+
+// Buffer returns a pointer to the buffer storing the value inside the Bytes
+func (lb *LockedBuffer) Buffer() (B *[]byte) {
+	b := lb.value.Buffer()
+	return &b
 }
 
 // Copy makes a copy and returns it.
@@ -63,7 +70,7 @@ func (lb *LockedBuffer) WithSize(size int) *LockedBuffer {
 // ToLockedBuffer moves the current buffer into a new one
 func (lb *LockedBuffer) ToLockedBuffer() (LB *LockedBuffer) {
 	LB = NewLockedBuffer()
-	LB.value, LB.err = memguard.NewMutableFromBytes(lb.value.Buffer())
+	LB.value, LB.err = memguard.NewMutableFromBytes(*lb.Buffer())
 	lb.Delete()
 	return
 }
