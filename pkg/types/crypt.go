@@ -73,8 +73,11 @@ func (c *Crypt) Generate(p *Password) *Crypt {
 	var gcm cipher.AEAD
 	gcm, c.err = cipher.NewGCM(block)
 	crypt := gcm.Seal(nil, *c.cipherIV.Buffer(), *LB.Buffer(), nil)
+<<<<<<< HEAD
 	c.cipherIV.Zero()
 	c.cipherIV = nil
+=======
+>>>>>>> 2d6a1d98d908534e5adea5c3973fa670e926b9df
 	c.Load(NewBytes().FromByteSlice(&crypt))
 	c.Unlock(p)
 	c.Arm()
@@ -152,7 +155,10 @@ func (c *Crypt) Unlock(p *Password) *Crypt {
 	if !c.armed {
 		c.Arm()
 	}
+<<<<<<< HEAD
 	c.locked = false
+=======
+>>>>>>> 2d6a1d98d908534e5adea5c3973fa670e926b9df
 	return c
 }
 
@@ -192,6 +198,7 @@ func (c *Crypt) Arm() *Crypt {
 		return c
 	}
 	ctb := *c.ciphertext.WithSize(32).Buffer()
+<<<<<<< HEAD
 	_, c.err = gcm.Open(ctb, *c.cipherIV.Buffer(), *c.crypt.Buffer(), nil)
 	if c.err != nil {
 		return c
@@ -206,6 +213,20 @@ func (c *Crypt) Arm() *Crypt {
 	if c.err != nil {
 		return c
 	}
+=======
+	_, c.err = gcm.Open(ctb, *c.IV().Buffer(), *c.crypt.Buffer(), nil)
+	if c.err != nil {
+		return c
+	}
+	block, c.err = aes.NewCipher(*c.ciphertext.Buffer())
+	if c.err != nil {
+		return c
+	}
+	gcm, c.err = cipher.NewGCM(block)
+	if c.err != nil {
+		return c
+	}
+>>>>>>> 2d6a1d98d908534e5adea5c3973fa670e926b9df
 	c.gcm = &gcm
 	c.armed = true
 	return c
