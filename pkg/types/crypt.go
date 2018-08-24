@@ -180,12 +180,13 @@ func (c *Crypt) Arm() *Crypt {
 	var ciphertext *LockedBuffer
 	if c.iv != nil &&
 		c.crypt != nil &&
-		!c.IsArmed() &&
+		c.password != nil &&
 		c.iterations > 0 &&
 		!c.IsLocked() {
 		ciphertext, c.cipherIV, c.err = KDF(c.password, c.iv, c.iterations)
 	} else {
 		c.err = errors.New("Crypt is not fully populated")
+		return c
 	}
 	var block cipher.Block
 	block, c.err = aes.NewCipher(*ciphertext.Buffer())
