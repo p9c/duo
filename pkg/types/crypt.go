@@ -1,12 +1,16 @@
 package types
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"errors"
 )
 
 // Crypt is a secure data store for sensitive data. It consists of two fenced memory buffers, one for the password, one for the actual symmetric ciphertext, and a regular buffer that stores the data encrypted. It is intended to be used to minimise the number of times sensitive data ends up being copied around in memory.
 // The accessors for internal values all make copies into the same type of encapsulation rather than returning a reference to prevent a programmer accidentally messing up a Crypt variable's internals and other parts of an application using the values, so good memory hygiene dictates one should make sure to destroy especially LockedBuffers out of these functions.
+// It is important to note that this encryption library is only for encrypting individual strings of data for use in a relatively small database, and not for securing communications streams, as it would need to be extended with a byte counter and IV regenerator for the main IV used with encryption/decryption that triggers after some number of bytes (less than 4gb).
+// A database that uses this encryption must store the initialisation vector, crypt and iteration count, and from the password a GCM blockmode cipher is created that can be used to encrypt and decrypt.
 type Crypt struct {
 	password      *Password
 	crypt         *Bytes
@@ -15,6 +19,7 @@ type Crypt struct {
 	cipherIV      *Bytes
 	iterations    int
 	locked, armed bool
+	gcm           *cipher.AEAD
 	err           error
 }
 type crypt interface {
@@ -27,6 +32,7 @@ type crypt interface {
 	IV() *Bytes
 	SetRandomIV() *Crypt
 	SetIV(*Bytes) *Crypt
+	Iterations() int
 	SetIterations(int) *Crypt
 	Unlock(*Password) *Crypt
 	Lock() *Crypt
@@ -45,10 +51,32 @@ func NewCrypt() (c *Crypt) {
 	return
 }
 
-// Generate creates a new crypt (password encrypted symmetric key), random initialisation vector, based on a password
-func (c *Crypt) Generate(p *Password) {
+// Generate creates a new crypt (password encrypted symmetric key), random initialisation vector, based on a password, encrypts the crypt.
+// Because all required data is available from this function it arms the crypt after encrypting the generated ciphertext enabling it to be immediately put to use. Note that one can immediately chain a decrypt or encrypt function after this function invocation if desired.
+// The consumer of this library should be saving the crypt, IV and iteration count alongside the data that has been encrypted with the ciphertext to enable the data to be recovered with a valid key.
+// For this purpose, and the reason for making this library, the collection of structures containing data requiring encryption when not in use can have direct access to the GCM to provide the decrypted data to other functions using the data, by embedding this class alongside the crypt and the decrypt function returns a LockedBuffer containing the sensitive data, which can be wrapped in the function that returns the value in the crypt to callers.
+func (c *Crypt) Generate(p *Password) *Crypt {
 	c.SetRandomIV()
-
+	c.SetIterations(25000)
+	c.ciphertext.FromRandomBytes(32)
+	var LB *LockedBuffer
+	LB, c.cipherIV, c.err = KDF(p, c.IV(), c.Iterations())
+	if c.err != nil {
+		return c
+	}
+	defer LB.Delete()
+	var block cipher.Block
+	block, c.err = aes.NewCipher(*LB.Buffer())
+	if c.err != nil {
+		return c
+	}
+	var gcm cipher.AEAD
+	gcm, c.err = cipher.NewGCM(block)
+	crypt := gcm.Seal(nil, *c.cipherIV.Buffer(), *LB.Buffer(), nil)
+	c.Load(NewBytes().FromByteSlice(&crypt))
+	c.Unlock(p)
+	c.Arm()
+	return c
 }
 
 // Load moves the encrypted data into the crypt
@@ -102,6 +130,11 @@ func (c *Crypt) SetIV(B *Bytes) *Crypt {
 	return c
 }
 
+// Iterations returns the number of iterations configured in the Crypt
+func (c *Crypt) Iterations() int {
+	return c.iterations
+}
+
 // SetIterations sets the number of iterations to use in the KDF
 func (c *Crypt) SetIterations(I int) *Crypt {
 	c.iterations = I
@@ -114,7 +147,9 @@ func (c *Crypt) Unlock(p *Password) *Crypt {
 		c.password.Delete()
 	}
 	c.password = p
-	c.Arm()
+	if !c.armed {
+		c.Arm()
+	}
 	return c
 }
 
@@ -130,16 +165,43 @@ func (c *Crypt) IsLocked() bool {
 	return c.locked
 }
 
-// Arm runs the KDF on the password and uses the resultant key to unlock the ciphertext from the crypt enabling the encryption and decryption of data
+// Arm runs the KDF on the password and uses the resultant key to unlock the ciphertext from the crypt enabling the encryption and decryption of data. This function assumes the IV, encrypted form of the key is present, that it has not been marked as armed, the password has been loaded in, and that the iteration count is valid. If the content of the IV, crypt and password are not correct the result is not defined.
 func (c *Crypt) Arm() *Crypt {
-	if c.iv != nil && c.crypt != nil && c.armed != true && c.iterations > 0 {
-		c.ciphertext, c.cipherIV, c.err = KDF(c.password, c.iv, c.iterations)
+	var ciphertext *LockedBuffer
+	if c.iv != nil &&
+		c.crypt != nil &&
+		!c.IsArmed() &&
+		c.iterations > 0 &&
+		!c.IsLocked() {
+		ciphertext, c.cipherIV, c.err = KDF(c.password, c.iv, c.iterations)
 	} else {
 		c.err = errors.New("Crypt is not fully populated")
 	}
-	if c.err == nil {
-		c.armed = true
+	var block cipher.Block
+	block, c.err = aes.NewCipher(*ciphertext.Buffer())
+	if c.err != nil {
+		return c
 	}
+	var gcm cipher.AEAD
+	gcm, c.err = cipher.NewGCM(block)
+	if c.err != nil {
+		return c
+	}
+	ctb := *c.ciphertext.WithSize(32).Buffer()
+	_, c.err = gcm.Open(ctb, *c.IV().Buffer(), *c.crypt.Buffer(), nil)
+	if c.err != nil {
+		return c
+	}
+	block, c.err = aes.NewCipher(*c.ciphertext.Buffer())
+	if c.err != nil {
+		return c
+	}
+	gcm, c.err = cipher.NewGCM(block)
+	if c.err != nil {
+		return c
+	}
+	c.gcm = &gcm
+	c.armed = true
 	return c
 }
 
@@ -156,12 +218,17 @@ func (c *Crypt) IsArmed() bool {
 }
 
 // Encrypt encrypts the contents of a LockedBuffer and returns the encrypted form as Bytes
-func (c *Crypt) Encrypt(*LockedBuffer) (B *Bytes) {
+func (c *Crypt) Encrypt(lb *LockedBuffer) (B *Bytes) {
+	b := (*c.gcm).Seal(nil, *c.IV().Buffer(), *lb.Buffer(), nil)
+	B.FromByteSlice(&b)
 	return
 }
 
 // Decrypt decrypts the contents of a Bytes buffer and returns a LockedBuffer containing the decrypted plaintext
-func (c *Crypt) Decrypt(*Bytes) (LB *LockedBuffer) {
+func (c *Crypt) Decrypt(ciphertext *Bytes) (LB *LockedBuffer) {
+	var b []byte
+	b, c.err = (*c.gcm).Open(nil, *c.IV().Buffer(), *ciphertext.Buffer(), nil)
+	LB.FromByteSlice(&b)
 	return
 }
 
