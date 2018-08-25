@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"errors"
+	"time"
 )
 
 // Crypt is a secure data store for sensitive data. It consists of two fenced memory buffers, one for the password, one for the actual symmetric ciphertext, and a regular buffer that stores the data encrypted. It is intended to be used to minimise the number of times sensitive data ends up being copied around in memory.
@@ -53,14 +54,16 @@ func NewCrypt() (c *Crypt) {
 
 // Generate creates a new crypt (password encrypted symmetric key), random initialisation vector, based on a password, encrypts the crypt.
 // Because all required data is available from this function it arms the crypt after encrypting the generated ciphertext enabling it to be immediately put to use. Note that one can immediately chain a decrypt or encrypt function after this function invocation if desired.
+//
 // The consumer of this library should be saving the crypt, IV and iteration count alongside the data that has been encrypted with the ciphertext to enable the data to be recovered with a valid key.
+//
 // For this purpose, and the reason for making this library, the collection of structures containing data requiring encryption when not in use can have direct access to the GCM to provide the decrypted data to other functions using the data, by embedding this class alongside the crypt and the decrypt function returns a LockedBuffer containing the sensitive data, which can be wrapped in the function that returns the value in the crypt to callers.
 func (c *Crypt) Generate(p *Password) *Crypt {
 	c.SetRandomIV()
-	c.SetIterations(25000)
+	c.SetIterations(KDFBench(time.Second))
 	c.ciphertext.FromRandomBytes(32)
 	var LB *LockedBuffer
-	LB, c.cipherIV, c.err = KDF(p, c.IV(), c.Iterations())
+	LB, c.cipherIV, c.err = kdf(p, c.IV(), c.Iterations())
 	if c.err != nil {
 		return c
 	}
@@ -177,7 +180,7 @@ func (c *Crypt) Arm() *Crypt {
 		c.password != nil &&
 		c.iterations > 0 &&
 		!c.IsLocked() {
-		ciphertext, c.cipherIV, c.err = KDF(c.password, c.iv, c.iterations)
+		ciphertext, c.cipherIV, c.err = kdf(c.password, c.iv, c.iterations)
 	} else {
 		c.err = errors.New("Crypt is not fully populated")
 		return c

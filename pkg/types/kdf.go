@@ -7,8 +7,9 @@ import (
 )
 
 // KDF takes a password and a random 16 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 16 byte initialisation vector from the first 32 bytes and last 16 bytes respectively, after hashing the resultant hash iterations-1 more times.
+//
 // Blake2b is used because it is faster than SHA256/SHA512.
-func KDF(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, err error) {
+func kdf(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, err error) {
 	buf := NewLockedBuffer().WithSize(p.Len() + iv.Len())
 	defer buf.Delete()
 	Buf := *buf.Buffer()
