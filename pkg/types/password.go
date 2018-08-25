@@ -20,7 +20,6 @@ type password interface {
 // NewPassword creates a new empty password object
 func NewPassword() (p *Password) {
 	p = new(Password)
-	p.LockedBuffer = NewLockedBuffer()
 	return p
 }
 
@@ -54,8 +53,15 @@ FromString copies a string into the LockedBuffer.
 WARNING: Go strings are immutable so be aware that this password will persist and potentially be copied several times before being zeroed again for a new allocation.
 */
 func (p *Password) FromString(s *string) *Password {
-	b := []byte(*s)
-	p.FromBytes(NewBytes().FromByteSlice(&b))
+	if p.LockedBuffer != nil {
+		p.Delete()
+	}
+	p.LockedBuffer = NewLockedBuffer().WithSize(len(*s))
+	pp := p.Buffer()
+	P := *pp
+	for i := range *s {
+		P[i] = (*s)[i]
+	}
 	return p
 }
 

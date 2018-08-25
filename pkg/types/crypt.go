@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -68,7 +69,7 @@ For this purpose, and the reason for making this library, the collection of stru
 func (c *Crypt) Generate(p *Password) *Crypt {
 	c.SetRandomIV()
 	c.SetIterations(KDFBench(time.Second))
-	c.ciphertext.FromRandomBytes(32)
+	c.ciphertext.FromRandomBytes(36)
 	var LB *LockedBuffer
 	var cipherIV *Bytes
 	LB, cipherIV, c.err = kdf(p, c.IV(), c.Iterations())
@@ -83,6 +84,7 @@ func (c *Crypt) Generate(p *Password) *Crypt {
 	}
 	var gcm cipher.AEAD
 	gcm, c.err = cipher.NewGCM(block)
+	fmt.Println(gcm.NonceSize(), cipherIV.Len())
 	crypt := gcm.Seal(nil, *cipherIV.Buffer(), *LB.Buffer(), nil)
 	cipherIV.Zero()
 	cipherIV = nil
@@ -130,10 +132,15 @@ func (c *Crypt) IV() *Bytes {
 	return c.iv.Copy()
 }
 
-// SetRandomIV returns a new 16 byte initialisation vector from a cryptographically secure random source
+// SetRandomIV returns a new 12 byte initialisation vector from a cryptographically secure random source
 func (c *Crypt) SetRandomIV() *Crypt {
-	i := *c.iv.Buffer()
-	rand.Read(i)
+	if c.iv != nil {
+		c.iv.Zero()
+	} else {
+		c.iv = NewBytes().WithSize(12)
+	}
+	i := c.iv.Buffer()
+	rand.Read(*i)
 	return c
 }
 

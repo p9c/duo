@@ -9,7 +9,7 @@ import (
 /*
 Bytes is a simple wrapper around the builtin []byte type that is written to make explicit when data is being copied by an application.
 
-This is to promote security hygiene and prevent the unintended duplication of sensitive data in the memory of the process, which obviously improves the odds of an attack uncovering them.
+This is to promote security hygiene and prevent the unintended duplication of sensitive data in the memory of the process, which improves the odds of an attack uncovering them.
 */
 type Bytes struct {
 	value *[]byte

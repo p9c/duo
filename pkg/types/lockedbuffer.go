@@ -1,6 +1,8 @@
 package types
 
 import (
+	"crypto/rand"
+	"errors"
 	"fmt"
 	"github.com/awnumar/memguard"
 )
@@ -69,6 +71,7 @@ func (lb *LockedBuffer) WithSize(size int) *LockedBuffer {
 	if lb.value != nil {
 		lb.value.Destroy()
 	}
+	lb = NewLockedBuffer()
 	lb.value, lb.err = memguard.NewMutable(size)
 	return lb
 }
@@ -95,10 +98,23 @@ func (lb *LockedBuffer) FromLockedBuffer(in *LockedBuffer) *LockedBuffer {
 
 // FromRandomBytes creates a new LockedBuffer from a cryptographically secure source
 func (lb *LockedBuffer) FromRandomBytes(size int) *LockedBuffer {
-	if lb.value != nil {
-		lb.value.Destroy()
+	if lb != nil {
+		lb.Delete()
 	}
-	lb.value, lb.err = memguard.NewMutableRandom(size)
+	lb = NewLockedBuffer().WithSize(size)
+	if lb.err != nil {
+		return lb
+	}
+	LB := (*lb.value).Buffer()
+	var n int
+	n, lb.err = rand.Read(LB)
+	if n != size {
+		lb.err = errors.New("got only " + fmt.Sprint(n) + " of " + fmt.Sprint(size) + "requested bytes from rand.Read()")
+		return lb
+	}
+	if lb.err != nil {
+		return lb
+	}
 	return lb
 }
 
@@ -127,6 +143,9 @@ func (lb *LockedBuffer) FromBytes(in *Bytes) *LockedBuffer {
 	}
 	b := in.ToByteSlice()
 	lb.value, lb.err = memguard.NewMutableFromBytes(*b)
+	if lb.err != nil {
+		return lb
+	}
 	return lb
 }
 

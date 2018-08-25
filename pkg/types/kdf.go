@@ -8,7 +8,7 @@ import (
 )
 
 /*
-KDF takes a password and a random 16 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 16 byte initialisation vector from the first 32 bytes and last 16 bytes respectively, after hashing the resultant hash iterations-1 more times.
+KDF takes a password and a random 12 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 12 byte initialisation vector from the first 32 bytes and last 12 bytes respectively, after hashing the resultant hash iterations-1 more times.
 
 Blake2b is used because it is faster than SHA256/SHA512.
 */
@@ -35,7 +35,7 @@ func kdf(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, er
 	for i := range c {
 		c[i] = last[i]
 	}
-	IV = NewBytes().WithSize(16)
+	IV = NewBytes().WithSize(12)
 	ivb := *IV.Buffer()
 	for i := range ivb {
 		ivb[i] = last[i+C.Len()]
@@ -47,11 +47,9 @@ func kdf(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, er
 func KDFBench(t time.Duration) (iter int) {
 	P := NewPassword().FromRandomBytes(12)
 	p := *P.Buffer()
-	iv := NewBytes().FromRandom(16)
+	iv := NewBytes().FromRandom(12)
 	fmt.Println(iv.Len())
-	defer P.Delete()
-	buf := NewLockedBuffer().WithSize(P.Len() + iv.Len())
-	Buf := *buf.Buffer()
+	Buf := make([]byte, P.Len()+iv.Len())
 	for i := range p {
 		Buf[i] = p[i]
 	}
@@ -69,6 +67,7 @@ func KDFBench(t time.Duration) (iter int) {
 		iter++
 		select {
 		case <-timerChan:
+			P.Delete()
 			return
 		default:
 		}

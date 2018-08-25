@@ -8,13 +8,15 @@ import (
 )
 
 func TestCrypt(t *testing.T) {
-
+	a := NewCrypt()
+	p := "testpassword"
+	a.Generate(NewPassword().FromString(&p))
 }
 
 func TestKDF(t *testing.T) {
 	p := "testpassword"
 	password := NewPassword().FromString(&p)
-	iv := NewBytes().WithSize(16)
+	iv := NewBytes().WithSize(12)
 	rand.Read(*iv.Buffer())
 	iterations := 400000
 	tstart := time.Now()
