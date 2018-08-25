@@ -1,8 +1,10 @@
 package types
 
 import (
+	"fmt"
 	"golang.org/x/crypto/blake2b"
 	"hash"
+	"time"
 )
 
 // KDF takes a password and a random 16 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 16 byte initialisation vector from the first 32 bytes and last 16 bytes respectively, after hashing the resultant hash iterations-1 more times.
@@ -38,5 +40,12 @@ func KDF(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, er
 	for i := range ivb {
 		ivb[i] = last[i+C.Len()]
 	}
+	return
+}
+
+// KDFBench returns the number of iterations performed in a given time
+func KDFBench(t time.Duration) (iter int) {
+	timer := time.NewTimer(t)
+	fmt.Println(t)
 	return
 }

@@ -73,11 +73,8 @@ func (c *Crypt) Generate(p *Password) *Crypt {
 	var gcm cipher.AEAD
 	gcm, c.err = cipher.NewGCM(block)
 	crypt := gcm.Seal(nil, *c.cipherIV.Buffer(), *LB.Buffer(), nil)
-<<<<<<< HEAD
 	c.cipherIV.Zero()
 	c.cipherIV = nil
-=======
->>>>>>> 2d6a1d98d908534e5adea5c3973fa670e926b9df
 	c.Load(NewBytes().FromByteSlice(&crypt))
 	c.Unlock(p)
 	c.Arm()
@@ -155,10 +152,7 @@ func (c *Crypt) Unlock(p *Password) *Crypt {
 	if !c.armed {
 		c.Arm()
 	}
-<<<<<<< HEAD
 	c.locked = false
-=======
->>>>>>> 2d6a1d98d908534e5adea5c3973fa670e926b9df
 	return c
 }
 
