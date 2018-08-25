@@ -24,3 +24,9 @@ func TestKDF(t *testing.T) {
 	fmt.Println(elapsed, "elapsed", elapsed.Nanoseconds()/int64(iterations), "nanoseconds/iteration")
 	fmt.Println(LB, IV, err)
 }
+
+func TestKDFBench(t *testing.T) {
+
+	iter := KDFBench(time.Second)
+	fmt.Println("Performed", iter, "iterations in 1 seecond")
+}

@@ -1,6 +1,8 @@
 package types
 
 import (
+	"crypto/rand"
+	"errors"
 	"fmt"
 )
 
@@ -12,6 +14,7 @@ type Bytes struct {
 type bytes interface {
 	Buffer() *[]byte
 	Copy() *[]byte
+	FromRandom(int) *Bytes
 	Len() int
 	WithSize(int) *Bytes
 	ToBytes() []byte
@@ -45,6 +48,24 @@ func (b *Bytes) Copy() *Bytes {
 		bbv[i] = bv[i]
 	}
 	return bb
+}
+
+// FromRandom generates a Bytes object with a specified length gathered from a cryptographically secure RNG
+func (b *Bytes) FromRandom(length int) *Bytes {
+	if b.value != nil {
+		b.Zero()
+	}
+	B := make([]byte, length)
+	var count int
+	count, b.err = rand.Read(B)
+	if b.err != nil {
+		return b
+	}
+	if count < length {
+		b.err = errors.New("did not get all the random bytes requested")
+		return b
+	}
+	return b
 }
 
 // Len returns the length of the data stored in a Bytes
