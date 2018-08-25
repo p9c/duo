@@ -5,8 +5,11 @@ import (
 	"github.com/awnumar/memguard"
 )
 
-// LockedBuffer uses the memguard library to create a memory buffer that protects against reading or writing of the data by other processes running on a machine (except root user's processes of course).
-// Because of the need to manually free the buffers since the system doesn't really allow very much memory to have fences around it, there may be cases where you have to manually delete the buffers so they don't run out. If this becomes troublesome we may add tracking via a 'factory' type, to assist debugging out-of-memory errors.
+/*
+LockedBuffer uses the memguard library to create a memory buffer that protects against reading or writing of the data by other processes running on a machine (except root user's processes of course).
+
+Because of the need to manually free the buffers since the system doesn't really allow very much memory to have fences around it, there may be cases where you have to manually delete the buffers so they don't run out. If this becomes troublesome we may add tracking via a 'factory' type, to assist debugging out-of-memory errors.
+*/
 type LockedBuffer struct {
 	value *memguard.LockedBuffer
 	err   error
@@ -38,8 +41,11 @@ func (lb *LockedBuffer) Buffer() (B *[]byte) {
 	return &b
 }
 
-// Copy makes a copy and returns it.
-// WARNING: This buffer will need to be deleted later, so don't use this method without assigning it to a variable (it should always be the last in a method call chain and part of an assignment or a parameter in another function).
+/*
+Copy makes a copy and returns it.
+
+WARNING: This buffer will need to be deleted later, so don't use this method without assigning it to a variable (it should always be the last in a method call chain and part of an assignment or a parameter in another function).
+*/
 func (lb *LockedBuffer) Copy() (LB *LockedBuffer) {
 	LB = NewLockedBuffer().WithSize(lb.Len())
 	b := lb.value.Buffer()

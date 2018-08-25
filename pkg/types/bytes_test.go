@@ -35,4 +35,10 @@ func TestBytes(t *testing.T) {
 	H := h.Copy()
 	fmt.Println("original", h, "copy", H)
 	fmt.Println("original '" + *h.ToString() + "' copy '" + *H.ToString() + "'")
+	k := NewBytes().FromRandom(32)
+	fmt.Println("original FromRandom()", *k.Buffer())
+	k.Zero()
+	fmt.Println(*k.Buffer())
+	K := NewBytes().FromRandom(32).FromRandom(23)
+	fmt.Println(*K.Buffer())
 }

@@ -18,7 +18,7 @@ func TestKDF(t *testing.T) {
 	rand.Read(*iv.Buffer())
 	iterations := 400000
 	tstart := time.Now()
-	LB, IV, err := KDF(password, iv, iterations)
+	LB, IV, err := kdf(password, iv, iterations)
 	tend := time.Now()
 	elapsed := tend.Sub(tstart)
 	fmt.Println(elapsed, "elapsed", elapsed.Nanoseconds()/int64(iterations), "nanoseconds/iteration")
@@ -26,7 +26,6 @@ func TestKDF(t *testing.T) {
 }
 
 func TestKDFBench(t *testing.T) {
-
 	iter := KDFBench(time.Second)
 	fmt.Println("Performed", iter, "iterations in 1 seecond")
 }

@@ -1,14 +1,17 @@
 package types
 
 import (
+	"fmt"
 	"golang.org/x/crypto/blake2b"
 	"hash"
 	"time"
 )
 
-// KDF takes a password and a random 16 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 16 byte initialisation vector from the first 32 bytes and last 16 bytes respectively, after hashing the resultant hash iterations-1 more times.
-//
-// Blake2b is used because it is faster than SHA256/SHA512.
+/*
+KDF takes a password and a random 16 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 16 byte initialisation vector from the first 32 bytes and last 16 bytes respectively, after hashing the resultant hash iterations-1 more times.
+
+Blake2b is used because it is faster than SHA256/SHA512.
+*/
 func kdf(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, err error) {
 	buf := NewLockedBuffer().WithSize(p.Len() + iv.Len())
 	defer buf.Delete()
@@ -45,6 +48,7 @@ func KDFBench(t time.Duration) (iter int) {
 	P := NewPassword().FromRandomBytes(12)
 	p := *P.Buffer()
 	iv := NewBytes().FromRandom(16)
+	fmt.Println(iv.Len())
 	defer P.Delete()
 	buf := NewLockedBuffer().WithSize(P.Len() + iv.Len())
 	Buf := *buf.Buffer()
