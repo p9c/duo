@@ -8,7 +8,7 @@ import (
 func TestBytes(t *testing.T) {
 	a := new(Bytes)
 	A := []byte("test")
-	a.Assign(&A)
+	a.Load(&A)
 	fmt.Println("a", *a.Buf())
 	b := new(Bytes)
 	b.Copy(a)
