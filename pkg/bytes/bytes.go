@@ -2,12 +2,6 @@
 package b
 
 // To use it, simply new(Bytes) to get pointer to a empty new structure, and then after that you can call the methods of the interface.
-//
-// Or you can use a struct literal:
-//
-//     a := &Bytes{}.Assign([]bytes("string"))
-//
-// which you can immediately call pointer methods on, all of which recognise the empty state and will not panic due to nil pointers.
 type Bytes struct {
 	val *[]byte
 	set bool
