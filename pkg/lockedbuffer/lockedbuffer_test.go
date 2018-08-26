@@ -22,4 +22,24 @@ func TestLockedBuffer(t *testing.T) {
 	C := *c
 	C[0] = 1
 	fmt.Println("now both the same memory (changed byte zero of a only)", a.Buf(), b.Buf())
+	var d *LockedBuffer
+	fmt.Println("copy to unallocated b", b, "d", d.Copy(b))
+	fmt.Println("Should have an error, copying nil pointer: '" + b.Copy(d).err.Error() + "'")
+	fmt.Println("Random bytes", b.Rand(32).Buf())
+	fmt.Println("Chaining - New at end should mean empty at end", b.New(32).Rand(12).New(5).Buf())
+	fmt.Println("Struct literal (VERY BAD! Dangles afterwards)", struct{ *LockedBuffer }{}.New(12))
+	fmt.Println("Copying to ourself, should be an error '" + a.Copy(a).err.Error() + "'")
+	fmt.Println("Getting length of struct literal should be 0:", struct{ *LockedBuffer }{}.Len())
+	e := new(LockedBuffer)
+	fmt.Println("Getting length on unallocated buffer (should be 0):", e.Len())
+	fmt.Println("Nulling empty struct literal should be nil, false nil:", struct{ *LockedBuffer }{}.Null())
+	fmt.Println("Getting buf fromempty struct literal should be empty:", struct{ *LockedBuffer }{}.Buf())
+	fmt.Println("Rand on empty struct literal:", struct{ *LockedBuffer }{}.Rand(12).Buf())
+	fmt.Println("Rand on empty struct literal with negative length: '"+struct{ *LockedBuffer }{}.Rand(-12).err.Error(), "'")
+	fmt.Println("New on empty struct literal with negative length: '" + struct{ *LockedBuffer }{}.New(-12).err.Error() + "'")
+	fmt.Println("Buf() on empty struct literal:", struct{ *LockedBuffer }{}.Null().Buf())
+	A = []byte("testing")
+	fmt.Println("Load() on empty struct literal:", struct{ *LockedBuffer }{}.Load(&A))
+	fmt.Println("Load() on empty struct literal:", struct{ *LockedBuffer }{}.Link(b))
+	fmt.Println("Load() on empty struct literal:", struct{ *LockedBuffer }{}.Move(b))
 }

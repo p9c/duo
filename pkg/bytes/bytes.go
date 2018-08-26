@@ -5,7 +5,6 @@ package b
 
 import (
 	"crypto/rand"
-	"errors"
 )
 
 // Bytes is a struct that stores and manages byte slices for security purposes, automatically wipes old data when new data is loaded.
@@ -31,8 +30,11 @@ type bytes interface {
 	Move(*Bytes) *Bytes
 }
 
-// Len returns the length of the *[]byte if it has a value assigned.
+// Len returns the length of the *[]byte if it has a value assigned, or zero
 func (r *Bytes) Len() int {
+	if r == nil {
+		return 0
+	}
 	if r.set {
 		return len(*r.val)
 	}
@@ -41,35 +43,34 @@ func (r *Bytes) Len() int {
 
 // Null wipes the value stored, and restores the Bytes to the same state as a newly created one (with a nil *[]byte).
 func (r *Bytes) Null() *Bytes {
+	if r == nil {
+		r = new(Bytes)
+	}
 	if r.set {
 		rr := *r.val
 		for i := range rr {
 			rr[i] = 0
 		}
 	}
-	r.val = nil
-	r.set = false
-	r.err = nil
+	r.val, r.set, r.err = nil, false, nil
 	return r
 }
 
 // Rand loads a cryptographically random string of []byte of a specified size.
 func (r *Bytes) Rand(size int) *Bytes {
-	r.New(size)
-	var n int
-	n, r.err = rand.Read(*r.Buf())
-	if r.err != nil {
-		return r
-	}
-	if n != size {
-		r.err = errors.New("did not get the requested amount of bytes")
-	}
+	r = r.New(size)
+	// This function simply blocks until it gets all it wants from the random source.
+	rand.Read(*r.Buf())
 	return r
 }
 
 // New nulls the Bytes and assigns an empty *[]byte with a specified size.
 func (r *Bytes) New(size int) *Bytes {
-	r.Null()
+	if r == nil {
+		r = new(Bytes)
+	} else {
+		r.Null()
+	}
 	b := make([]byte, size)
 	r.Load(&b)
 	return r
@@ -77,36 +78,48 @@ func (r *Bytes) New(size int) *Bytes {
 
 // Buf returns a variable pointing to the value stored in a Bytes.
 func (r *Bytes) Buf() *[]byte {
+	if r == nil {
+		return &[]byte{}
+	}
 	return r.val
 }
 
 // Load nulls any existing data and sets its pointer to refer to the pointer to byte slice in the parameter.
 func (r *Bytes) Load(bytes *[]byte) *Bytes {
-	if r.set {
-		r.Null()
+	if r == nil {
+		r = new(Bytes)
 	}
-	r.val = bytes
-	r.set = true
-	r.err = nil
+	r.val, r.set, r.err = bytes, true, nil
 	return r
 }
 
 // Copy duplicates the data from the *[]byte provided and zeroes and replaces its contents, clearing the error value.
 func (r *Bytes) Copy(bytes *Bytes) *Bytes {
-	temp := make([]byte, bytes.Len())
+	if r == nil {
+		r = new(Bytes)
+	}
+	if bytes == nil {
+		return r
+	}
 	b := bytes.Buf()
+	if b == nil {
+		return r
+	}
+	temp := make([]byte, bytes.Len())
 	for i := range *b {
 		temp[i] = (*b)[i]
 	}
-	r.Load(&temp)
-	return r
+	return r.Load(&temp)
 }
 
 // Link nulls the Bytes and copies the pointer in from another Bytes. Whatever is done to one's []byte will also affect the other, but they keep separate error values
 func (r *Bytes) Link(bytes *Bytes) *Bytes {
-	r.Null()
-	r.Load(bytes.val)
-	return r
+	if r == nil {
+		r = new(Bytes)
+	} else {
+		r.Null()
+	}
+	return r.Load(bytes.val)
 }
 
 // Move copies the *[]byte pointer into the Bytes structure after removing what was in it, if anything. The value input into this function will be empty afterwards
