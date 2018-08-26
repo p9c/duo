@@ -20,6 +20,7 @@ type LockedBuffer struct {
 }
 
 type lockedBuffer interface {
+	Error() string
 	Len() int
 	Null() *LockedBuffer
 	Rand(int) *LockedBuffer
@@ -29,6 +30,14 @@ type lockedBuffer interface {
 	Copy(*LockedBuffer) *LockedBuffer
 	Link(*LockedBuffer) *LockedBuffer
 	Move(*LockedBuffer) *LockedBuffer
+}
+
+// Error returns the string in the err field
+func (r *LockedBuffer) Error() string {
+	if r.err == nil {
+		return ""
+	}
+	return r.err.Error()
 }
 
 // Len returns the length of the LockedBuffer if it has been loaded, or zero if not
@@ -107,8 +116,13 @@ func (r *LockedBuffer) Load(bytes *[]byte) *LockedBuffer {
 	} else {
 		r.Null()
 	}
-	// This function cannot return an error because len() cannot return negative
-	r.val, _ = memguard.NewMutableFromBytes(*bytes)
+	if bytes == nil {
+		return r.Null()
+	}
+	r.val, r.err = memguard.NewMutableFromBytes(*bytes)
+	if r.err != nil {
+		return r
+	}
 	r.set = true
 	return r
 }
