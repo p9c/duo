@@ -41,5 +41,6 @@ func TestBytes(t *testing.T) {
 	a.Load(&A)
 	fmt.Println(a.Buf())
 	fmt.Println("nil pointer with Link()", a.Buf(), d.Link(a).Buf())
-
+	f := NewBytes().Rand(13)
+	fmt.Println("NewBytes().Rand(13)", f, f.Buf())
 }

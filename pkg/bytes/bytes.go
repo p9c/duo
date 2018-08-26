@@ -30,6 +30,11 @@ type bytes interface {
 	Move(*Bytes) *Bytes
 }
 
+// NewBytes creates a new empty Bytes
+func NewBytes() *Bytes {
+	return new(Bytes)
+}
+
 // Len returns the length of the *[]byte if it has a value assigned, or zero
 func (r *Bytes) Len() int {
 	if r == nil {

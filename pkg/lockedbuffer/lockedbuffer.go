@@ -18,7 +18,6 @@ type LockedBuffer struct {
 	set bool
 	err error
 }
-
 type lockedBuffer interface {
 	Error() string
 	Len() int
@@ -30,6 +29,11 @@ type lockedBuffer interface {
 	Copy(*LockedBuffer) *LockedBuffer
 	Link(*LockedBuffer) *LockedBuffer
 	Move(*LockedBuffer) *LockedBuffer
+}
+
+// NewLockedBuffer creates a new, empty LockedBuffer
+func NewLockedBuffer() *LockedBuffer {
+	return new(LockedBuffer)
 }
 
 // Error returns the string in the err field
