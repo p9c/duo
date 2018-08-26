@@ -1,7 +1,6 @@
+// Bytes is a wrapper around the native byte slice  that automatically handles purging discarded data and enables copy, link and move functions on the data contained inside the structure.
 package b
 
-// Bytes is a wrapper around the native byte slice  that automatically handles purging discarded data and enables copy, link and move functions on the data contained inside the structure.
-//
 // To use it, simply new(Bytes) to get pointer to a empty new structure, and then after that you can call the methods of the interface.
 //
 // Or you can use a struct literal:
