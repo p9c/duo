@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"gitlab.com/parallelcoin/duo/pkg/types"
+	"gitlab.com/parallelcoin/duo/pkg/bytes"
 )
 
 func main() {
-	testthing := types.NewBytes()
-	fmt.Println(testthing)
+	a := new(b.Bytes)
+	fmt.Println(a.Buf())
 }
