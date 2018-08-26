@@ -1,3 +1,4 @@
+// Password is a LockedBuffer with string conversion functions, which are not recommended to be used. However the distinct type adds other safety benefits for the programmer and can be treated exactly the same as the LockedBuffer otherwise.
 package password
 
 import (
@@ -5,7 +6,7 @@ import (
 	"gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
 )
 
-// Password is a LockedBuffer with string conversion functions, which are not recommended to be used. However the distinct type adds other safety benefits for the programmer and can be treated exactly the same as the LockedBuffer otherwise.
+// Password is just a LockedBuffer but recommended for use in storing password fields in other structures to signify what kind of data it is.
 type Password struct {
 	*lb.LockedBuffer
 }
