@@ -1,7 +1,7 @@
 ![https://gitlab.com/parallelcoin/duo/raw/master/assets/logo/logo256x256.png](https://gitlab.com/parallelcoin/duo/raw/master/assets/logo/logo256x256.png)
 # Parallelcoin Daemon and Wallet
 
-![go report card](https://goreportcard.com/badge/gitlab.com/parallelcoin/duo)[](https://goreportcard.com/report/gitlab.com/parallelcoin/duo)     ![godoc](https://godoc.org/gitlab.com/parallelcoin/duo?status.svg)[](https://godoc.org/gitlab.com/parallelcoin/duo)
+<a href="https://goreportcard.com/report/gitlab.com/parallelcoin/duo"><img src="https://goreportcard.com/badge/gitlab.com/parallelcoin/duo" /></a>     <a href="https://godoc.org/gitlab.com/parallelcoin/duo"><img src="https://godoc.org/gitlab.com/parallelcoin/duo?status.svg" /></a>
 
 This is a port of the original Bitcoin-based C++ code that runs the Parallelcoin network, structurally identical but rewritten in Go. The Qt GUI wallet will be replaced with a Progressive Web App and a gRPC protocol will be added for faster RPC processing.
 
