@@ -57,14 +57,21 @@ func null(R interface{}) interface{} {
 			}
 		}
 	}
-	r.val = nil
-	r.set = false
-	r.err = nil
+	r.Bytes.Null()
+	r.password.Null()
+	r.ciphertext.Null()
+	r.iv.Null()
+	r.unlocked = false
+	r.armed = false
+	r.gcm = nil
 	return r
 }
 
 // Generate creates a new crypt based on a password and a newly generated random ciphertext
 func (r *Crypt) Generate(*Password) *Crypt {
+	if r == nil {
+		r = new(Crypt).NilGuard(r, null).(*Crypt)
+	}
 	if r == nil {
 		r = new(Crypt)
 	}
@@ -76,7 +83,7 @@ func (r *Crypt) Generate(*Password) *Crypt {
 // Password returns the password stored in the Crypt
 func (r *Crypt) Password() *Password {
 	if r == nil {
-		r = new(Crypt)
+		r = new(Crypt).NilGuard(r, null).(*Crypt)
 	}
 	return nil
 }
@@ -84,7 +91,7 @@ func (r *Crypt) Password() *Password {
 // Ciphertext returns the ciphertext stored in the crypt
 func (r *Crypt) Ciphertext() *LockedBuffer {
 	if r == nil {
-		r = new(Crypt)
+		r = new(Crypt).NilGuard(r, null).(*Crypt)
 	}
 	return nil
 }
@@ -92,7 +99,7 @@ func (r *Crypt) Ciphertext() *LockedBuffer {
 // IV returns the initialisation vector stored in the crypt
 func (r *Crypt) IV() *Bytes {
 	if r == nil {
-		r = new(Crypt)
+		r = new(Crypt).NilGuard(r, null).(*Crypt)
 	}
 	return nil
 }
@@ -100,7 +107,7 @@ func (r *Crypt) IV() *Bytes {
 // SetIV loads the IV with a Bytes. It must be 12 bytes long.
 func (r *Crypt) SetIV(b *Bytes) *Crypt {
 	if r == nil {
-		r = new(Crypt)
+		r = new(Crypt).NilGuard(r, null).(*Crypt)
 	}
 	if b.Len() == 0 {
 		r.SetError("nil Bytes")
@@ -116,16 +123,16 @@ func (r *Crypt) SetIV(b *Bytes) *Crypt {
 // SetRandomIV loads the IV with a random 12 bytes.
 func (r *Crypt) SetRandomIV() *Crypt {
 	if r == nil {
-		r = new(Crypt)
+		r = new(Crypt).NilGuard(r, null).(*Crypt)
 	}
-	r.iv.Move(NewBytes().Rand(12))
+	r.iv.Rand(12)
 	return r
 }
 
 // Unlock sets the password, runs the KDF and arms the
 func (r *Crypt) Unlock(*Password) *Crypt {
 	if r == nil {
-		r = new(Crypt)
+		r = new(Crypt).NilGuard(r, null).(*Crypt)
 	}
 	r.unlocked = true
 	return r
@@ -134,7 +141,7 @@ func (r *Crypt) Unlock(*Password) *Crypt {
 // Lock clears the password and disarms the crypt if it is armed
 func (r *Crypt) Lock() *Crypt {
 	if r == nil {
-		r = new(Crypt)
+		r = new(Crypt).NilGuard(r, null).(*Crypt)
 	}
 	r.unlocked = false
 	return r
@@ -143,7 +150,7 @@ func (r *Crypt) Lock() *Crypt {
 // IsUnlocked returns whether the crypt is locked or not
 func (r *Crypt) IsUnlocked() bool {
 	if r == nil {
-		r = new(Crypt)
+		return false
 	}
 	return r.unlocked
 }
@@ -151,7 +158,7 @@ func (r *Crypt) IsUnlocked() bool {
 // Arm generates the ciphertext from the password, uses it to decrypt the crypt into the crypt's main cyphertext, and creates the AES-GCM cipher
 func (r *Crypt) Arm() *Crypt {
 	if r == nil {
-		r = new(Crypt)
+		r = new(Crypt).NilGuard(r, null).(*Crypt)
 	}
 	r.armed = true
 	return r
@@ -159,21 +166,33 @@ func (r *Crypt) Arm() *Crypt {
 
 // Disarm clears the ciphertext
 func (r *Crypt) Disarm() *Crypt {
+	if r == nil {
+		r = new(Crypt).NilGuard(r, null).(*Crypt)
+	}
 	r.armed = false
 	return r
 }
 
 // IsArmed returns true if the crypt is armed
 func (r *Crypt) IsArmed() bool {
+	if r == nil {
+		return false
+	}
 	return r.armed
 }
 
 // Encrypt encrypts a Lockedbuffer and returns the ciphertext as Bytes
 func (r *Crypt) Encrypt(*LockedBuffer) *Bytes {
+	if r == nil {
+		return &Bytes{}
+	}
 	return nil
 }
 
 // Decrypt takes an encrypted Bytes and returns the decrypted data in a LockedBuffer
 func (r *Crypt) Decrypt(*Bytes) *LockedBuffer {
+	if r == nil {
+		return &LockedBuffer{}
+	}
 	return nil
 }

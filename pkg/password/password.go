@@ -34,8 +34,11 @@ func (r *Password) ToString() *string {
 
 // FromString loads the Lockedbuffer with the bytes of a string. The string is immutable so it is not removed from memory except automatically.
 func (r *Password) FromString(s *string) *Password {
-	if r == nil || r.LockedBuffer == nil {
+	if r == nil {
 		r = new(Password)
+	}
+	if r.LockedBuffer == nil {
+		r.LockedBuffer = new(LockedBuffer)
 	}
 	rr, S := r.New(len(*s)), []byte(*s)
 	R := *rr.Buf()
@@ -43,5 +46,6 @@ func (r *Password) FromString(s *string) *Password {
 		R[i] = S[i]
 	}
 	r.LockedBuffer = rr
+	fmt.Println(r.LockedBuffer.Buf())
 	return r
 }
