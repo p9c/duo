@@ -3,12 +3,12 @@ package password
 
 import (
 	"fmt"
-	"gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
+	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
 )
 
 // Password is just a LockedBuffer but recommended for use in storing password fields in other structures to signify what kind of data it is.
 type Password struct {
-	*lb.LockedBuffer
+	*LockedBuffer
 }
 type passwordI interface {
 	ToString() string

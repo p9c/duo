@@ -1,5 +1,5 @@
 // Package lb is a wrapper around the memguard LockedBuffer that automatically handles destroying data no longer needed and enables copy, link and move functions on the data contained inside the structure.
-package lb
+package lockedbuffer
 
 import (
 	"errors"
