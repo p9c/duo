@@ -24,6 +24,7 @@ type Bytes struct {
 type bytes interface {
 	Len() int
 	Null() *Bytes
+	IsSet() bool
 	Rand(int) *Bytes
 	New(int) *Bytes
 	Buf() []byte
@@ -72,6 +73,14 @@ func null(R interface{}) interface{} {
 	r.set = false
 	r.err = nil
 	return r
+}
+
+// IsSet returns true if the Bytes buffer has been loaded with a slice
+func (r *Bytes) IsSet() bool {
+	if r == nil {
+		return false
+	}
+	return r.set
 }
 
 // Rand loads a cryptographically random string of []byte of a specified size.

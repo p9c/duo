@@ -3,7 +3,6 @@ package crypt
 
 import (
 	"crypto/cipher"
-	"errors"
 	. "gitlab.com/parallelcoin/duo/pkg/bytes"
 	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
 	. "gitlab.com/parallelcoin/duo/pkg/password"
@@ -39,6 +38,29 @@ type crypt interface {
 // NewCrypt returns a new empty Crypt
 func NewCrypt() *Crypt {
 	return new(Crypt)
+}
+
+// Null wipes the value stored, and restores the Bytes to the same state as a newly created one (with a nil *[]byte).
+func (r *Crypt) Null() *Crypt {
+	return null(r).(*Crypt)
+}
+func null(R interface{}) interface{} {
+	r := R.(*Crypt)
+	if r == nil {
+		r = new(Crypt)
+	}
+	if r.Buf() != nil {
+		rr := *r.Buf()
+		if r.IsSet() {
+			for i := range rr {
+				rr[i] = 0
+			}
+		}
+	}
+	r.val = nil
+	r.set = false
+	r.err = nil
+	return r
 }
 
 // Generate creates a new crypt based on a password and a newly generated random ciphertext
