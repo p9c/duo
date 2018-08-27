@@ -1,4 +1,4 @@
-// Password is a LockedBuffer with string conversion functions, which are not recommended to be used. However the distinct type adds other safety benefits for the programmer and can be treated exactly the same as the LockedBuffer otherwise.
+// Package password is a LockedBuffer with string conversion functions, which are not recommended to be used. However the distinct type adds other safety benefits for the programmer and can be treated exactly the same as the LockedBuffer otherwise.
 package password
 
 import (
@@ -35,7 +35,7 @@ func (r *Password) ToString() *string {
 // FromString loads the Lockedbuffer with the bytes of a string. The string is immutable so it is not removed from memory except automatically.
 func (r *Password) FromString(s *string) *Password {
 	if r == nil {
-		r = new(Password)
+		r = new(Password).NilGuard(r, Null).(*Password)
 	}
 	if r.LockedBuffer == nil {
 		r.LockedBuffer = new(LockedBuffer)

@@ -2,8 +2,9 @@ package crypt
 
 import (
 	"fmt"
+	. "gitlab.com/parallelcoin/duo/pkg/byteprint"
 	. "gitlab.com/parallelcoin/duo/pkg/password"
-	"os"
+	// "os"
 	"testing"
 )
 
@@ -17,5 +18,8 @@ func TestCrypt(t *testing.T) {
 	d := NewPassword()
 	d.FromString(&s)
 	fmt.Println("fromstring")
-	os.Stdout.Write(*d.Buf())
+	Print(d.Buf()).SP().Str(d.Buf()).SP().Quo("thisisastring").SP().Brc(&s).CR().Brc(',')
+	NewCrypt().Password()
+	var f *Crypt
+	f.Password()
 }

@@ -10,7 +10,7 @@ import (
 
 // Crypt has a primary embed from a Bytes type that stores the encrypted data, so loading it is simple.
 type Crypt struct {
-	Bytes
+	*Bytes
 	password        *Password
 	ciphertext      *LockedBuffer
 	iv              *Bytes
@@ -57,8 +57,17 @@ func null(R interface{}) interface{} {
 			}
 		}
 	}
+	if r.Bytes == nil {
+		r.Bytes = new(Bytes)
+	}
 	r.Bytes.Null()
+	if r.password == nil {
+		r.password = new(Password)
+	}
 	r.password.Null()
+	if r.password == nil {
+		r.password = new(Password)
+	}
 	r.ciphertext.Null()
 	r.iv.Null()
 	r.unlocked = false
@@ -83,9 +92,9 @@ func (r *Crypt) Generate(*Password) *Crypt {
 // Password returns the password stored in the Crypt
 func (r *Crypt) Password() *Password {
 	if r == nil {
-		r = new(Crypt).NilGuard(r, null).(*Crypt)
+		return new(Password)
 	}
-	return nil
+	return r.password
 }
 
 // Ciphertext returns the ciphertext stored in the crypt

@@ -1,4 +1,4 @@
-// Package lb is a wrapper around the memguard LockedBuffer that automatically handles destroying data no longer needed and enables copy, link and move functions on the data contained inside the structure.
+// Package lockedbuffer is a wrapper around the memguard LockedBuffer that automatically handles destroying data no longer needed and enables copy, link and move functions on the data contained inside the structure.
 package lockedbuffer
 
 import (
@@ -15,7 +15,7 @@ import (
 //
 // The maximum size of buffer is around 172500 bytes on a linux 4.18, it may be more may be less.
 type LockedBuffer struct {
-	Pipe
+	*Pipe
 	val *memguard.LockedBuffer
 	set bool
 	err error
@@ -40,9 +40,9 @@ func NewLockedBuffer() *LockedBuffer {
 
 // Null zeroes out a LockedBuffer
 func (r *LockedBuffer) Null() *LockedBuffer {
-	return null(r).(*LockedBuffer)
+	return Null(r).(*LockedBuffer)
 }
-func null(R interface{}) interface{} {
+func Null(R interface{}) interface{} {
 	r := R.(*LockedBuffer)
 	if r == nil {
 		r = new(LockedBuffer)
@@ -78,7 +78,7 @@ func (r *LockedBuffer) Len() int {
 // Rand loads the LockedBuffer with cryptographically random bytes to a specified length, destroying existing buffer if it was set
 func (r *LockedBuffer) Rand(size int) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
 	}
 	r.val, r.err = memguard.NewMutableRandom(size)
 	if r.err != nil {
@@ -91,7 +91,7 @@ func (r *LockedBuffer) Rand(size int) *LockedBuffer {
 // New loads a fresh, zero-filled LockedBuffer in and destroys the existing buffer if it was set
 func (r *LockedBuffer) New(size int) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
 	}
 	r.val, r.err = memguard.NewMutable(size)
 	if r.err != nil {
@@ -118,10 +118,10 @@ func (r *LockedBuffer) Buf() *[]byte {
 // Load moves the contents of a byte slice into the LockedBuffer, erasing the original copy.
 func (r *LockedBuffer) Load(bytes *[]byte) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
 	}
 	if bytes == nil {
-		return null(r).(*LockedBuffer)
+		return Null(r).(*LockedBuffer)
 	}
 	r.val, r.err = memguard.NewMutableFromBytes(*bytes)
 	if r.err != nil {
@@ -134,7 +134,7 @@ func (r *LockedBuffer) Load(bytes *[]byte) *LockedBuffer {
 // Copy duplicates the buffer from another LockedBuffer.
 func (r *LockedBuffer) Copy(buf *LockedBuffer) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
 	}
 	if r == buf {
 		r.err = errors.New("cannot copy, returning same as given")
@@ -159,7 +159,7 @@ func (r *LockedBuffer) Copy(buf *LockedBuffer) *LockedBuffer {
 // Link copies the pointer from another LockedBuffer's content, meaning what is written to one will also be visible in the other
 func (r *LockedBuffer) Link(buf *LockedBuffer) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
 	}
 	r.val = buf.val
 	r.set = true
@@ -170,7 +170,7 @@ func (r *LockedBuffer) Link(buf *LockedBuffer) *LockedBuffer {
 // Move copies the pointer to the buffer into the receiver and nulls the passed LockedBuffer
 func (r *LockedBuffer) Move(buf *LockedBuffer) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
 	}
 	r.val = buf.val
 	r.set = true
