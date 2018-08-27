@@ -47,4 +47,5 @@ func TestLockedBuffer(t *testing.T) {
 	fmt.Println("Load(nil) on empty struct literal:", struct{ *LockedBuffer }{}.Load(nil))
 	g := NewLockedBuffer().Rand(13)
 	fmt.Println("NewLockedBuffer().Rand(13)", g, g.Buf())
+	fmt.Println(NewLockedBuffer().New(13).Null())
 }

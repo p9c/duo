@@ -2,6 +2,7 @@ package bytes
 
 import (
 	"fmt"
+	. "gitlab.com/parallelcoin/duo/pkg/pipe"
 	"testing"
 )
 
@@ -25,7 +26,7 @@ func TestBytes(t *testing.T) {
 	fmt.Println("Struct literal with Null", struct{ *Bytes }{}.Null().Buf())
 	fmt.Println("Struct literal with Len()", struct{ *Bytes }{}.Len())
 	fmt.Println("Struct literal with Null().Len()", struct{ *Bytes }{}.Null().Len())
-	fmt.Println("Struct literal with Null().New(32)", struct{ *Bytes }{}.Null().New(32))
+	fmt.Println("Struct literal with Null().New(32)", *struct{ *Bytes }{}.Null().New(32))
 	var d *Bytes
 	fmt.Println("nil pointer with Buf()", d.Buf())
 	d = nil
@@ -33,8 +34,9 @@ func TestBytes(t *testing.T) {
 	d = nil
 	fmt.Println("nil pointer with Copy()", d.Copy(a).Buf())
 	d = nil
-	fmt.Println("nil pointer with Copy(empty)", d.Copy(&Bytes{nil, false, nil}))
-	fmt.Println("Struct pointer with Copy(<nil>)", a.Load(&A).Copy(nil))
+	fmt.Println("nil pointer with Copy(empty)", *d.Copy(&Bytes{Pipe{}, nil, false, nil}))
+	fmt.Println("nil pointer with Copy(Buf zero len)", *d.Copy(&Bytes{Pipe{}, &[]byte{}, false, nil}))
+	fmt.Println("Struct pointer with Copy(<nil>)", *a.Load(&A).Copy(nil))
 	d = nil
 	A = []byte("this is longer")
 	fmt.Println(A)
@@ -42,5 +44,13 @@ func TestBytes(t *testing.T) {
 	fmt.Println(a.Buf())
 	fmt.Println("nil pointer with Link()", a.Buf(), d.Link(a).Buf())
 	f := NewBytes().Rand(13)
-	fmt.Println("NewBytes().Rand(13)", f, f.Buf())
+	fmt.Println("NewBytes().Rand(13)", *f, f.Buf())
+	fmt.Println("NewBytes().Move(NewBytes().New(13)).Error()", NewBytes().Move(NewBytes().New(13)).Error())
+	d = nil
+	fmt.Println("nil pointer with Move(empty)", *d.Move(&Bytes{Pipe{}, nil, false, nil}))
+	d = nil
+	fmt.Println("nil pointer with Error()", d.Error())
+	d = nil
+	fmt.Println("nil pointer with Error().SetError()", d.SetError("testing").Error())
+
 }
