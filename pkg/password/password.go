@@ -2,7 +2,6 @@
 package password
 
 import (
-	"fmt"
 	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
 )
 
@@ -27,7 +26,6 @@ func (r *Password) ToString() *string {
 		return &s
 	}
 	s := r.Buf()
-	fmt.Println(*s)
 	S := string(*s)
 	return &S
 }
@@ -35,10 +33,14 @@ func (r *Password) ToString() *string {
 // FromString loads the Lockedbuffer with the bytes of a string. The string is immutable so it is not removed from memory except automatically.
 func (r *Password) FromString(s *string) *Password {
 	if r == nil {
-		r = new(Password).NilGuard(r, Null).(*Password)
+		r = new(Password)
+		r.LockedBuffer = new(LockedBuffer)
+		r.LockedBuffer = r.LockedBuffer.NilGuard(r.LockedBuffer, NullLockedBuffer).(*LockedBuffer)
+		r.SetError("receiver was nil")
 	}
 	if r.LockedBuffer == nil {
 		r.LockedBuffer = new(LockedBuffer)
+		r.SetError("lockedbuffer was nil")
 	}
 	rr, S := r.New(len(*s)), []byte(*s)
 	R := *rr.Buf()
@@ -46,6 +48,5 @@ func (r *Password) FromString(s *string) *Password {
 		R[i] = S[i]
 	}
 	r.LockedBuffer = rr
-	fmt.Println(r.LockedBuffer.Buf())
 	return r
 }

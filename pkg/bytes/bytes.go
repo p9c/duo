@@ -103,7 +103,10 @@ func (r *Bytes) New(size int) *Bytes {
 
 // Buf returns a variable pointing to the value stored in a Bytes.
 func (r *Bytes) Buf() *[]byte {
-	if r == nil || r.val == nil {
+	if r == nil {
+		return &[]byte{}
+	}
+	if r.val == nil {
 		return &[]byte{}
 	}
 	return r.val
@@ -150,8 +153,13 @@ func (r *Bytes) Move(bytes *Bytes) *Bytes {
 	if r == nil {
 		r = new(Bytes).NilGuard(r, null).(*Bytes)
 	}
-	r.Load(bytes.val)
-	bytes.Null()
+	if bytes != nil {
+		r.Load(bytes.val)
+		bytes.Null()
+		r.set, r.err = true, nil
+	} else {
+		r.err = errors.New("nil pointer received as parameter")
+	}
 	return r
 }
 

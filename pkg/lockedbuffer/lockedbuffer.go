@@ -21,7 +21,8 @@ type LockedBuffer struct {
 	err error
 }
 type lockedBuffer interface {
-	Error() string
+	Error() error
+	SetError(string)
 	Null() *LockedBuffer
 	Len() int
 	Rand(int) *LockedBuffer
@@ -40,12 +41,15 @@ func NewLockedBuffer() *LockedBuffer {
 
 // Null zeroes out a LockedBuffer
 func (r *LockedBuffer) Null() *LockedBuffer {
-	return Null(r).(*LockedBuffer)
+	return NullLockedBuffer(r).(*LockedBuffer)
 }
-func Null(R interface{}) interface{} {
+
+// NullLockedBuffer clears the passed LockedBuffer or creates a new one if null
+func NullLockedBuffer(R interface{}) interface{} {
 	r := R.(*LockedBuffer)
 	if r == nil {
 		r = new(LockedBuffer)
+		r.SetError("receiver was nil")
 	}
 	if r.set {
 		r.val.Destroy()
@@ -57,11 +61,17 @@ func Null(R interface{}) interface{} {
 }
 
 // Error returns the string in the err field
-func (r *LockedBuffer) Error() string {
+func (r *LockedBuffer) Error() error {
 	if r.err == nil {
-		return ""
+		return nil
 	}
-	return r.err.Error()
+	return r.err
+}
+
+// SetError sets the string of the error in the err field
+func (r *LockedBuffer) SetError(s string) *LockedBuffer {
+
+	return r
 }
 
 // Len returns the length of the LockedBuffer if it has been loaded, or zero if not
@@ -78,7 +88,7 @@ func (r *LockedBuffer) Len() int {
 // Rand loads the LockedBuffer with cryptographically random bytes to a specified length, destroying existing buffer if it was set
 func (r *LockedBuffer) Rand(size int) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, NullLockedBuffer).(*LockedBuffer)
 	}
 	r.val, r.err = memguard.NewMutableRandom(size)
 	if r.err != nil {
@@ -91,7 +101,7 @@ func (r *LockedBuffer) Rand(size int) *LockedBuffer {
 // New loads a fresh, zero-filled LockedBuffer in and destroys the existing buffer if it was set
 func (r *LockedBuffer) New(size int) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, NullLockedBuffer).(*LockedBuffer)
 	}
 	r.val, r.err = memguard.NewMutable(size)
 	if r.err != nil {
@@ -118,10 +128,10 @@ func (r *LockedBuffer) Buf() *[]byte {
 // Load moves the contents of a byte slice into the LockedBuffer, erasing the original copy.
 func (r *LockedBuffer) Load(bytes *[]byte) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, NullLockedBuffer).(*LockedBuffer)
 	}
 	if bytes == nil {
-		return Null(r).(*LockedBuffer)
+		return NullLockedBuffer(r).(*LockedBuffer)
 	}
 	r.val, r.err = memguard.NewMutableFromBytes(*bytes)
 	if r.err != nil {
@@ -134,7 +144,7 @@ func (r *LockedBuffer) Load(bytes *[]byte) *LockedBuffer {
 // Copy duplicates the buffer from another LockedBuffer.
 func (r *LockedBuffer) Copy(buf *LockedBuffer) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, NullLockedBuffer).(*LockedBuffer)
 	}
 	if r == buf {
 		r.err = errors.New("cannot copy, returning same as given")
@@ -159,7 +169,7 @@ func (r *LockedBuffer) Copy(buf *LockedBuffer) *LockedBuffer {
 // Link copies the pointer from another LockedBuffer's content, meaning what is written to one will also be visible in the other
 func (r *LockedBuffer) Link(buf *LockedBuffer) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, NullLockedBuffer).(*LockedBuffer)
 	}
 	r.val = buf.val
 	r.set = true
@@ -170,7 +180,7 @@ func (r *LockedBuffer) Link(buf *LockedBuffer) *LockedBuffer {
 // Move copies the pointer to the buffer into the receiver and nulls the passed LockedBuffer
 func (r *LockedBuffer) Move(buf *LockedBuffer) *LockedBuffer {
 	if r == nil {
-		r = new(LockedBuffer).NilGuard(r, Null).(*LockedBuffer)
+		r = new(LockedBuffer).NilGuard(r, NullLockedBuffer).(*LockedBuffer)
 	}
 	r.val = buf.val
 	r.set = true
