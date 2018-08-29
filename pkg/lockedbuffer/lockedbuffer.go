@@ -2,6 +2,8 @@
 package lockedbuffer
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"github.com/awnumar/memguard"
 )
@@ -14,9 +16,10 @@ import (
 //
 // The maximum size of buffer is around 172500 bytes on a linux 4.18, it may be more may be less.
 type LockedBuffer struct {
-	val *memguard.LockedBuffer
-	set bool
-	err error
+	val  *memguard.LockedBuffer
+	set  bool
+	utf8 bool
+	err  error
 }
 
 // NewLockedBuffer clears the passed LockedBuffer or creates a new one if null
@@ -41,14 +44,19 @@ type lockedBuffer interface {
 	Delete()
 	Error() string
 	IsSet() bool
+	IsUTF8() bool
 	Len() int
 	Link(*LockedBuffer) *LockedBuffer
 	Load(*[]byte) *LockedBuffer
+	MarshalJSON() ([]byte, error)
 	Move(*LockedBuffer) *LockedBuffer
 	New(int) *LockedBuffer
 	Null() *LockedBuffer
 	Rand(int) *LockedBuffer
+	SetBin() *LockedBuffer
 	SetError(string) *LockedBuffer
+	SetUTF8() *LockedBuffer
+	String() string
 }
 
 // Buf returns a pointer to the byte slice in the LockedBuffer.
@@ -121,6 +129,11 @@ func (r *LockedBuffer) IsSet() bool {
 	return r.set
 }
 
+// IsUTF8 returns true if the LockedBuffer is set to output UTF8
+func (r *LockedBuffer) IsUTF8() bool {
+	return r.utf8
+}
+
 // Len returns the length of the LockedBuffer if it has been loaded, or -1 if not
 func (r *LockedBuffer) Len() int {
 	if r == nil {
@@ -158,6 +171,31 @@ func (r *LockedBuffer) Load(bytes *[]byte) *LockedBuffer {
 		r.set = true
 	}
 	return r
+}
+
+// MarshalJSON marshals the data of this object into JSON
+func (r *LockedBuffer) MarshalJSON() ([]byte, error) {
+	if r == nil {
+		r = NewLockedBuffer()
+		r.SetError("nil receiver")
+	}
+	var val string
+	if r.IsSet() {
+		if r.utf8 {
+			val = string(*r.Buf())
+		} else {
+			val = string(append([]byte("0x"), hex.EncodeToString(*r.Buf())...))
+		}
+	}
+	return json.Marshal(&struct {
+		Value string
+		IsSet bool
+		Error string
+	}{
+		Value: val,
+		IsSet: r.set,
+		Error: r.Error(),
+	})
 }
 
 // Move copies the pointer to the buffer into the receiver and nulls the passed LockedBuffer
@@ -201,6 +239,16 @@ func (r *LockedBuffer) Rand(size int) *LockedBuffer {
 	return r
 }
 
+// SetBin sets the data type to be binary
+func (r *LockedBuffer) SetBin() *LockedBuffer {
+	if r == nil {
+		r = NewLockedBuffer()
+		r.SetError("nil receiver")
+	}
+	r.utf8 = false
+	return r
+}
+
 // SetError sets the string of the error in the err field
 func (r *LockedBuffer) SetError(s string) *LockedBuffer {
 	if r == nil {
@@ -208,4 +256,20 @@ func (r *LockedBuffer) SetError(s string) *LockedBuffer {
 	}
 	r.err = errors.New(s)
 	return r
+}
+
+// SetUTF8 sets the LockedBuffer to output UTF8 strings
+func (r *LockedBuffer) SetUTF8() *LockedBuffer {
+	if r == nil {
+		r = NewLockedBuffer()
+		r.SetError("nil receiver")
+	}
+	r.utf8 = true
+	return r
+}
+
+// String returns the JSON representing the data in a LockedBuffer
+func (r *LockedBuffer) String() string {
+	s, _ := json.MarshalIndent(r, "", "    ")
+	return string(s)
 }

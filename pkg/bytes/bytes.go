@@ -5,6 +5,8 @@ package bytes
 
 import (
 	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 )
 
@@ -14,9 +16,10 @@ import (
 //
 // To use it, simply new(Bytes) to get pointer to a empty new structure, and then after that you can call the methods of the interface.
 type Bytes struct {
-	val *[]byte
-	set bool
-	err error
+	val  *[]byte
+	set  bool
+	utf8 bool
+	err  error
 }
 
 // NewBytes empties an existing bytes or makes a new one
@@ -46,14 +49,19 @@ type bytes interface {
 	Delete()
 	Error() string
 	IsSet() bool
+	IsUTF8() bool
 	Len() int
 	Link(*Bytes) *Bytes
 	Load(*[]byte) *Bytes
+	MarshalJSON() ([]byte, error)
 	Move(*Bytes) *Bytes
 	New(int) *Bytes
 	Null() *Bytes
 	Rand(int) *Bytes
+	SetBin() *Bytes
 	SetError(string) *Bytes
+	SetUTF8() *Bytes
+	String() string
 }
 
 // Buf returns a variable pointing to the value stored in a Bytes.
@@ -120,6 +128,11 @@ func (r *Bytes) IsSet() bool {
 	return r.set
 }
 
+// IsUTF8 returns true if the buffer is set to output UTF8 (instead of hex)
+func (r *Bytes) IsUTF8() bool {
+	return r.utf8
+}
+
 // Len returns the length of the *[]byte if it has a value assigned, or -1
 func (r *Bytes) Len() int {
 	if r == nil {
@@ -148,11 +161,35 @@ func (r *Bytes) Load(bytes *[]byte) *Bytes {
 	}
 	if bytes == nil {
 		r.SetError("nil parameter")
+		r.val, r.set = nil, false
 	} else {
 		r.Null()
 		r.val, r.set, r.err = bytes, true, nil
 	}
 	return r
+}
+
+// MarshalJSON renders the data as JSON
+func (r *Bytes) MarshalJSON() ([]byte, error) {
+	var val string
+	if r.val != nil {
+		if r.utf8 {
+			val = string(*r.val)
+		} else {
+			val = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.val))...))
+		}
+	}
+	return json.Marshal(&struct {
+		Value  string
+		IsSet  bool
+		IsUTF8 bool
+		Error  string
+	}{
+		Value:  val,
+		IsSet:  r.set,
+		IsUTF8: r.utf8,
+		Error:  r.Error(),
+	})
 }
 
 // Move copies the *[]byte pointer into the Bytes structure after removing what was in it, if anything. The value input into this function will be empty afterwards
@@ -194,6 +231,12 @@ func (r *Bytes) Rand(size int) *Bytes {
 	return r
 }
 
+// SetBin toggles to represent binary data as hex for string and json output
+func (r *Bytes) SetBin() *Bytes {
+	r.utf8 = false
+	return r
+}
+
 // SetError sets the error string
 func (r *Bytes) SetError(s string) *Bytes {
 	if r == nil {
@@ -201,4 +244,16 @@ func (r *Bytes) SetError(s string) *Bytes {
 	}
 	r.err = errors.New(s)
 	return r
+}
+
+// SetUTF8 toggles to represent UTF8 for (mutable) string output
+func (r *Bytes) SetUTF8() *Bytes {
+	r.utf8 = true
+	return r
+}
+
+// String returns the Bytes as JSON
+func (r *Bytes) String() string {
+	b, _ := json.MarshalIndent(r, "", "    ")
+	return string(b)
 }

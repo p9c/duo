@@ -45,14 +45,17 @@ func TestCrypt(t *testing.T) {
 	fmt.Println(*x.SetIV(NewBytes().Rand(12)).IV())
 	fmt.Println(x.SetIV(NewBytes().Rand(11)))
 	var z *Crypt
-	fmt.Println(z.Error())
+	fmt.Println(z)
 	fmt.Println(z.SetError("nothing"))
 	var n *Crypt
-	fmt.Println(n.SetIV(NewBytes().Rand(12)))
+	fmt.Println("SetIV()", n.SetIV(NewBytes().Rand(12)).IV().Buf())
 	var m *Crypt
 	fmt.Println(m.SetIV(nil).IV())
 	fmt.Println(*m.SetRandomIV().IV().Buf())
-	fmt.Println(NewCrypt().Generate(NewPassword().FromString("test")))
-	var v *Crypt
-	fmt.Println(v.Generate(NewPassword().FromString("test")))
+	// fmt.Println(NewCrypt().Generate(NewPassword().FromString("abcdef")).Password().Buf())
+	// var v *Crypt
+	// fmt.Println("nil receiver")
+	// fmt.Println(v.Generate(NewPassword().FromString("ghijkl")).String())
+	fmt.Println("valid receiver")
+	fmt.Println("Generate()", NewCrypt().Unlock(NewPassword().FromString("abcdef")).SetRandomIV().Generate(NewPassword().FromString("abcdef")).String())
 }

@@ -1,7 +1,6 @@
 package kdf
 
 import (
-	"fmt"
 	. "gitlab.com/parallelcoin/duo/pkg/bytes"
 	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
 	. "gitlab.com/parallelcoin/duo/pkg/password"
@@ -49,7 +48,6 @@ func Bench(t time.Duration) (iter int) {
 	P := NewPassword().Rand(12)
 	p := *P.Buf()
 	iv := NewBytes().Rand(12)
-	fmt.Println(iv.Len())
 	Buf := make([]byte, P.Len()+iv.Len())
 	for i := range p {
 		Buf[i] = p[i]

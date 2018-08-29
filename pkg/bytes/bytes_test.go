@@ -33,8 +33,8 @@ func TestBytes(t *testing.T) {
 	d = nil
 	fmt.Println("nil pointer with Copy()", d.Copy(a).Buf())
 	d = nil
-	fmt.Println("nil pointer with Copy(empty)", *d.Copy(&Bytes{nil, false, nil}))
-	fmt.Println("nil pointer with Copy(Buf zero len)", *d.Copy(&Bytes{&[]byte{}, false, nil}))
+	fmt.Println("nil pointer with Copy(empty)", *d.Copy(&Bytes{nil, false, false, nil}))
+	fmt.Println("nil pointer with Copy(Buf zero len)", *d.Copy(&Bytes{&[]byte{}, false, false, nil}))
 	fmt.Println("Struct pointer with Copy(<nil>)", *a.Load(&A).Copy(nil))
 	d = nil
 	A = []byte("this is longer")
@@ -46,7 +46,7 @@ func TestBytes(t *testing.T) {
 	fmt.Println("NewBytes().Rand(13)", *f, f.Buf())
 	fmt.Println("NewBytes().Move(NewBytes().New(13)).Error()", NewBytes().Move(NewBytes().New(13)).Error())
 	d = nil
-	fmt.Println("nil pointer with Move(empty)", *d.Move(&Bytes{nil, false, nil}))
+	fmt.Println("nil pointer with Move(empty)", *d.Move(&Bytes{nil, false, false, nil}))
 	d = nil
 	fmt.Println("nil pointer with Error()", d.Error())
 	d = nil
@@ -56,5 +56,9 @@ func TestBytes(t *testing.T) {
 	fmt.Println("non nil IsSet()", f.IsSet())
 	fmt.Println("nil Load(nil)", d.Load(nil))
 	fmt.Println("nil Move(nil)", d.Move(nil))
+	fmt.Println("JSON UTF8", f.Load(&A).SetUTF8().String())
+	B := []byte("this is longer    ")
+	fmt.Println("JSON hex", f.Load(&B).SetBin().String())
+	fmt.Println("JSON nil val", f.Load(nil).String())
 	d.Delete()
 }
