@@ -12,4 +12,5 @@ func TestPassword(t *testing.T) {
 	var n *Password
 	fmt.Println(n.ToString())
 	fmt.Println(*n.FromString(&p).ToString())
+	fmt.Println(P.SetError("testing").Error())
 }

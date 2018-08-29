@@ -9,14 +9,22 @@ import (
 type Password struct {
 	*LockedBuffer
 }
+
+// NewPassword creates a new Password
+func NewPassword(r ...*Password) *Password {
+	if len(r) == 0 {
+		r = append(r, new(Password))
+	}
+	if r[0] == nil {
+		r[0] = new(Password)
+		r[0].LockedBuffer = NewLockedBuffer(r[0].LockedBuffer)
+	}
+	return r[0]
+}
+
 type passwordI interface {
 	ToString() string
 	FromString(string) *Password
-}
-
-// NewPassword creates a new Password
-func NewPassword() *Password {
-	return new(Password)
 }
 
 // ToString returns the password as a string. Not recommended, as the memory is immutable and may end up being copied several times.
@@ -32,21 +40,12 @@ func (r *Password) ToString() *string {
 
 // FromString loads the Lockedbuffer with the bytes of a string. The string is immutable so it is not removed from memory except automatically.
 func (r *Password) FromString(s *string) *Password {
-	if r == nil {
-		r = new(Password)
-		r.LockedBuffer = new(LockedBuffer)
-		r.LockedBuffer = r.LockedBuffer.NilGuard(r.LockedBuffer, NullLockedBuffer).(*LockedBuffer)
-		r.SetError("receiver was nil")
-	}
-	if r.LockedBuffer == nil {
-		r.LockedBuffer = new(LockedBuffer)
-		r.SetError("lockedbuffer was nil")
-	}
-	rr, S := r.New(len(*s)), []byte(*s)
-	R := *rr.Buf()
+	r = NewPassword(r)
+	S := []byte(*s)
+	r.LockedBuffer = r.New(len(*s))
+	R := *r.Buf()
 	for i := range S {
 		R[i] = S[i]
 	}
-	r.LockedBuffer = rr
 	return r
 }

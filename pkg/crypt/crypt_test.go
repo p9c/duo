@@ -19,7 +19,7 @@ func TestCrypt(t *testing.T) {
 	d.FromString(&s)
 	fmt.Println("fromstring", d)
 	Print(d.Buf()).SP().Str(d.Buf()).SP().Quo("thisisastring").SP().Brc(&s).CR().Brc(',')
-	NewCrypt().Password()
+	fmt.Println("empty pw", NewCrypt().Password().Error())
 	var f *Crypt
 	f.Password()
 	f.Ciphertext()

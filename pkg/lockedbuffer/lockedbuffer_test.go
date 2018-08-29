@@ -29,6 +29,7 @@ func TestLockedBuffer(t *testing.T) {
 	fmt.Println("Chaining - New at end should mean empty at end", b.New(32).Rand(12).New(5).Buf())
 	fmt.Println("Struct literal (VERY BAD! Dangles afterwards)", struct{ *LockedBuffer }{}.New(12))
 	fmt.Println("Copying to ourself, should be an error '" + a.Copy(a).Error() + "'")
+	fmt.Println("Copying to ourself, should be an error '" + a.Copy(&LockedBuffer{}).Error() + "'")
 	fmt.Println("Getting length of struct literal should be 0:", struct{ *LockedBuffer }{}.Len())
 	e := new(LockedBuffer)
 	fmt.Println("Getting length on unallocated buffer (should be 0):", e.Len())
@@ -48,4 +49,12 @@ func TestLockedBuffer(t *testing.T) {
 	g := NewLockedBuffer().Rand(13)
 	fmt.Println("NewLockedBuffer().Rand(13)", g, g.Buf())
 	fmt.Println(NewLockedBuffer().New(13).Null())
+	NewLockedBuffer().Delete()
+	var n *LockedBuffer
+	fmt.Println("should be nil receiver:", n.Error())
+	fmt.Println("nil IsSet()", n.IsSet())
+	e.Rand(32)
+	fmt.Println("not nil IsSet()", e.IsSet())
+	fmt.Println("Move(nil)", n.Move(nil))
+	fmt.Println("nil SetError()", n.SetError("testing"))
 }

@@ -2,7 +2,6 @@ package bytes
 
 import (
 	"fmt"
-	. "gitlab.com/parallelcoin/duo/pkg/pipe"
 	"testing"
 )
 
@@ -34,8 +33,8 @@ func TestBytes(t *testing.T) {
 	d = nil
 	fmt.Println("nil pointer with Copy()", d.Copy(a).Buf())
 	d = nil
-	fmt.Println("nil pointer with Copy(empty)", *d.Copy(&Bytes{Pipe{}, nil, false, nil}))
-	fmt.Println("nil pointer with Copy(Buf zero len)", *d.Copy(&Bytes{Pipe{}, &[]byte{}, false, nil}))
+	fmt.Println("nil pointer with Copy(empty)", *d.Copy(&Bytes{nil, false, nil}))
+	fmt.Println("nil pointer with Copy(Buf zero len)", *d.Copy(&Bytes{&[]byte{}, false, nil}))
 	fmt.Println("Struct pointer with Copy(<nil>)", *a.Load(&A).Copy(nil))
 	d = nil
 	A = []byte("this is longer")
@@ -47,10 +46,15 @@ func TestBytes(t *testing.T) {
 	fmt.Println("NewBytes().Rand(13)", *f, f.Buf())
 	fmt.Println("NewBytes().Move(NewBytes().New(13)).Error()", NewBytes().Move(NewBytes().New(13)).Error())
 	d = nil
-	fmt.Println("nil pointer with Move(empty)", *d.Move(&Bytes{Pipe{}, nil, false, nil}))
+	fmt.Println("nil pointer with Move(empty)", *d.Move(&Bytes{nil, false, nil}))
 	d = nil
 	fmt.Println("nil pointer with Error()", d.Error())
 	d = nil
 	fmt.Println("nil pointer with Error().SetError()", d.SetError("testing").Error())
-
+	fmt.Println("copying self", f.Copy(f))
+	fmt.Println("nil IsSet()", d.IsSet())
+	fmt.Println("non nil IsSet()", f.IsSet())
+	fmt.Println("nil Load(nil)", d.Load(nil))
+	fmt.Println("nil Move(nil)", d.Move(nil))
+	d.Delete()
 }

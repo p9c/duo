@@ -53,7 +53,7 @@ func NewCrypt() *Crypt {
 // Error returns the error stored in the crypt
 func (r *Crypt) Error() error {
 	if r == nil {
-		return nil
+		return errors.New("receiver was nil")
 	}
 	return r.err
 }
@@ -154,8 +154,8 @@ func (r *Crypt) Password() *Password {
 		r.SetError("receiver was nil")
 	}
 	if r.password == nil {
-		r.password = new(Password)
-		r.SetError("password was nil")
+		r.password = NewPassword()
+		r.password.SetError("password was nil")
 	}
 	return r.password
 }
