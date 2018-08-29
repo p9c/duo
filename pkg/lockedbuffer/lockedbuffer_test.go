@@ -2,6 +2,8 @@ package lockedbuffer
 
 import (
 	"fmt"
+	"github.com/awnumar/memguard"
+	. "gitlab.com/parallelcoin/duo/pkg/bytes"
 	"testing"
 )
 
@@ -57,4 +59,21 @@ func TestLockedBuffer(t *testing.T) {
 	fmt.Println("not nil IsSet()", e.IsSet())
 	fmt.Println("Move(nil)", n.Move(nil))
 	fmt.Println("nil SetError()", n.SetError("testing"))
+	n.IsUTF8()
+	e.IsUTF8()
+	fmt.Println("JSON", e.String())
+	var m *LockedBuffer
+	fmt.Println("JSON", m.String())
+	m.MarshalJSON()
+	m.Load(NewBytes().Rand(32).Buf())
+	m = new(LockedBuffer)
+	m.set = true
+	m.SetUTF8()
+	m.val, m.err = memguard.NewImmutableRandom(32)
+	m.MarshalJSON()
+	var oo *LockedBuffer
+	oo.SetUTF8()
+	var pp *LockedBuffer
+	pp.SetBin()
+
 }

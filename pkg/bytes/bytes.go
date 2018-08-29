@@ -139,7 +139,9 @@ func (r *Bytes) Len() int {
 		return -1
 	}
 	if r.set {
-		return len(*r.val)
+		if r.val != nil {
+			return len(*r.val)
+		}
 	}
 	return 0
 }

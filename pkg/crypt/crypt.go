@@ -87,34 +87,34 @@ func (r *Crypt) Arm() *Crypt {
 	case r == nil:
 		r = NewCrypt()
 		r.SetError("nil receiver")
-	case r.Password() == nil:
+	case r.Password().Len() == 0:
 		r.SetError("nil password")
-	case r.Crypt() == nil:
+	case r.Crypt().Len() == 0:
 		r.SetError("nil crypt")
-	case r.IV() == nil:
+	case r.IV().Len() == 0:
 		r.SetError("nil IV")
 	default:
 		var C *LockedBuffer
 		var IV *Bytes
 		C, IV, r.err = kdf.Gen(r.Password(), r.IV(), r.iterations)
-		if r.err != nil {
-			return r
-		}
+		// if r.err != nil {
+		// 	return r
+		// }
 		var block cipher.Block
 		block, r.err = aes.NewCipher(*C.Buf())
 		var blockmode cipher.AEAD
 		blockmode, r.err = cipher.NewGCM(block)
 		var c []byte
 		c, r.err = blockmode.Open(nil, *IV.Buf(), *r.Crypt().Buf(), nil)
-		if r.err != nil {
-			return r
-		}
+		// if r.err != nil {
+		// 	return r
+		// }
 		r.ciphertext = NewLockedBuffer().Load(&c)
 		block, r.err = aes.NewCipher(*r.ciphertext.Buf())
 		blockmode, r.err = cipher.NewGCM(block)
-		if r.err != nil {
-			return r
-		}
+		// if r.err != nil {
+		// 	return r
+		// }
 		r.gcm = &blockmode
 		r.armed = true
 	}
@@ -223,18 +223,18 @@ func (r *Crypt) Generate(p *Password) *Crypt {
 	if p == nil {
 		r.password = new(Password)
 		r.SetError("no password given")
-	} else {
-		r.password = p
+		return r
 	}
+	r.password = p
 	r.ciphertext = NewLockedBuffer().Rand(32)
 	r.SetRandomIV()
 	r.iterations = kdf.Bench(time.Second)
 	var C *LockedBuffer
 	var IV *Bytes
 	C, IV, r.err = kdf.Gen(r.Password(), r.IV(), r.iterations)
-	if r.err != nil {
-		return r
-	}
+	// if r.err != nil {
+	// 	return r
+	// }
 	var block cipher.Block
 	block, r.err = aes.NewCipher(*C.Buf())
 	var blockmode cipher.AEAD
@@ -242,15 +242,15 @@ func (r *Crypt) Generate(p *Password) *Crypt {
 	c := blockmode.Seal(nil, *IV.Buf(), *r.Ciphertext().Buf(), nil)
 	r.crypt = r.crypt.Load(&c)
 	block, r.err = aes.NewCipher(*r.Ciphertext().Buf())
-	if r.err != nil {
-		return r
-	}
+	// if r.err != nil {
+	// 	return r
+	// }
 	A := new(cipher.AEAD)
 	a := *A
 	a, r.err = cipher.NewGCM(block)
-	if r.err != nil {
-		return r
-	}
+	// if r.err != nil {
+	// 	return r
+	// }
 	r.gcm = &a
 	r.armed = true
 	return r

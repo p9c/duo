@@ -32,7 +32,9 @@ func NewLockedBuffer(r ...*LockedBuffer) *LockedBuffer {
 		r[0].SetError("receiver was nil")
 	}
 	if r[0].set {
-		r[0].val.Destroy()
+		if r[0].val != nil {
+			r[0].val.Destroy()
+		}
 	}
 	r[0].val, r[0].set, r[0].err = nil, false, nil
 	return r[0]
@@ -67,8 +69,10 @@ func (r *LockedBuffer) Buf() *[]byte {
 		return &[]byte{}
 	}
 	if r.set {
-		a := r.val.Buffer()
-		return &a
+		if r.val != nil {
+			a := r.val.Buffer()
+			return &a
+		}
 	}
 	return nil
 }
@@ -131,6 +135,9 @@ func (r *LockedBuffer) IsSet() bool {
 
 // IsUTF8 returns true if the LockedBuffer is set to output UTF8
 func (r *LockedBuffer) IsUTF8() bool {
+	if r == nil {
+		return false
+	}
 	return r.utf8
 }
 
@@ -181,10 +188,12 @@ func (r *LockedBuffer) MarshalJSON() ([]byte, error) {
 	}
 	var val string
 	if r.IsSet() {
-		if r.utf8 {
-			val = string(*r.Buf())
-		} else {
-			val = string(append([]byte("0x"), hex.EncodeToString(*r.Buf())...))
+		if r.val != nil {
+			if r.utf8 {
+				val = string(*r.Buf())
+			} else {
+				val = string(append([]byte("0x"), hex.EncodeToString(*r.Buf())...))
+			}
 		}
 	}
 	return json.Marshal(&struct {

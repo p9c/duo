@@ -3,6 +3,7 @@ package password
 
 import (
 	"encoding/json"
+	. "gitlab.com/parallelcoin/duo/pkg/bytes"
 	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
 )
 
@@ -59,6 +60,15 @@ func (r *Password) FromString(s string) *Password {
 
 // MarshalJSON marshalls the JSON for a Password
 func (r *Password) MarshalJSON() ([]byte, error) {
+	if r == nil {
+		r = NewPassword()
+	}
+	if r.LockedBuffer == nil {
+		r.LockedBuffer = NewLockedBuffer()
+	}
+	if r.LockedBuffer.Len() == 0 {
+		r.LockedBuffer.Load(NewBytes().Rand(32).Buf())
+	}
 	return json.Marshal(&struct {
 		Value  string
 		IsSet  bool

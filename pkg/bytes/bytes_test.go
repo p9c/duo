@@ -60,5 +60,6 @@ func TestBytes(t *testing.T) {
 	B := []byte("this is longer    ")
 	fmt.Println("JSON hex", f.Load(&B).SetBin().String())
 	fmt.Println("JSON nil val", f.Load(nil).String())
+	f.IsUTF8()
 	d.Delete()
 }

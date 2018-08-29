@@ -1,6 +1,7 @@
 package kdf
 
 import (
+	"errors"
 	. "gitlab.com/parallelcoin/duo/pkg/bytes"
 	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
 	. "gitlab.com/parallelcoin/duo/pkg/password"
@@ -13,7 +14,19 @@ import (
 //
 // Blake2b is used because it is faster than SHA256/SHA512.
 func Gen(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, err error) {
+	if p == nil {
+		return nil, nil, errors.New("nil password")
+	}
+	if iv == nil {
+		return nil, nil, errors.New("nil IV")
+	}
+	if iterations < 1 {
+		return nil, nil, errors.New("iterations less than 1")
+	}
 	buf := NewLockedBuffer().New(p.Len() + iv.Len())
+	if buf.Error() != "" {
+		return nil, nil, errors.New(buf.Error())
+	}
 	defer buf.Delete()
 	Buf := *buf.Buf()
 	P := *p.Buf()
