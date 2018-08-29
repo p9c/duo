@@ -39,10 +39,10 @@ func (r *Password) ToString() *string {
 }
 
 // FromString loads the Lockedbuffer with the bytes of a string. The string is immutable so it is not removed from memory except automatically.
-func (r *Password) FromString(s *string) *Password {
+func (r *Password) FromString(s string) *Password {
 	r = NewPassword(r)
-	S := []byte(*s)
-	r.LockedBuffer = r.New(len(*s))
+	S := []byte(s)
+	r.LockedBuffer = r.New(len(s))
 	R := *r.Buf()
 	for i := range S {
 		R[i] = S[i]

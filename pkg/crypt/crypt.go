@@ -23,7 +23,7 @@ type Crypt struct {
 	err             error
 }
 type crypt interface {
-	Error() error
+	Error() string
 	SetError(string) *crypt
 	Crypt() *Bytes
 	Load(*Bytes) *Crypt
@@ -51,11 +51,14 @@ func NewCrypt() *Crypt {
 }
 
 // Error returns the error stored in the crypt
-func (r *Crypt) Error() error {
+func (r *Crypt) Error() string {
 	if r == nil {
-		return errors.New("receiver was nil")
+		return "receiver was nil"
 	}
-	return r.err
+	if r.err != nil {
+		return r.err.Error()
+	}
+	return "<nil>"
 }
 
 // SetError sets the error in the Crypt
@@ -135,15 +138,18 @@ func NullCrypt(R interface{}) interface{} {
 }
 
 // Generate creates a new crypt based on a password and a newly generated random ciphertext
-func (r *Crypt) Generate(*Password) *Crypt {
-	if r == nil {
-		// r = new(Crypt).NilGuard(r, null).(*Crypt)
+func (r *Crypt) Generate(p *Password) *Crypt {
+	if p != nil {
+		r.SetError("no password given")
+		return r
 	}
+	r.password = p
 	if r == nil {
-		r = new(Crypt)
+		r = NewCrypt()
 	}
 	r.ciphertext = NewLockedBuffer().Rand(36)
 	r.SetRandomIV()
+
 	return r
 }
 

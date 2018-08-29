@@ -16,10 +16,10 @@ func TestCrypt(t *testing.T) {
 	c := a.crypt.Buf()
 	fmt.Println(c)
 	d := NewPassword()
-	d.FromString(&s)
+	d.FromString(s)
 	fmt.Println("fromstring", d)
 	Print(d.Buf()).SP().Str(d.Buf()).SP().Quo("thisisastring").SP().Brc(&s).CR().Brc(',')
-	fmt.Println("empty pw", NewCrypt().Password().Error())
+	fmt.Println("empty pw", NewCrypt().Password())
 	var f *Crypt
 	f.Password()
 	f.Ciphertext()
@@ -43,13 +43,16 @@ func TestCrypt(t *testing.T) {
 	x.Crypt().Null().Null()
 	fmt.Println(x)
 	fmt.Println(*x.SetIV(NewBytes().Rand(12)).IV())
-	fmt.Println(x.SetIV(NewBytes().Rand(11)).Error())
+	fmt.Println(x.SetIV(NewBytes().Rand(11)))
 	var z *Crypt
 	fmt.Println(z.Error())
 	fmt.Println(z.SetError("nothing"))
 	var n *Crypt
 	fmt.Println(n.SetIV(NewBytes().Rand(12)))
 	var m *Crypt
-	fmt.Println(m.SetIV(nil).IV().Error())
+	fmt.Println(m.SetIV(nil).IV())
 	fmt.Println(*m.SetRandomIV().IV().Buf())
+	fmt.Println(NewCrypt().Generate(NewPassword().FromString("test")))
+	var v *Crypt
+	fmt.Println(v.Generate(NewPassword().FromString("test")))
 }
