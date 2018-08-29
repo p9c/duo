@@ -4,6 +4,7 @@ import (
 	"fmt"
 	. "gitlab.com/parallelcoin/duo/pkg/byteprint"
 	. "gitlab.com/parallelcoin/duo/pkg/bytes"
+	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
 	. "gitlab.com/parallelcoin/duo/pkg/password"
 	"testing"
 )
@@ -57,5 +58,26 @@ func TestCrypt(t *testing.T) {
 	// fmt.Println("nil receiver")
 	// fmt.Println(v.Generate(NewPassword().FromString("ghijkl")).String())
 	fmt.Println("valid receiver")
-	fmt.Println("Generate()", NewCrypt().Unlock(NewPassword().FromString("abcdef")).SetRandomIV().Generate(NewPassword().FromString("abcdef")).String())
+	pass := NewPassword().FromString("abcdef")
+	C := NewCrypt().SetRandomIV().Generate(pass)
+	fmt.Println("Generate()", C.String())
+	C.Disarm()
+	fmt.Println("Disarm()", C.String())
+	C.Lock()
+	fmt.Println("Lock()", C.String())
+	pass = NewPassword().FromString("abcdef")
+	C.Unlock(pass)
+	fmt.Println("Unlock()", C.String())
+	C.Arm()
+	fmt.Println("Arm()", C.String())
+	ss := []byte("this is a test")
+	fmt.Println("plaintext '" + string(ss) + "'")
+	fmt.Println("bytes ", ss)
+	bb := C.Encrypt(NewLockedBuffer().Load(&ss))
+	fmt.Println("ciphertext", *bb.Buf())
+	BB := C.Decrypt(bb)
+	fmt.Println("recovertext", *BB.Buf())
+	fmt.Println("recover as string '" + string(*BB.Buf()) + "'")
+	C.Lock()
+	fmt.Println("Unlock()", C.String())
 }

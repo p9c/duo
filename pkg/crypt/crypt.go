@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	. "gitlab.com/parallelcoin/duo/pkg/bytes"
 	"gitlab.com/parallelcoin/duo/pkg/kdf"
 	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
@@ -84,19 +83,50 @@ type crypt interface {
 
 // Arm generates the ciphertext from the password, uses it to decrypt the crypt into the crypt's main cyphertext, and creates the AES-GCM cipher
 func (r *Crypt) Arm() *Crypt {
-	if r == nil {
-		// r = new(Crypt).NilGuard(r, null).(*Crypt)
+	switch {
+	case r == nil:
+		r = NewCrypt()
+		r.SetError("nil receiver")
+	case r.Password() == nil:
+		r.SetError("nil password")
+	case r.Crypt() == nil:
+		r.SetError("nil crypt")
+	case r.IV() == nil:
+		r.SetError("nil IV")
+	default:
+		var C *LockedBuffer
+		var IV *Bytes
+		C, IV, r.err = kdf.Gen(r.Password(), r.IV(), r.iterations)
+		if r.err != nil {
+			return r
+		}
+		var block cipher.Block
+		block, r.err = aes.NewCipher(*C.Buf())
+		var blockmode cipher.AEAD
+		blockmode, r.err = cipher.NewGCM(block)
+		var c []byte
+		c, r.err = blockmode.Open(nil, *IV.Buf(), *r.Crypt().Buf(), nil)
+		if r.err != nil {
+			return r
+		}
+		r.ciphertext = NewLockedBuffer().Load(&c)
+		block, r.err = aes.NewCipher(*r.ciphertext.Buf())
+		blockmode, r.err = cipher.NewGCM(block)
+		if r.err != nil {
+			return r
+		}
+		r.gcm = &blockmode
+		r.armed = true
 	}
-	r.armed = true
 	return r
 }
 
 // Ciphertext returns the ciphertext stored in the crypt
 func (r *Crypt) Ciphertext() *LockedBuffer {
 	if r == nil {
-		R := new(LockedBuffer)
-		R.SetError("receiver was nil")
-		return R
+		r := NewLockedBuffer()
+		r.SetError("receiver was nil")
+		return r
 	}
 	if r.ciphertext == nil {
 		r.ciphertext = new(LockedBuffer)
@@ -108,37 +138,69 @@ func (r *Crypt) Ciphertext() *LockedBuffer {
 // Crypt returns the Bytes buffer crypt
 func (r *Crypt) Crypt() *Bytes {
 	if r == nil {
-		return new(Bytes)
+		b := NewBytes()
+		b.SetError("nil receiver")
+		return b
 	}
 	if r.crypt == nil {
-		r.crypt = new(Bytes)
+		r.crypt = NewBytes()
+		r.crypt.SetError("nil crypt")
 	}
 	return r.crypt
 }
 
 // Decrypt takes an encrypted Bytes and returns the decrypted data in a LockedBuffer
-func (r *Crypt) Decrypt(*Bytes) *LockedBuffer {
-	if r == nil {
-		return &LockedBuffer{}
+func (r *Crypt) Decrypt(b *Bytes) *LockedBuffer {
+	switch {
+	case r == nil:
+		r.SetError("nil receiver")
+	case !r.armed:
+		r.SetError("not armed")
+	case r.gcm == nil:
+		r.SetError("nil gcm")
+	default:
+		var bb []byte
+		bb, r.err = (*r.gcm).Open(nil, *r.IV().Buf(), *b.Buf(), nil)
+		B := NewLockedBuffer().Load(&bb)
+		return B
 	}
-	return nil
+	B := NewLockedBuffer()
+	B.SetError(r.Error())
+	return B
 }
 
 // Disarm clears the ciphertext
 func (r *Crypt) Disarm() *Crypt {
 	if r == nil {
-		// r = new(Crypt).NilGuard(r, null).(*Crypt)
+		r = NewCrypt()
+		r.SetError("nil receiver")
 	}
+	if r.gcm != nil {
+		r.gcm = nil
+	}
+	r.ciphertext.Delete()
+	r.ciphertext = nil
 	r.armed = false
 	return r
 }
 
 // Encrypt encrypts a Lockedbuffer and returns the ciphertext as Bytes
-func (r *Crypt) Encrypt(*LockedBuffer) *Bytes {
-	if r == nil {
-		return &Bytes{}
+func (r *Crypt) Encrypt(lb *LockedBuffer) *Bytes {
+	switch {
+	case r == nil:
+		r.SetError("nil receiver")
+	case !r.armed:
+		r.SetError("not armed")
+	case r.gcm == nil:
+		r.SetError("nil gcm")
+	default:
+		b := (*r.gcm).Seal(nil, *r.IV().Buf(), *lb.Buf(), nil)
+		B := NewBytes().Load(&b)
+		return B
 	}
-	return nil
+	b := NewBytes()
+	b.SetError(r.Error())
+	return b
 }
 
 // Error returns the error stored in the crypt
@@ -149,7 +211,7 @@ func (r *Crypt) Error() string {
 	if r.err != nil {
 		return r.err.Error()
 	}
-	return "<nil>"
+	return ""
 }
 
 // Generate creates a new crypt based on a password and a newly generated random ciphertext
@@ -164,17 +226,32 @@ func (r *Crypt) Generate(p *Password) *Crypt {
 	} else {
 		r.password = p
 	}
-	r.ciphertext = NewLockedBuffer().Rand(36)
+	r.ciphertext = NewLockedBuffer().Rand(32)
 	r.SetRandomIV()
 	r.iterations = kdf.Bench(time.Second)
-	fmt.Println("before", r.String())
-	C, IV, _ := kdf.Gen(r.Password(), r.IV(), r.iterations)
+	var C *LockedBuffer
+	var IV *Bytes
+	C, IV, r.err = kdf.Gen(r.Password(), r.IV(), r.iterations)
+	if r.err != nil {
+		return r
+	}
 	var block cipher.Block
 	block, r.err = aes.NewCipher(*C.Buf())
 	var blockmode cipher.AEAD
 	blockmode, r.err = cipher.NewGCM(block)
 	c := blockmode.Seal(nil, *IV.Buf(), *r.Ciphertext().Buf(), nil)
-	r.crypt.Load(&c)
+	r.crypt = r.crypt.Load(&c)
+	block, r.err = aes.NewCipher(*r.Ciphertext().Buf())
+	if r.err != nil {
+		return r
+	}
+	A := new(cipher.AEAD)
+	a := *A
+	a, r.err = cipher.NewGCM(block)
+	if r.err != nil {
+		return r
+	}
+	r.gcm = &a
 	r.armed = true
 	return r
 }
@@ -229,23 +306,39 @@ func (r *Crypt) Load(bytes *Bytes) *Crypt {
 // Lock clears the password and disarms the crypt if it is armed
 func (r *Crypt) Lock() *Crypt {
 	if r == nil {
-		// r = new(Crypt).NilGuard(r, null).(*Crypt)
+		r = NewCrypt()
+		r.SetError("nil receciver")
+		return r
 	}
+	if r.password == nil {
+		r.password = NewPassword()
+		r.SetError("nil password")
+		return r
+	}
+	r.password.Null()
+	r.gcm = nil
 	r.unlocked = false
+	r.Disarm()
 	return r
 }
 
 // MarshalJSON renders the struct as JSON
 func (r *Crypt) MarshalJSON() ([]byte, error) {
-	var crypt, ciphertext, iv string
+	var crypt, ciphertext, iv, password string
 	if r.Crypt() != nil && r.Crypt().Len() != 0 {
 		crypt = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.Crypt().Buf()))...))
 	}
 	if r.Ciphertext() != nil && r.Ciphertext().Len() != 0 {
 		ciphertext = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.Ciphertext().Buf()))...))
 	}
+	if r.Error() == "ciphertext was nil" {
+		r.err = nil
+	}
 	if r.IV() != nil && r.IV().Len() != 0 {
 		iv = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.IV().Buf()))...))
+	}
+	if r.Password() != nil && r.Password().Len() != 0 {
+		password = string(*r.Password().Buf())
 	}
 	return json.Marshal(&struct {
 		Crypt      string
@@ -255,14 +348,18 @@ func (r *Crypt) MarshalJSON() ([]byte, error) {
 		Iterations int64
 		Unlocked   bool
 		Armed      bool
+		HasGCM     bool
+		Error      string
 	}{
 		Crypt:      crypt,
-		Password:   string(*r.Password().Buf()),
+		Password:   password,
 		Ciphertext: ciphertext,
 		IV:         iv,
 		Iterations: int64(r.iterations),
 		Unlocked:   r.unlocked,
 		Armed:      r.armed,
+		HasGCM:     r.gcm != nil,
+		Error:      r.Error(),
 	})
 }
 
@@ -333,9 +430,12 @@ func (r *Crypt) Unlock(p *Password) *Crypt {
 	if r == nil {
 		r = new(Crypt)
 		r.SetError("nil receiver")
+		return r
 	}
-	if r.password != nil {
+	if r.password == nil {
 		r.password = NewPassword(r.password)
+		r.SetError("nil password")
+		return r
 	}
 	r.password = p
 	r.unlocked = true
