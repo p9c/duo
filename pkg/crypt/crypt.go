@@ -65,10 +65,10 @@ type crypt interface {
 	Encrypt(*LockedBuffer) *Bytes
 	Error() string
 	Generate(*Password) *Crypt
+	IV() *Bytes
 	IsArmed() bool
 	IsLoaded() bool
 	IsUnlocked() bool
-	IV() *Bytes
 	Load(*Bytes) *Crypt
 	Lock() *Crypt
 	MarshalJSON() ([]byte, error)
@@ -256,6 +256,17 @@ func (r *Crypt) Generate(p *Password) *Crypt {
 	return r
 }
 
+// IV returns the initialisation vector stored in the crypt
+func (r *Crypt) IV() *Bytes {
+	if r == nil {
+		return new(Bytes)
+	}
+	if r.iv == nil {
+		r.iv = new(Bytes)
+	}
+	return r.iv
+}
+
 // IsArmed returns true if the crypt is armed
 func (r *Crypt) IsArmed() bool {
 	if r == nil {
@@ -278,17 +289,6 @@ func (r *Crypt) IsUnlocked() bool {
 		return false
 	}
 	return r.unlocked
-}
-
-// IV returns the initialisation vector stored in the crypt
-func (r *Crypt) IV() *Bytes {
-	if r == nil {
-		return new(Bytes)
-	}
-	if r.iv == nil {
-		r.iv = new(Bytes)
-	}
-	return r.iv
 }
 
 // Load moves a bytes into the crypt

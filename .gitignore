@@ -2,3 +2,5 @@ debug
 debug\.test
 config.ini
 secret.go
+funcsort
+test
