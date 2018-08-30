@@ -8,10 +8,10 @@ import (
 func TestPassword(t *testing.T) {
 	p := "this is a test!"
 	P := NewPassword().FromString(p)
-	fmt.Println("original", p, "From->ToString", *P.ToString())
+	fmt.Println("original", p, "From->String", *P.String())
 	var n *Password
-	fmt.Println(*n.ToString())
-	fmt.Println(*n.FromString(p).ToString())
+	fmt.Println(*n.String())
+	fmt.Println(*n.FromString(p).String())
 	fmt.Println(P.SetError("testing"))
 	fmt.Println(P.String())
 	fmt.Println(P.MarshalJSON())

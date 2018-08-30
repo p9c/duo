@@ -34,7 +34,11 @@ func NewCrypt(r ...*Crypt) *Crypt {
 	if r[0] == nil {
 		r[0] = new(Crypt)
 	}
-	r[0].crypt.Null()
+	if r[0].crypt == nil {
+		r[0].crypt = new(Bytes)
+	} else {
+		r[0].crypt.Null()
+	}
 	if r[0].password == nil {
 		r[0].password = new(Password)
 	} else {

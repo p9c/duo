@@ -30,7 +30,6 @@ type passwordI interface {
 	FromString(string) *Password
 	MarshalJSON() ([]byte, error)
 	String() string
-	ToString() string
 }
 
 // FromString loads the Lockedbuffer with the bytes of a string. The string is immutable so it is not removed from memory except automatically.
@@ -71,13 +70,8 @@ func (r *Password) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// String does...
-func (r *Password) String() string {
-	return r
-}
-
-// ToString returns the password as a string. Not recommended, as the memory is immutable and may end up being copied several times.
-func (r *Password) ToString() *string {
+// String returns the password as a string. Not recommended, as the memory is immutable and may end up being copied several times.
+func (r *Password) String() *string {
 	if r == nil || r.LockedBuffer == nil {
 		s := ""
 		return &s

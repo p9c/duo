@@ -15,7 +15,7 @@
             "program": "${workspaceFolder}/cmd/funcsort/funcsort.go",
             "env": {},
             "args": [
-                "${workspaceFolder}/pkg/bytes/bytes.go"
+                "${workspaceFolder}/pkg/uint256/test.go"
             ],
             "showLog": true
         }
