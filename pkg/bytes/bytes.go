@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
 )
 
 // Bytes is a struct that stores and manages byte slices for security purposes, automatically wipes old data when new data is loaded.
@@ -43,27 +44,6 @@ func NewBytes(r ...*Bytes) *Bytes {
 	return r[0]
 }
 
-type bytes interface {
-	Buf() []byte
-	Copy(*Bytes) *Bytes
-	Delete()
-	Error() string
-	IsSet() bool
-	IsUTF8() bool
-	Len() int
-	Link(*Bytes) *Bytes
-	Load(*[]byte) *Bytes
-	MarshalJSON() ([]byte, error)
-	Move(*Bytes) *Bytes
-	New(int) *Bytes
-	Null() *Bytes
-	Rand(int) *Bytes
-	SetBin() *Bytes
-	SetError(string) *Bytes
-	SetUTF8() *Bytes
-	String() string
-}
-
 // Buf returns a variable pointing to the value stored in a Bytes.
 func (r *Bytes) Buf() *[]byte {
 	if r == nil || r.val == nil {
@@ -73,7 +53,7 @@ func (r *Bytes) Buf() *[]byte {
 }
 
 // Copy duplicates the data from the *[]byte provided and zeroes and replaces its contents, clearing the error value.
-func (r *Bytes) Copy(bytes *Bytes) *Bytes {
+func (r *Bytes) Copy(bytes Buffer) Buffer {
 	if r == nil {
 		r = NewBytes()
 		r.err = errors.New("nil pointer receiver")
@@ -88,13 +68,13 @@ func (r *Bytes) Copy(bytes *Bytes) *Bytes {
 		r.err = errors.New("parameter is receiver")
 		return r
 	}
-	if len(*bytes.Buf()) == 0 {
+	if bytes.Len() == 0 {
 		r.Null()
-		r.val = bytes.val
+		r.val = bytes.Buf()
 		r.err = errors.New("empty buffer received")
 		return r
 	}
-	r = r.New(bytes.Len())
+	r = r.New(bytes.Len()).(*Bytes)
 	a := *r.Buf()
 	b := *bytes.Buf()
 	for i := range b {
@@ -107,6 +87,17 @@ func (r *Bytes) Copy(bytes *Bytes) *Bytes {
 // Delete wipes the buffer and dereferences it
 func (r *Bytes) Delete() {
 	r.Null()
+}
+
+// Elem returns the byte at a given index of the buffer
+func (r *Bytes) Elem(i int) byte {
+	if r == nil {
+		return 0
+	}
+	if r.val == nil {
+		return 0
+	}
+	return (*r.val)[i]
 }
 
 // Error gets the error string
@@ -147,17 +138,17 @@ func (r *Bytes) Len() int {
 }
 
 // Link nulls the Bytes and copies the pointer in from another Bytes. Whatever is done to one's []byte will also affect the other, but they keep separate error values
-func (r *Bytes) Link(bytes *Bytes) *Bytes {
+func (r *Bytes) Link(bytes Buffer) Buffer {
 	if r == nil {
 		r = NewBytes(nil)
 	}
 	r.Null()
-	r.val, r.set = bytes.val, bytes.set
+	r.val, r.set = bytes.Buf(), bytes.IsSet()
 	return r
 }
 
 // Load nulls any existing data and sets its pointer to refer to the pointer to byte slice in the parameter.
-func (r *Bytes) Load(bytes *[]byte) *Bytes {
+func (r *Bytes) Load(bytes *[]byte) Buffer {
 	if r == nil {
 		r = NewBytes()
 	}
@@ -195,21 +186,23 @@ func (r *Bytes) MarshalJSON() ([]byte, error) {
 }
 
 // Move copies the *[]byte pointer into the Bytes structure after removing what was in it, if anything. The value input into this function will be empty afterwards
-func (r *Bytes) Move(bytes *Bytes) *Bytes {
+func (r *Bytes) Move(bytes Buffer) Buffer {
 	if r == nil {
 		r = NewBytes()
 	}
 	if bytes == nil {
 		r.err = errors.New("nil parameter")
 	} else {
-		r.val, r.set, r.err = bytes.val, true, nil
-		bytes.val, bytes.set, bytes.err = nil, false, nil
+		r.val, r.set, r.err = bytes.Buf(), true, nil
+		bytes.Load(nil)
+		bytes.Unset()
+		bytes.SetError("")
 	}
 	return r
 }
 
 // New nulls the Bytes and assigns an empty *[]byte with a specified size.
-func (r *Bytes) New(size int) *Bytes {
+func (r *Bytes) New(size int) Buffer {
 	if r == nil {
 		r = NewBytes()
 	}
@@ -221,26 +214,45 @@ func (r *Bytes) New(size int) *Bytes {
 }
 
 // Null wipes the value stored, and restores the Bytes to the same state as a newly created one (with a nil *[]byte).
-func (r *Bytes) Null() *Bytes {
+func (r *Bytes) Null() Buffer {
 	return NewBytes(r)
 }
 
 // Rand loads a cryptographically random string of []byte of a specified size.
-func (r *Bytes) Rand(size int) *Bytes {
-	r = r.New(size)
+func (r *Bytes) Rand(size int) Buffer {
+	r = r.New(size).(*Bytes)
 	rand.Read(*r.Buf())
 	r.set = true
 	return r
 }
 
-// SetBin toggles to represent binary data as hex for string and json output
-func (r *Bytes) SetBin() *Bytes {
+// SetBinary toggles to represent binary data as hex for string and json output
+func (r *Bytes) SetBinary() Buffer {
+	if r == nil {
+		r = NewBytes()
+		r.SetError("nil receiver")
+	}
 	r.utf8 = false
 	return r
 }
 
+// SetElem sets an element in the buffer
+func (r *Bytes) SetElem(i int, b byte) Buffer {
+	if r == nil {
+		R := NewBytes()
+		R.SetError("nil receiver")
+		return R
+	}
+	if r.val == nil {
+		r.SetError("nil value")
+		return r
+	}
+	(*r.val)[i] = b
+	return r
+}
+
 // SetError sets the error string
-func (r *Bytes) SetError(s string) *Bytes {
+func (r *Bytes) SetError(s string) Buffer {
 	if r == nil {
 		r = NewBytes(nil)
 	}
@@ -249,7 +261,7 @@ func (r *Bytes) SetError(s string) *Bytes {
 }
 
 // SetUTF8 toggles to represent UTF8 for (mutable) string output
-func (r *Bytes) SetUTF8() *Bytes {
+func (r *Bytes) SetUTF8() Buffer {
 	r.utf8 = true
 	return r
 }
@@ -258,4 +270,19 @@ func (r *Bytes) SetUTF8() *Bytes {
 func (r *Bytes) String() string {
 	b, _ := json.MarshalIndent(r, "", "    ")
 	return string(b)
+}
+
+// Unset changes the set flag in a Bytes to false and other functions will treat it as empty
+func (r *Bytes) Unset() Buffer {
+	r.set = false
+	return r
+}
+
+// UnsetError sets the error to nil
+func (r *Bytes) UnsetError() Buffer {
+	if r == nil {
+		return NewBytes()
+	}
+	r.err = nil
+	return r
 }

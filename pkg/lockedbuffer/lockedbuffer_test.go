@@ -63,6 +63,10 @@ func TestLockedBuffer(t *testing.T) {
 	e.IsUTF8()
 	fmt.Println("JSON", e.String())
 	var m *LockedBuffer
+	m.UnsetError()
+	m.SetElem(0, 100)
+	m.Elem(0)
+	m.Unset().UnsetError()
 	fmt.Println("JSON", m.String())
 	m.MarshalJSON()
 	m.Load(NewBytes().Rand(32).Buf())
@@ -74,6 +78,6 @@ func TestLockedBuffer(t *testing.T) {
 	var oo *LockedBuffer
 	oo.SetUTF8()
 	var pp *LockedBuffer
-	pp.SetBin()
-
+	pp.SetBinary()
+	NewLockedBuffer().SetElem(0, 100).Copy(nil).Elem(0)
 }

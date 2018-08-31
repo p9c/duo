@@ -1,21 +1,22 @@
-// Package uint256
+// Package uint256 is a store for 32 byte values used for signatures and public/private keys
 package uint256
 
 import (
 	. "gitlab.com/parallelcoin/duo/pkg/bytes"
 	. "gitlab.com/parallelcoin/duo/pkg/crypt"
 	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
-	. "gitlab.com/parallelcoin/duo/pkg/password"
 )
 
-//
+// Uint256 is a store  for 32 byte values either securely, using a crypt to keep data encrypted when not in use, or a regular, unsecure byteslice
 type Uint256 struct {
-	*Bytes
-	*Crypt
-	secured bool
+	bytes        *Bytes
+	lockedbuffer *LockedBuffer
+	crypt        *Crypt
+	secured      bool
+	err          error
 }
 
-//
+// NewUint256 creates a new Uint256
 func NewUint256(r ...*Uint256) *Uint256 {
 	if len(r) == 0 {
 		r = append(r, new(Uint256))
@@ -23,56 +24,38 @@ func NewUint256(r ...*Uint256) *Uint256 {
 	if r[0] == nil {
 		r[0] = new(Uint256)
 	}
-	if r[0].Bytes == nil {
-		r[0].Bytes = NewBytes()
+	if r[0].bytes == nil {
+		r[0].bytes = NewBytes()
 	}
-	if r[0].Crypt == nil {
-		r[0].Crypt = NewCrypt()
+	if r[0].lockedbuffer == nil {
+		r[0].lockedbuffer = NewLockedBuffer()
+	}
+	if r[0].crypt == nil {
+		r[0].crypt = NewCrypt()
 	}
 	r[0].secured = false
 	return r[0]
 }
 
 type uint256 interface {
-	Arm() *Uint256
 	Buf() []byte
-	Ciphertext() *LockedBuffer
 	Copy(*Uint256) *Uint256
-	Crypt() *Bytes
-	Decrypt(*Bytes) *LockedBuffer
 	Delete()
-	Disarm() *Uint256
-	Encrypt(*LockedBuffer) *Bytes
 	Error() string
-	Generate(*Password) *Uint256
-	IV() *Bytes
-	IsArmed() bool
-	IsLoaded() bool
 	IsSet() bool
-	IsUTF8() bool
-	IsUnlocked() bool
 	Len() int
 	Link(*Uint256) *Uint256
-	Load(*Bytes) *Uint256
-	Lock() *Uint256
+	Load(*[]byte) *Uint256
 	MarshalJSON() ([]byte, error)
 	Move(*Uint256) *Uint256
 	New(int) *Uint256
 	Null() *Uint256
-	Password() *Password
 	Rand(int) *Uint256
-	SetBin() *Uint256
 	SetError(string) *Uint256
-	SetIV(*Bytes) *Uint256
-	SetRandomIV() *Uint256
-	SetUTF8() *Uint256
 	String() string
-	Unlock(*Password) *Uint256
-}
-
-// Arm does...
-func (r *Uint256) Arm() *Uint256 {
-	return r
+	UseCrypt(*Crypt) *Uint256
+	UseBytes() *Uint256
+	IsUsingCrypt() bool
 }
 
 // Buf returns the contents of the buffer whether it's the secure or unsecured buffer
@@ -80,162 +63,81 @@ func (r *Uint256) Buf() []byte {
 	return nil
 }
 
-// Ciphertext does...
-func (r *Uint256) Ciphertext() *LockedBuffer {
-	return r
-}
-
-// Copy does...
+// Copy copies in another Uint256
 func (r *Uint256) Copy(*Uint256) *Uint256 {
 	return r
 }
 
-// Crypt does...
-func (r *Uint256) Crypt() *Bytes {
-	return r
-}
-
-// Decrypt does...
-func (r *Uint256) Decrypt(*Bytes) *LockedBuffer {
-	return r
-}
-
-// Delete does...
+// Delete wipes an insecure buffer or calls Destroy() on a LockedBuffer
 func (r *Uint256) Delete() {
-	return r
 }
 
-// Disarm does...
-func (r *Uint256) Disarm() *Uint256 {
-	return r
-}
-
-// Encrypt does...
-func (r *Uint256) Encrypt(*LockedBuffer) *Bytes {
-	return r
-}
-
-// Error does...
+// Error returns the error stored in the Uint256
 func (r *Uint256) Error() string {
-	return r
+	return ""
 }
 
-// Generate does...
-func (r *Uint256) Generate(*Password) *Uint256 {
-	return r
-}
-
-// IV does...
-func (r *Uint256) IV() *Bytes {
-	return r
-}
-
-// IsArmed does...
-func (r *Uint256) IsArmed() bool {
-	return r
-}
-
-// IsLoaded does...
-func (r *Uint256) IsLoaded() bool {
-	return r
-}
-
-// IsSet does...
+// IsSet returns true when the buffer is loaded
 func (r *Uint256) IsSet() bool {
-	return r
+	return false
 }
 
-// IsUTF8 does...
-func (r *Uint256) IsUTF8() bool {
-	return r
-}
-
-// IsUnlocked does...
-func (r *Uint256) IsUnlocked() bool {
-	return r
-}
-
-// Len does...
-func (r *Uint256) Len() int {
-	return r
-}
-
-// Link does...
+// Link copies the reference from one data to another. The link breaks if the security mode is changed.
 func (r *Uint256) Link(*Uint256) *Uint256 {
 	return r
 }
 
-// Load does...
-func (r *Uint256) Load(*Bytes) *Uint256 {
+// Load puts bytes into the buffer
+func (r *Uint256) Load(*[]byte) *Uint256 {
 	return r
 }
 
-// Lock does...
-func (r *Uint256) Lock() *Uint256 {
-	return r
-}
-
-// MarshalJSON does...
+// MarshalJSON renders the object into JSON format
 func (r *Uint256) MarshalJSON() ([]byte, error) {
-	return r
+	return nil, nil
 }
 
-// Move does...
+// Move references the buffer referred, and dereferences it from the source.
 func (r *Uint256) Move(*Uint256) *Uint256 {
 	return r
 }
 
-// New does...
+// New destroys the previous buffer and allocates a new one of a given size
 func (r *Uint256) New(int) *Uint256 {
 	return r
 }
 
-// Null does...
+// Null destroys the buffer and sets the Uint256 into its Null state (all values default)
 func (r *Uint256) Null() *Uint256 {
 	return r
 }
 
-// Password does...
-func (r *Uint256) Password() *Password {
-	return r
-}
-
-// Rand does...
+// Rand creates a new buffer from cryptographically secure random source, destroying the previous data
 func (r *Uint256) Rand(int) *Uint256 {
 	return r
 }
 
-// SetBin does...
-func (r *Uint256) SetBin() *Uint256 {
-	return r
-}
-
-// SetError does...
+// SetError sets the error stored in the Uint256
 func (r *Uint256) SetError(string) *Uint256 {
 	return r
 }
 
-// SetIV does...
-func (r *Uint256) SetIV(*Bytes) *Uint256 {
-	return r
-}
-
-// SetRandomIV does...
-func (r *Uint256) SetRandomIV() *Uint256 {
-	return r
-}
-
-// SetUTF8 does...
-func (r *Uint256) SetUTF8() *Uint256 {
-	return r
-}
-
-// String does...
+// String converts the data to a string, in JSON format
 func (r *Uint256) String() string {
+	return ""
+}
+
+// UseCrypt enables the use of the crypt, referenced from an existing crypt.
+func (r *Uint256) UseCrypt(c *Crypt) *Uint256 {
 	return r
 }
 
-// Unlock does...
-func (r *Uint256) Unlock(*Password) *Uint256 {
+// UseBytes disables an armed crypt and decrypts the data
+func (r *Uint256) UseBytes() *Uint256 {
 	return r
+}
+
+// IsUsingCrypt returns true if the Uint256 is set to use a crypt
+func (r *Uint256) IsUsingCrypt() bool {
+	return false
 }
