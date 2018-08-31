@@ -4,3 +4,4 @@ config.ini
 secret.go
 funcsort
 test
+!funcsort.go
