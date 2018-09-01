@@ -1,6 +1,7 @@
 package bytes
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 )
@@ -18,14 +19,16 @@ func TestBytes(t *testing.T) {
 	fmt.Println("after move a", *a, "b", *b)
 	a.Link(b)
 	fmt.Println("link emptied b to a", a.Buf(), *b.Buf())
-	c := a.buf
+	c := a.Buf()
 	(*c)[0] = 1
 	fmt.Println("now both the same memory (changed byte zero of first only)", a.Buf(), b.Buf())
 	fmt.Println("Struct literal with Rand", struct{ *Bytes }{}.Rand(32).Buf())
-	fmt.Println("Struct literal with Null", struct{ *Bytes }{}.Null().Buf())
+	fmt.Println("Struct literal with Null", struct{ *Bytes }{}.Null().String())
 	fmt.Println("Struct literal with Len()", struct{ *Bytes }{}.Size())
 	fmt.Println("Struct literal with Null().Len()", struct{ *Bytes }{}.Null().Size())
-	fmt.Println("Struct literal with Null().New(32)", struct{ *Bytes }{}.Null().New(32))
+	fmt.Println("Struct literal with Null().New(32)", struct{ *Bytes }{}.Null().New(32).SetCoding("decimal").String())
+	fmt.Println("Struct literal with Null().Rand(32) base64", struct{ *Bytes }{}.Null().Rand(32).SetCoding("base64").String())
+	fmt.Println("Struct literal with Null().Rand(32) hex", struct{ *Bytes }{}.Null().Rand(32).SetCoding("hex").String())
 	var d *Bytes
 	fmt.Println("nil pointer with Buf()", d.Buf())
 	d = nil
@@ -51,14 +54,31 @@ func TestBytes(t *testing.T) {
 	fmt.Println("nil pointer with Error()", d.Error())
 	d = nil
 	fmt.Println("nil pointer with Error().SetError()", d.SetError("testing").Error())
+	j, _ := json.MarshalIndent(d.Rand(32).SetCoding("decimal"), "", "    ")
+	fmt.Println(string(j))
+	j, _ = json.MarshalIndent(d.Rand(32).SetCoding("hex"), "", "    ")
+	fmt.Println(string(j))
+	chinese := "王明：这是什么？ (王明：這是什麼？) 李红：这是书。"
+	bbb := []byte(chinese)
+	j, _ = json.MarshalIndent(d.Load(&bbb).SetCoding("string"), "", "    ")
+	fmt.Println(string(j))
+	bbb = []byte(chinese)
+	j, _ = json.MarshalIndent(d.Load(&bbb).SetCoding("byte"), "", "    ")
+	fmt.Println(string(j))
+	bbb = []byte(chinese)
+	j, _ = json.MarshalIndent(d.Load(&bbb).SetCoding("hex"), "", "    ")
+	fmt.Println(string(j))
+	bbb = []byte(chinese)
+	j, _ = json.MarshalIndent(d.Load(&bbb).SetCoding("decimal"), "", "    ")
+	fmt.Println(string(j))
 	fmt.Println("copying self", f.Copy(f))
 	fmt.Println("nil IsSet()", d.IsSet())
 	fmt.Println("non nil IsSet()", f.IsSet())
 	fmt.Println("nil Load(nil)", d.Load(nil))
 	fmt.Println("nil Move(nil)", d.Move(nil))
-	fmt.Println("JSON UTF8", f.Load(&A).SetCoding("utf8").Coding())
+	fmt.Println("JSON UTF8", f.Load(&A).SetCoding("byte").Coding())
 	B := []byte("this is longer    ")
-	fmt.Println("JSON hex", f.Load(&B).SetCoding("binary").Coding())
+	fmt.Println("JSON hex", f.Load(&B).SetCoding("hex").Coding())
 	fmt.Println("JSON nil val", f.Load(nil).String())
 	f.Elem(0)
 	f.SetElem(0, NewBytes().Load(&[]byte{100}))

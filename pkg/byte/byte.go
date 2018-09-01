@@ -1,4 +1,4 @@
-package bytes
+package bits
 
 import (
 	"crypto/rand"
@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
-	"math/big"
 )
 
 // Byte is an implementation of the Buffer, Toggle and Status interface
@@ -287,12 +286,12 @@ func (r *Byte) SetElem(index int, b Buffer) Array {
 func (r *Byte) String() string {
 	r = ifnil(r)
 	switch CodeType[r.coding] {
-	case "byte", "string":
+	case "byte":
+		return fmt.Sprint(r.Buf())
+	case "string":
 		return string(r.byte)
 	case "decimal":
-		bi := big.NewInt(0)
-		bi.SetBytes(*r.Buf())
-		return fmt.Sprint(bi)
+		return fmt.Sprint(r.byte)
 	case "hex":
 		return "0x" + hex.EncodeToString(*r.Buf())
 	default:
