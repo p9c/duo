@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	. "gitlab.com/parallelcoin/duo/pkg/byte"
 	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
 )
 
@@ -17,10 +18,19 @@ import (
 //
 // To use it, simply new(Bytes) to get pointer to a empty new structure, and then after that you can call the methods of the interface.
 type Bytes struct {
-	val  *[]byte
-	set  bool
-	utf8 bool
-	err  error
+	buf    *[]byte
+	set    bool
+	coding int
+	err    error
+}
+
+// Nil guards against nil pointer receivers
+func ifnil(r *Bytes) *Bytes {
+	if r == nil {
+		r = new(Bytes)
+		r.SetError("nil receiver")
+	}
+	return r
 }
 
 // NewBytes empties an existing bytes or makes a new one
@@ -29,112 +39,69 @@ func NewBytes(r ...*Bytes) *Bytes {
 		r = append(r, new(Bytes))
 	}
 	if r[0] == nil {
-		r[0] = new(Bytes)
+		r[0] = ifnil(r[0])
 		r[0].SetError("receiver was nil")
 	}
-	if r[0].val != nil {
-		rr := *r[0].val
+	if r[0].buf != nil {
+		rr := *r[0].buf
 		if r[0].set {
 			for i := range rr {
 				rr[i] = 0
 			}
 		}
 	}
-	r[0].val, r[0].set, r[0].err = nil, false, nil
+	r[0].buf, r[0].set, r[0].err = nil, false, nil
 	return r[0]
 }
 
+/////////////////////////////////////////
+// Buffer implementations
+/////////////////////////////////////////
+
 // Buf returns a variable pointing to the value stored in a Bytes.
 func (r *Bytes) Buf() *[]byte {
-	if r == nil || r.val == nil {
+	if r == nil || r.buf == nil {
 		return &[]byte{}
 	}
-	return r.val
+	return r.buf
 }
 
-// Copy duplicates the data from the *[]byte provided and zeroes and replaces its contents, clearing the error value.
-func (r *Bytes) Copy(bytes Buffer) Buffer {
-	if r == nil {
-		r = NewBytes()
-		r.err = errors.New("nil pointer receiver")
+// Copy duplicates the data from the buffer provided and zeroes and replaces its contents, clearing the error value.
+func (r *Bytes) Copy(buf Buffer) Buffer {
+	r = ifnil(r)
+	r.UnsetError()
+	if buf == nil {
+		return r.Free().SetError("nil parameter")
 	}
-	r.err = nil
-	if bytes == nil {
-		r.Null()
-		r.err = errors.New("nil parameter")
-		return r
+	if r == buf {
+		return r.SetError("parameter is receiver")
 	}
-	if r == bytes {
-		r.err = errors.New("parameter is receiver")
-		return r
+	if buf.Size() == 0 {
+		return r.Null().Load(buf.Buf()).SetError("empty buffer received")
 	}
-	if bytes.Len() == 0 {
-		r.Null()
-		r.val = bytes.Buf()
-		r.err = errors.New("empty buffer received")
-		return r
-	}
-	r = r.New(bytes.Len()).(*Bytes)
-	a := *r.Buf()
-	b := *bytes.Buf()
-	for i := range b {
-		a[i] = b[i]
-	}
-	r.set = true
+	r.New(buf.Size())
+	r.ForEach(func(i int) {
+		r.SetElem(i, buf.Elem(i))
+	})
+	// for i := range *r.Buf() {
+	// }
+	r.Set()
 	return r
 }
 
-// Delete wipes the buffer and dereferences it
-func (r *Bytes) Delete() {
+// ForEach calls a function that is called with an index and allows iteration neatly with a closure
+func (r *Bytes) ForEach(f func(int)) Buffer {
+	for i := range *r.buf {
+		f(i)
+	}
+	return r
+}
+
+// Free zeroes the buffer and dereferences it
+func (r *Bytes) Free() Buffer {
 	r.Null()
-}
-
-// Elem returns the byte at a given index of the buffer
-func (r *Bytes) Elem(i int) byte {
-	if r == nil {
-		return 0
-	}
-	if r.val == nil {
-		return 0
-	}
-	return (*r.val)[i]
-}
-
-// Error gets the error string
-func (r *Bytes) Error() string {
-	if r == nil {
-		return "nil receiver"
-	}
-	if r.err != nil {
-		return r.err.Error()
-	}
-	return ""
-}
-
-// IsSet returns true if the Bytes buffer has been loaded with a slice
-func (r *Bytes) IsSet() bool {
-	if r == nil {
-		return false
-	}
-	return r.set
-}
-
-// IsUTF8 returns true if the buffer is set to output UTF8 (instead of hex)
-func (r *Bytes) IsUTF8() bool {
-	return r.utf8
-}
-
-// Len returns the length of the *[]byte if it has a value assigned, or -1
-func (r *Bytes) Len() int {
-	if r == nil {
-		return -1
-	}
-	if r.set {
-		if r.val != nil {
-			return len(*r.val)
-		}
-	}
-	return 0
+	r.buf = nil
+	return r
 }
 
 // Link nulls the Bytes and copies the pointer in from another Bytes. Whatever is done to one's []byte will also affect the other, but they keep separate error values
@@ -143,7 +110,7 @@ func (r *Bytes) Link(bytes Buffer) Buffer {
 		r = NewBytes(nil)
 	}
 	r.Null()
-	r.val, r.set = bytes.Buf(), bytes.IsSet()
+	r.buf, r.set = bytes.Buf(), bytes.IsSet()
 	return r
 }
 
@@ -151,38 +118,19 @@ func (r *Bytes) Link(bytes Buffer) Buffer {
 func (r *Bytes) Load(bytes *[]byte) Buffer {
 	if r == nil {
 		r = NewBytes()
+		r.SetError("nil receiver")
 	}
 	if bytes == nil {
 		r.SetError("nil parameter")
-		r.val, r.set = nil, false
+		r.Unset()
+		r.Free()
 	} else {
 		r.Null()
-		r.val, r.set, r.err = bytes, true, nil
+		r.buf = bytes
+		r.UnsetError()
+		r.Set()
 	}
 	return r
-}
-
-// MarshalJSON renders the data as JSON
-func (r *Bytes) MarshalJSON() ([]byte, error) {
-	var val string
-	if r.val != nil {
-		if r.utf8 {
-			val = string(*r.val)
-		} else {
-			val = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.val))...))
-		}
-	}
-	return json.Marshal(&struct {
-		Value  string
-		IsSet  bool
-		IsUTF8 bool
-		Error  string
-	}{
-		Value:  val,
-		IsSet:  r.set,
-		IsUTF8: r.utf8,
-		Error:  r.Error(),
-	})
 }
 
 // Move copies the *[]byte pointer into the Bytes structure after removing what was in it, if anything. The value input into this function will be empty afterwards
@@ -193,7 +141,7 @@ func (r *Bytes) Move(bytes Buffer) Buffer {
 	if bytes == nil {
 		r.err = errors.New("nil parameter")
 	} else {
-		r.val, r.set, r.err = bytes.Buf(), true, nil
+		r.buf, r.set, r.err = bytes.Buf(), true, nil
 		bytes.Load(nil)
 		bytes.Unset()
 		bytes.SetError("")
@@ -208,7 +156,7 @@ func (r *Bytes) New(size int) Buffer {
 	}
 	r.Null()
 	rr := make([]byte, size)
-	r.val = &rr
+	r.buf = &rr
 	r.set = true
 	return r
 }
@@ -226,63 +174,229 @@ func (r *Bytes) Rand(size int) Buffer {
 	return r
 }
 
-// SetBinary toggles to represent binary data as hex for string and json output
-func (r *Bytes) SetBinary() Buffer {
+// Size returns the length of the *[]byte if it has a value assigned, or -1
+func (r *Bytes) Size() int {
+	if r == nil {
+		return -1
+	}
+	if r.IsSet() {
+		if r.buf != nil {
+			return len(*r.buf)
+		}
+	}
+	return 0
+}
+
+/////////////////////////////////////////
+// Error implementation
+/////////////////////////////////////////
+
+// Error gets the error string
+func (r *Bytes) Error() string {
+	if r == nil {
+		return "nil receiver"
+	}
+	if r.err != nil {
+		return r.err.Error()
+	}
+	return ""
+}
+
+/////////////////////////////////////////
+// Array implementation
+/////////////////////////////////////////
+
+// Elem returns the byte at a given index of the buffer
+func (r *Bytes) Elem(i int) Buffer {
+	if r == nil {
+		r.SetError("nil receiver")
+		return &Byte{}
+	}
+	if r.buf == nil {
+		r.SetError("nil buffer")
+		return &Byte{}
+	}
+	R := NewByte().Load(&[]byte{(*r.buf)[i]})
+	return R
+}
+
+// Len is just a synonym for size
+func (r *Bytes) Len() int {
+	return r.Size()
+}
+
+// Cap returns the amount of elements allocated (can be larger than the size)
+func (r *Bytes) Cap() int {
+	return cap(*r.buf)
+}
+
+// Purge zeroes out all of the buffers in the array
+func (r *Bytes) Purge() Array {
 	if r == nil {
 		r = NewBytes()
 		r.SetError("nil receiver")
 	}
-	r.utf8 = false
+	if r.buf == nil {
+		r.SetError("nil buffer")
+		return r
+	}
+	for i := range *r.buf {
+		(*r.buf)[i] = 0
+	}
 	return r
 }
 
 // SetElem sets an element in the buffer
-func (r *Bytes) SetElem(i int, b byte) Buffer {
+func (r *Bytes) SetElem(i int, b Buffer) Array {
 	if r == nil {
 		R := NewBytes()
 		R.SetError("nil receiver")
 		return R
 	}
-	if r.val == nil {
+	if r.buf == nil {
 		r.SetError("nil value")
 		return r
 	}
-	(*r.val)[i] = b
+	(*r.buf)[i] = (*b.Buf())[0]
 	return r
 }
+
+/////////////////////////////////////////
+// Toggle implementation
+/////////////////////////////////////////
+
+// IsSet returns true if the Bytes buffer has been loaded with a slice
+func (r *Bytes) IsSet() bool {
+	if r == nil {
+		return false
+	}
+	return r.set
+}
+
+// Set mark that the value has been initialised/loaded
+func (r *Bytes) Set() Toggle {
+	r.set = true
+	return r
+}
+
+// Unset changes the set flag in a Bytes to false and other functions will treat it as empty
+func (r *Bytes) Unset() Toggle {
+	r.set = false
+	return r
+}
+
+/////////////////////////////////////////
+// Status implementation
+/////////////////////////////////////////
 
 // SetError sets the error string
 func (r *Bytes) SetError(s string) Buffer {
 	if r == nil {
 		r = NewBytes(nil)
+		r.SetError("nil receiver")
 	}
 	r.err = errors.New(s)
-	return r
-}
-
-// SetUTF8 toggles to represent UTF8 for (mutable) string output
-func (r *Bytes) SetUTF8() Buffer {
-	r.utf8 = true
-	return r
-}
-
-// String returns the Bytes as JSON
-func (r *Bytes) String() string {
-	b, _ := json.MarshalIndent(r, "", "    ")
-	return string(b)
-}
-
-// Unset changes the set flag in a Bytes to false and other functions will treat it as empty
-func (r *Bytes) Unset() Buffer {
-	r.set = false
 	return r
 }
 
 // UnsetError sets the error to nil
 func (r *Bytes) UnsetError() Buffer {
 	if r == nil {
-		return NewBytes()
+		r = NewBytes()
+		r.SetError("nil receiver")
 	}
 	r.err = nil
 	return r
+}
+
+/////////////////////////////////////////
+// Coding implementation
+/////////////////////////////////////////
+
+// Coding returns the coding type to be used by the String function
+func (r *Bytes) Coding() string {
+	if r == nil {
+		r = NewBytes()
+		r.SetError("nil receiver")
+	}
+	if r.coding >= len(*r.buf) {
+		r.coding = 0
+		r.SetError("invalid coding type in Bytes")
+	}
+	return CodeType[r.coding]
+}
+
+// SetCoding changes the encoding type
+func (r *Bytes) SetCoding(coding string) Buffer {
+	if r == nil {
+		r = NewBytes()
+		r.SetError("nil receiver")
+	}
+	found := false
+	for i := range CodeType {
+		if coding == CodeType[i] {
+			found = true
+			r.coding = i
+		}
+	}
+	if !found {
+		r.SetError("code type not found")
+	}
+	return r
+}
+
+// Codes returns a copy of the array of CodeType
+func (r *Bytes) Codes() (R []string) {
+	copy(R, CodeType)
+	return
+}
+
+/////////////////////////////////////////
+// Stringer implementation
+/////////////////////////////////////////
+
+// String returns the Bytes in the currently set coding format
+func (r *Bytes) String() string {
+	switch CodeType[r.coding] {
+	case "utf8":
+		return string(*r.Buf())
+	case "hex":
+		return hex.EncodeToString(*r.Buf())
+	default:
+		r.SetError("coding type not implemented")
+	}
+	return ""
+}
+
+/////////////////////////////////////////
+// JSON implementation
+/////////////////////////////////////////
+
+// MarshalJSON renders the data as JSON
+func (r *Bytes) MarshalJSON() ([]byte, error) {
+	var buf string
+	if r.buf != nil {
+		if r.coding >= len(CodeType) {
+			r.SetError("invalid coding type set")
+		}
+		switch CodeType[r.coding] {
+		case "utf8":
+			buf = string(*r.buf)
+		case "hex":
+			buf = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.buf))...))
+		default:
+			r.SetError("coding type not yet implemented")
+		}
+	}
+	return json.Marshal(&struct {
+		Value  string
+		IsSet  bool
+		Coding string
+		Error  string
+	}{
+		Value:  buf,
+		IsSet:  r.set,
+		Coding: CodeType[r.coding],
+		Error:  r.Error(),
+	})
 }

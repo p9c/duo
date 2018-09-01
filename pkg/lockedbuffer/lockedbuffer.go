@@ -17,10 +17,10 @@ import (
 //
 // The maximum size of buffer is around 172500 bytes on a linux 4.18, it may be more may be less.
 type LockedBuffer struct {
-	val  *memguard.LockedBuffer
-	set  bool
-	utf8 bool
-	err  error
+	buf    *memguard.LockedBuffer
+	set    bool
+	coding int
+	err    error
 }
 
 // NewLockedBuffer clears the passed LockedBuffer or creates a new one if null
@@ -33,24 +33,26 @@ func NewLockedBuffer(r ...*LockedBuffer) *LockedBuffer {
 		r[0].SetError("receiver was nil")
 	}
 	if r[0].set {
-		if r[0].val != nil {
-			r[0].val.Destroy()
+		if r[0].buf != nil {
+			r[0].buf.Destroy()
 		}
 	}
-	r[0].val, r[0].set, r[0].err = nil, false, nil
+	r[0].buf, r[0].set, r[0].err = nil, false, nil
 	return r[0]
 }
 
+/////////////////////////////////////////
+// Buffer implementations
+/////////////////////////////////////////
+
 // Buf returns a pointer to the byte slice in the LockedBuffer.
-//
-// Note that this buffer cannot be treated as a regular byte slice, or it will likely trample the canaries or leave a dangling pointer if it is.
 func (r *LockedBuffer) Buf() *[]byte {
 	if r == nil {
 		return &[]byte{}
 	}
 	if r.set {
-		if r.val != nil {
-			a := r.val.Buffer()
+		if r.buf != nil {
+			a := r.buf.Buffer()
 			return &a
 		}
 	}
@@ -61,84 +63,37 @@ func (r *LockedBuffer) Buf() *[]byte {
 func (r *LockedBuffer) Copy(buf Buffer) Buffer {
 	if r == nil {
 		r = NewLockedBuffer()
-		r.err = errors.New("nil receiver")
+		r.SetError("nil receiver")
 	}
-	r.err = nil
+	r.UnsetError()
 	if buf == nil {
-		r.Null()
-		r.err = errors.New("nil parameter")
+		r.Free()
+		r.SetError("nil parameter")
 		return r
 	}
 	if r == buf {
-		r.err = errors.New("parameter is receiver")
+		r.SetError("parameter is receiver")
 		return r
 	}
-	if buf.Len() == 0 {
+	if buf.Size() == 0 {
 		r.Null()
 		r.Load(buf.Buf())
-		r.err = errors.New("empty buffer received")
+		r.SetError("empty buffer received")
 		return r
 	}
-	r.New(buf.Len())
-	for i := 0; i < r.Len(); i++ {
+	r.New(buf.Size())
+	for i := 0; i < r.Size(); i++ {
 		r.SetElem(i, buf.Elem(i))
 	}
-	r.set = true
+	r.Set()
 	return r
 }
 
-// Delete deletes the memguard LockedBuffer and dereferences it
-func (r *LockedBuffer) Delete() {
-	r.Null()
-}
-
-// Elem returns the byte at a given index of the buffer
-func (r *LockedBuffer) Elem(i int) byte {
-	if r == nil {
-		return 0
-	}
-	if r.val == nil {
-		return 0
-	}
-	return (*r.Buf())[i]
-}
-
-// Error returns the string in the err field
-func (r *LockedBuffer) Error() string {
-	if r == nil {
-		return "nil receiver"
-	}
-	if r.err != nil {
-		return r.err.Error()
-	}
-	return ""
-}
-
-// IsSet returns true if the Lockedbuffer has been loaded with a data
-func (r *LockedBuffer) IsSet() bool {
-	if r == nil {
-		return false
-	}
-	return r.set
-}
-
-// IsUTF8 returns true if the LockedBuffer is set to output UTF8
-func (r *LockedBuffer) IsUTF8() bool {
-	if r == nil {
-		return false
-	}
-	return r.utf8
-}
-
-// Len returns the length of the LockedBuffer if it has been loaded, or -1 if not
-func (r *LockedBuffer) Len() int {
-	if r == nil {
-		return -1
-	}
-	if r.val == nil {
-		return 0
-	}
-	return r.val.Size()
+// Free destroys the LockedBuffer and dereferences it
+func (r *LockedBuffer) Free() {
+	r.buf.Destroy()
+	r.buf = nil
+	r.UnsetError()
 }
 
 // Link copies the pointer from another LockedBuffer's content, meaning what is written to one will also be visible in the other
@@ -155,45 +110,18 @@ func (r *LockedBuffer) Link(buf Buffer) Buffer {
 func (r *LockedBuffer) Load(bytes *[]byte) Buffer {
 	if r == nil {
 		r = NewLockedBuffer()
+		r.SetError("nil receiver")
 	}
 	if bytes == nil {
 		r.SetError("nil parameter")
 	} else {
 		r.Null()
-		r.val, r.err = memguard.NewMutableFromBytes(*bytes)
-		if r.err != nil {
+		if r.buf, r.err = memguard.NewMutableFromBytes(*bytes); r.err != nil {
 			return r
 		}
-		r.set = true
+		r.Set()
 	}
 	return r
-}
-
-// MarshalJSON marshals the data of this object into JSON
-func (r *LockedBuffer) MarshalJSON() ([]byte, error) {
-	if r == nil {
-		r = NewLockedBuffer()
-		r.SetError("nil receiver")
-	}
-	var val string
-	if r.IsSet() {
-		if r.val != nil {
-			if r.utf8 {
-				val = string(*r.Buf())
-			} else {
-				val = string(append([]byte("0x"), hex.EncodeToString(*r.Buf())...))
-			}
-		}
-	}
-	return json.Marshal(&struct {
-		Value string
-		IsSet bool
-		Error string
-	}{
-		Value: val,
-		IsSet: r.set,
-		Error: r.Error(),
-	})
 }
 
 // Move copies the pointer to the buffer into the receiver and nulls the passed LockedBuffer
@@ -218,14 +146,14 @@ func (r *LockedBuffer) New(size int) Buffer {
 		r = NewLockedBuffer()
 	}
 	r.Null()
-	r.val, r.err = memguard.NewMutable(size)
+	r.buf, r.err = memguard.NewMutable(size)
 	r.set = true
 	return r
 }
 
 // Null zeroes out a LockedBuffer
 func (r *LockedBuffer) Null() Buffer {
-	return NewLockedBuffer(r)
+	r.buf.Wipe()
 }
 
 // Rand loads the LockedBuffer with cryptographically random bytes to a specified length, destroying existing buffer if it was set
@@ -234,7 +162,7 @@ func (r *LockedBuffer) Rand(size int) Buffer {
 		r = NewLockedBuffer()
 	}
 	r.New(size)
-	r.val, r.err = memguard.NewMutableRandom(size)
+	r.buf, r.err = memguard.NewMutableRandom(size)
 	if r.err != nil {
 		return r
 	}
@@ -242,29 +170,30 @@ func (r *LockedBuffer) Rand(size int) Buffer {
 	return r
 }
 
-// SetBinary sets the data type to be binary
-func (r *LockedBuffer) SetBinary() Buffer {
+// Size returns the length of the LockedBuffer if it has been loaded, or -1 if not
+func (r *LockedBuffer) Size() int {
 	if r == nil {
-		r = NewLockedBuffer()
-		r.SetError("nil receiver")
+		return -1
 	}
-	r.utf8 = false
-	return r
+	if r.buf == nil {
+		return 0
+	}
+	return r.buf.Size()
 }
 
-// SetElem sets an element in the buffer
-func (r *LockedBuffer) SetElem(i int, b byte) Buffer {
+/////////////////////////////////////////
+// Status implementation
+/////////////////////////////////////////
+
+// Error returns the string in the err field
+func (r *LockedBuffer) Error() string {
 	if r == nil {
-		R := NewLockedBuffer()
-		R.SetError("nil receiver")
-		return R
+		return "nil receiver"
 	}
-	if r.val == nil {
-		r.SetError("nil value")
-		return r
+	if r.err != nil {
+		return r.err.Error()
 	}
-	r.val.Buffer()[i] = b
-	return r
+	return ""
 }
 
 // SetError sets the string of the error in the err field
@@ -276,31 +205,6 @@ func (r *LockedBuffer) SetError(s string) Buffer {
 	return r
 }
 
-// SetUTF8 sets the LockedBuffer to output UTF8 strings
-func (r *LockedBuffer) SetUTF8() Buffer {
-	if r == nil {
-		r = NewLockedBuffer()
-		r.SetError("nil receiver")
-	}
-	r.utf8 = true
-	return r
-}
-
-// String returns the JSON representing the data in a LockedBuffer
-func (r *LockedBuffer) String() string {
-	s, _ := json.MarshalIndent(r, "", "    ")
-	return string(s)
-}
-
-// Unset changes the set flag in a Bytes to false and other functions will treat it as empty
-func (r *LockedBuffer) Unset() Buffer {
-	if r == nil {
-		r = NewLockedBuffer()
-	}
-	r.set = false
-	return r
-}
-
 // UnsetError sets the error to nil
 func (r *LockedBuffer) UnsetError() Buffer {
 	if r == nil {
@@ -308,4 +212,128 @@ func (r *LockedBuffer) UnsetError() Buffer {
 	}
 	r.err = nil
 	return r
+}
+
+/////////////////////////////////////////
+// Array implementation
+/////////////////////////////////////////
+
+// Elem returns the byte at a given index of the buffer
+func (r *LockedBuffer) Elem(i int) Array {
+	if r == nil {
+		r := NewLockedBuffer()
+		r.SetError("nil receiver")
+		return 0
+	}
+	if r.buf == nil {
+		r.SetError("nil buffer")
+		return 0
+	}
+	return (*r.Buf())[i]
+}
+
+// Len returns the length of the array
+func (r *LockedBuffer) Len() int {
+	return r.Size()
+}
+
+// Cap returns the amount of elements allocated (can be larger than the size)
+func (r *LockedBuffer) Cap() int {
+	return cap(*r.buf)
+}
+
+// SetElem sets an element in the buffer
+func (r *LockedBuffer) SetElem(i int, b byte) Buffer {
+	if r == nil {
+		R := NewLockedBuffer()
+		R.SetError("nil receiver")
+		return R
+	}
+	if r.buf == nil {
+		r.SetError("nil value")
+		return r
+	}
+	r.buf.Buffer()[i] = b
+	return r
+}
+
+// Purge zeroes out all of the buffers in the array
+func (r *LockedBuffer) Purge() Array {
+	if r == nil {
+		r = NewBytes()
+		r.SetError("nil receiver")
+	}
+	if r.buf == nil {
+		r.SetError("nil buffer")
+		return r
+	}
+	r.buf.Wipe()
+	return r
+}
+
+/////////////////////////////////////////
+// Toggle implementation
+/////////////////////////////////////////
+
+// IsSet returns true if the Lockedbuffer has been loaded with data
+func (r *LockedBuffer) IsSet() bool {
+	if r == nil {
+		return false
+	}
+	return r.set
+}
+
+// Set signifies that the state of the data is consistent
+func (r *LockedBuffer) Set() Toggle {
+	return r.set
+}
+
+// Unset changes the set flag in a Bytes to false and other functions will treat it as empty
+func (r *LockedBuffer) Unset() Toggle {
+	if r == nil {
+		r = NewLockedBuffer()
+	}
+	r.set = false
+	return r
+}
+
+/////////////////////////////////////////
+// JSON
+/////////////////////////////////////////
+
+// MarshalJSON marshals the data of this object into JSON
+func (r *LockedBuffer) MarshalJSON() ([]byte, error) {
+	if r == nil {
+		r = NewLockedBuffer()
+		r.SetError("nil receiver")
+	}
+	var buf string
+	if r.IsSet() {
+		if r.buf != nil {
+			if r.utf8 {
+				buf = string(*r.Buf())
+			} else {
+				buf = string(append([]byte("0x"), hex.EncodeToString(*r.Buf())...))
+			}
+		}
+	}
+	return json.Marshal(&struct {
+		Value string
+		IsSet bool
+		Error string
+	}{
+		Value: buf,
+		IsSet: r.set,
+		Error: r.Error(),
+	})
+}
+
+/////////////////////////////////////////
+// Stringer implementation
+/////////////////////////////////////////
+
+// String returns the JSON representing the data in a LockedBuffer
+func (r *LockedBuffer) String() string {
+	s, _ := json.MarshalIndent(r, "", "    ")
+	return string(s)
 }
