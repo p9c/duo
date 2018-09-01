@@ -40,19 +40,13 @@ func NewBytes(r ...*Bytes) *Bytes {
 	if len(r) == 0 {
 		r = append(r, new(Bytes))
 	}
-	if r[0] == nil {
-		r[0] = ifnil(r[0])
-		r[0].SetError("receiver was nil")
+	r[0] = ifnil(r[0])
+	if r[0].IsSet() {
+		r[0].Free()
 	}
-	if r[0].buf != nil {
-		rr := *r[0].buf
-		if r[0].set {
-			for i := range rr {
-				rr[i] = 0
-			}
-		}
-	}
-	r[0].buf, r[0].set, r[0].err = nil, false, nil
+	r[0].buf = nil
+	r[0].Unset()
+	r[0].UnsetError()
 	return r[0]
 }
 
@@ -86,8 +80,6 @@ func (r *Bytes) Copy(buf Buffer) Buffer {
 	r.ForEach(func(i int) {
 		r.SetElem(i, buf.Elem(i))
 	})
-	// for i := range *r.Buf() {
-	// }
 	r.Set()
 	return r
 }
@@ -103,9 +95,9 @@ func (r *Bytes) ForEach(f func(int)) Buffer {
 
 // Free zeroes the buffer and dereferences it
 func (r *Bytes) Free() Buffer {
-	r = ifnil(r)
-	r.Null()
-	r.buf = nil
+	if r != nil {
+		r.buf = nil
+	}
 	return r
 }
 

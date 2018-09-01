@@ -3,6 +3,8 @@ package bytes
 import (
 	"encoding/json"
 	"fmt"
+	. "gitlab.com/parallelcoin/duo/pkg/byte"
+	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
 	"testing"
 )
 
@@ -91,4 +93,13 @@ func TestBytes(t *testing.T) {
 	x.Load(&B).Elem(0)
 	var y *Bytes
 	y.UnsetError()
+	y.Len()
+	y.Cap()
+	b.Len()
+	b.Cap()
+	b.Purge()
+	b.coding = len(CodeType) + 10
+	b.Coding()
+	fmt.Println("coding types", b.Codes())
+	fmt.Println(b.SetElem(b.Size()+4, NewByte()))
 }

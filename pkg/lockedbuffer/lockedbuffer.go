@@ -23,15 +23,21 @@ type LockedBuffer struct {
 	err    error
 }
 
+// Nil guards against nil pointer receivers
+func ifnil(r *LockedBuffer) *LockedBuffer {
+	if r == nil {
+		r = new(LockedBuffer)
+		r.SetError("nil receiver")
+	}
+	return r
+}
+
 // NewLockedBuffer clears the passed LockedBuffer or creates a new one if null
 func NewLockedBuffer(r ...*LockedBuffer) *LockedBuffer {
 	if len(r) == 0 {
 		r = append(r, new(LockedBuffer))
 	}
-	if r[0] == nil {
-		r[0] = new(LockedBuffer)
-		r[0].SetError("receiver was nil")
-	}
+	r[0] = ifnil(r[0])
 	if r[0].set {
 		if r[0].buf != nil {
 			r[0].buf.Destroy()
@@ -89,8 +95,17 @@ func (r *LockedBuffer) Copy(buf Buffer) Buffer {
 	return r
 }
 
+// ForEach calls a function that is called with an index and allows iteration neatly with a closure
+func (r *LockedBuffer) ForEach(f func(int)) Buffer {
+	r = ifnil(r)
+	for i := range *r.Buf() {
+		f(i)
+	}
+	return r
+}
+
 // Free destroys the LockedBuffer and dereferences it
-func (r *LockedBuffer) Free() {
+func (r *LockedBuffer) Free() Buffer {
 	r.buf.Destroy()
 	r.buf = nil
 	r.UnsetError()
@@ -182,6 +197,42 @@ func (r *LockedBuffer) Size() int {
 }
 
 /////////////////////////////////////////
+// Coding implementation
+/////////////////////////////////////////
+
+// Coding returns the coding type to be used by the String function
+func (r *LockedBuffer) Coding() string {
+	r = ifnil(r)
+	if r.coding >= len(*r.buf) {
+		r.coding = 0
+		r.SetError("invalid coding type in LockedBuffer")
+	}
+	return CodeType[r.coding]
+}
+
+// SetCoding changes the encoding type
+func (r *LockedBuffer) SetCoding(coding string) Buffer {
+	r = ifnil(r)
+	found := false
+	for i := range CodeType {
+		if coding == CodeType[i] {
+			found = true
+			r.coding = i
+		}
+	}
+	if !found {
+		r.SetError("code type not found")
+	}
+	return r
+}
+
+// Codes returns a copy of the array of CodeType
+func (r *LockedBuffer) Codes() (R []string) {
+	copy(R, CodeType)
+	return
+}
+
+/////////////////////////////////////////
 // Status implementation
 /////////////////////////////////////////
 
@@ -219,7 +270,7 @@ func (r *LockedBuffer) UnsetError() Buffer {
 /////////////////////////////////////////
 
 // Elem returns the byte at a given index of the buffer
-func (r *LockedBuffer) Elem(i int) Array {
+func (r *LockedBuffer) Elem(i int) Buffer {
 	if r == nil {
 		r := NewLockedBuffer()
 		r.SetError("nil receiver")
@@ -239,11 +290,11 @@ func (r *LockedBuffer) Len() int {
 
 // Cap returns the amount of elements allocated (can be larger than the size)
 func (r *LockedBuffer) Cap() int {
-	return cap(*r.buf)
+	return cap(*r.Buf())
 }
 
 // SetElem sets an element in the buffer
-func (r *LockedBuffer) SetElem(i int, b byte) Buffer {
+func (r *LockedBuffer) SetElem(i int, b Buffer) Array {
 	if r == nil {
 		R := NewLockedBuffer()
 		R.SetError("nil receiver")
@@ -253,7 +304,8 @@ func (r *LockedBuffer) SetElem(i int, b byte) Buffer {
 		r.SetError("nil value")
 		return r
 	}
-	r.buf.Buffer()[i] = b
+	R := r.buf.Buffer()
+	*R[i] = b
 	return r
 }
 
@@ -288,7 +340,7 @@ func (r *LockedBuffer) Set() Toggle {
 	return r.set
 }
 
-// Unset changes the set flag in a Bytes to false and other functions will treat it as empty
+// Unset changes the set flag in a LockedBuffer to false and other functions will treat it as empty
 func (r *LockedBuffer) Unset() Toggle {
 	if r == nil {
 		r = NewLockedBuffer()
