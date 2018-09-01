@@ -324,7 +324,9 @@ func (r *Bytes) SetCoding(coding string) Buffer {
 
 // Codes returns a copy of the array of CodeType
 func (r *Bytes) Codes() (R []string) {
-	copy(R, CodeType)
+	for i := range CodeType {
+		R = append(R, CodeType[i])
+	}
 	return
 }
 

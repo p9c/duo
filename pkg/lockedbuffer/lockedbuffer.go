@@ -5,8 +5,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/awnumar/memguard"
+	. "gitlab.com/parallelcoin/duo/pkg/byte"
 	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
+	"math/big"
 )
 
 // LockedBuffer is a struct that stores and manages memguard.LockedBuffers, ensuring that buffers are destroyed when no longer in use.
@@ -88,9 +91,9 @@ func (r *LockedBuffer) Copy(buf Buffer) Buffer {
 		return r
 	}
 	r.New(buf.Size())
-	for i := 0; i < r.Size(); i++ {
+	r.ForEach(func(i int) {
 		r.SetElem(i, buf.Elem(i))
-	}
+	})
 	r.Set()
 	return r
 }
@@ -98,6 +101,9 @@ func (r *LockedBuffer) Copy(buf Buffer) Buffer {
 // ForEach calls a function that is called with an index and allows iteration neatly with a closure
 func (r *LockedBuffer) ForEach(f func(int)) Buffer {
 	r = ifnil(r)
+	if r.buf == nil {
+		return r
+	}
 	for i := range *r.Buf() {
 		f(i)
 	}
@@ -106,9 +112,13 @@ func (r *LockedBuffer) ForEach(f func(int)) Buffer {
 
 // Free destroys the LockedBuffer and dereferences it
 func (r *LockedBuffer) Free() Buffer {
-	r.buf.Destroy()
-	r.buf = nil
-	r.UnsetError()
+	r = ifnil(r)
+	if r.buf != nil {
+		r.buf.Destroy()
+		r.buf = nil
+	}
+	r.UnsetError().Unset()
+	return r
 }
 
 // Link copies the pointer from another LockedBuffer's content, meaning what is written to one will also be visible in the other
@@ -123,10 +133,7 @@ func (r *LockedBuffer) Link(buf Buffer) Buffer {
 
 // Load moves the contents of a byte slice into the LockedBuffer, erasing the original copy.
 func (r *LockedBuffer) Load(bytes *[]byte) Buffer {
-	if r == nil {
-		r = NewLockedBuffer()
-		r.SetError("nil receiver")
-	}
+	r = ifnil(r)
 	if bytes == nil {
 		r.SetError("nil parameter")
 	} else {
@@ -147,10 +154,10 @@ func (r *LockedBuffer) Move(buf Buffer) Buffer {
 	if buf == nil {
 		r.err = errors.New("nil parameter")
 	} else {
-		r.Load(buf.Buf())
-		r.SetError("")
-		buf.Delete()
-		buf.SetError("")
+		r.buf = buf.(*LockedBuffer).buf
+		r.UnsetError().Set()
+		buf.(*LockedBuffer).buf = nil
+		buf.UnsetError().Unset()
 	}
 	return r
 }
@@ -168,14 +175,16 @@ func (r *LockedBuffer) New(size int) Buffer {
 
 // Null zeroes out a LockedBuffer
 func (r *LockedBuffer) Null() Buffer {
-	r.buf.Wipe()
+	r = ifnil(r)
+	if r.buf != nil {
+		r.buf.Wipe()
+	}
+	return r
 }
 
 // Rand loads the LockedBuffer with cryptographically random bytes to a specified length, destroying existing buffer if it was set
 func (r *LockedBuffer) Rand(size int) Buffer {
-	if r == nil {
-		r = NewLockedBuffer()
-	}
+	r = ifnil(r)
 	r.New(size)
 	r.buf, r.err = memguard.NewMutableRandom(size)
 	if r.err != nil {
@@ -203,7 +212,7 @@ func (r *LockedBuffer) Size() int {
 // Coding returns the coding type to be used by the String function
 func (r *LockedBuffer) Coding() string {
 	r = ifnil(r)
-	if r.coding >= len(*r.buf) {
+	if r.coding >= len(CodeType) {
 		r.coding = 0
 		r.SetError("invalid coding type in LockedBuffer")
 	}
@@ -271,16 +280,12 @@ func (r *LockedBuffer) UnsetError() Buffer {
 
 // Elem returns the byte at a given index of the buffer
 func (r *LockedBuffer) Elem(i int) Buffer {
-	if r == nil {
-		r := NewLockedBuffer()
-		r.SetError("nil receiver")
-		return 0
-	}
+	r = ifnil(r)
 	if r.buf == nil {
 		r.SetError("nil buffer")
-		return 0
+		return &LockedBuffer{}
 	}
-	return (*r.Buf())[i]
+	return NewByte().Load(&[]byte{r.buf.Buffer()[i]})
 }
 
 // Len returns the length of the array
@@ -290,31 +295,27 @@ func (r *LockedBuffer) Len() int {
 
 // Cap returns the amount of elements allocated (can be larger than the size)
 func (r *LockedBuffer) Cap() int {
+	if r == nil || r.buf == nil {
+		return 0
+	}
 	return cap(*r.Buf())
 }
 
 // SetElem sets an element in the buffer
 func (r *LockedBuffer) SetElem(i int, b Buffer) Array {
-	if r == nil {
-		R := NewLockedBuffer()
-		R.SetError("nil receiver")
-		return R
-	}
+	r = ifnil(r)
 	if r.buf == nil {
 		r.SetError("nil value")
 		return r
 	}
 	R := r.buf.Buffer()
-	*R[i] = b
+	R[i] = (*b.Buf())[0]
 	return r
 }
 
 // Purge zeroes out all of the buffers in the array
 func (r *LockedBuffer) Purge() Array {
-	if r == nil {
-		r = NewBytes()
-		r.SetError("nil receiver")
-	}
+	r = ifnil(r)
 	if r.buf == nil {
 		r.SetError("nil buffer")
 		return r
@@ -337,14 +338,14 @@ func (r *LockedBuffer) IsSet() bool {
 
 // Set signifies that the state of the data is consistent
 func (r *LockedBuffer) Set() Toggle {
-	return r.set
+	r = ifnil(r)
+	r.set = true
+	return r
 }
 
 // Unset changes the set flag in a LockedBuffer to false and other functions will treat it as empty
 func (r *LockedBuffer) Unset() Toggle {
-	if r == nil {
-		r = NewLockedBuffer()
-	}
+	r = ifnil(r)
 	r.set = false
 	return r
 }
@@ -355,28 +356,17 @@ func (r *LockedBuffer) Unset() Toggle {
 
 // MarshalJSON marshals the data of this object into JSON
 func (r *LockedBuffer) MarshalJSON() ([]byte, error) {
-	if r == nil {
-		r = NewLockedBuffer()
-		r.SetError("nil receiver")
-	}
-	var buf string
-	if r.IsSet() {
-		if r.buf != nil {
-			if r.utf8 {
-				buf = string(*r.Buf())
-			} else {
-				buf = string(append([]byte("0x"), hex.EncodeToString(*r.Buf())...))
-			}
-		}
-	}
+	r = ifnil(r)
 	return json.Marshal(&struct {
-		Value string
-		IsSet bool
-		Error string
+		Value  string
+		IsSet  bool
+		Coding string
+		Error  string
 	}{
-		Value: buf,
-		IsSet: r.set,
-		Error: r.Error(),
+		Value:  r.String(),
+		IsSet:  r.set,
+		Coding: CodeType[r.coding],
+		Error:  r.Error(),
 	})
 }
 
@@ -386,6 +376,26 @@ func (r *LockedBuffer) MarshalJSON() ([]byte, error) {
 
 // String returns the JSON representing the data in a LockedBuffer
 func (r *LockedBuffer) String() string {
-	s, _ := json.MarshalIndent(r, "", "    ")
-	return string(s)
+	r = ifnil(r)
+	if r.buf == nil {
+		return "<nil>"
+	}
+	if r.coding > len(CodeType) {
+		r.SetError("invalid coding")
+		r.SetCoding("decimal")
+	}
+	switch CodeType[r.coding] {
+	case "byte":
+		return fmt.Sprint(*r.Buf())
+	case "string":
+		return string(*r.Buf())
+	case "decimal":
+		bi := big.NewInt(0)
+		bi.SetBytes(*r.Buf())
+		return fmt.Sprint(bi)
+	case "hex":
+		return "0x" + hex.EncodeToString(*r.Buf())
+	default:
+		return r.SetCoding("decimal").String()
+	}
 }

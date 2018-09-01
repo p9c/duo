@@ -3,7 +3,9 @@ package lockedbuffer
 import (
 	"fmt"
 	"github.com/awnumar/memguard"
+	. "gitlab.com/parallelcoin/duo/pkg/byte"
 	. "gitlab.com/parallelcoin/duo/pkg/bytes"
+	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
 	"testing"
 )
 
@@ -51,7 +53,7 @@ func TestLockedBuffer(t *testing.T) {
 	g := NewLockedBuffer().Rand(13)
 	fmt.Println("NewLockedBuffer().Rand(13)", g, g.Buf())
 	fmt.Println(NewLockedBuffer().New(13).Null())
-	NewLockedBuffer().Delete()
+	NewLockedBuffer().Free()
 	var n *LockedBuffer
 	fmt.Println("should be nil receiver:", n.Error())
 	fmt.Println("nil IsSet()", n.IsSet())
@@ -59,25 +61,46 @@ func TestLockedBuffer(t *testing.T) {
 	fmt.Println("not nil IsSet()", e.IsSet())
 	fmt.Println("Move(nil)", n.Move(nil))
 	fmt.Println("nil SetError()", n.SetError("testing"))
-	n.IsUTF8()
-	e.IsUTF8()
 	fmt.Println("JSON", e.String())
 	var m *LockedBuffer
 	m.UnsetError()
-	m.SetElem(0, 100)
+	m.SetElem(0, NewByte().Load(&[]byte{100}))
 	m.Elem(0)
-	m.Unset().UnsetError()
+	m.UnsetError().Unset()
 	fmt.Println("JSON", m.String())
 	m.MarshalJSON()
 	m.Load(NewBytes().Rand(32).Buf())
 	m = new(LockedBuffer)
 	m.set = true
-	m.SetUTF8()
-	m.val, m.err = memguard.NewImmutableRandom(32)
+	m.SetCoding("string")
+	m.buf, m.err = memguard.NewImmutableRandom(32)
 	m.MarshalJSON()
 	var oo *LockedBuffer
-	oo.SetUTF8()
+	oo.SetCoding("decimal")
 	var pp *LockedBuffer
-	pp.SetBinary()
-	NewLockedBuffer().SetElem(0, 100).Copy(nil).Elem(0)
+	pp.SetCoding("binary")
+	NewLockedBuffer().SetElem(0, NewByte().Load(&[]byte{100}))
+	NewLockedBuffer().Copy(nil).Elem(0)
+	NewLockedBuffer(NewLockedBuffer().Load(&[]byte{'t', 'e', 's', 't'}).(*LockedBuffer)).Free()
+	yy := "test"
+	YY := []byte(yy)
+	xx := NewLockedBuffer().Load(&YY)
+	fmt.Println(xx.String())
+	xbuf, xerr := memguard.NewMutable(12)
+	xx.(*LockedBuffer).buf = xbuf
+	xx.(*LockedBuffer).err = xerr
+	fmt.Println(xx.SetCoding("hex").String())
+	xx.Free()
+	fmt.Println(xx.String())
+	fmt.Println(xx.Coding())
+	fmt.Println(xx.Codes())
+	xx.(*LockedBuffer).coding = len(CodeType) + 4
+	xx.Coding()
+	xx.Cap()
+	xx.Purge().(*LockedBuffer).New(23).Cap()
+	xx.Purge()
+	fmt.Println(xx.Rand(23).SetCoding("decimal").String())
+	xx.(*LockedBuffer).coding = len(CodeType) + 5
+	fmt.Println(xx.Rand(23).String())
+	fmt.Println(xx.Rand(23).SetCoding("base64").String())
 }
