@@ -26,28 +26,18 @@ type Bytes struct {
 	err    error
 }
 
-// Nil guards against nil pointer receivers
-func ifnil(r *Bytes) *Bytes {
-	if r == nil {
-		r = new(Bytes)
-		r.SetError("nil receiver")
-	}
-	return r
+// NewBytes empties an existing bytes or makes a new one
+func NewBytes() (R *Bytes) {
+	R = new(Bytes)
+	R.buf = nil
+	return
 }
 
-// NewBytes empties an existing bytes or makes a new one
-func NewBytes(r ...*Bytes) *Bytes {
-	if len(r) == 0 {
-		r = append(r, new(Bytes))
+func (r *Bytes) ifnil() (R *Bytes) {
+	if r == nil {
+		return NewBytes().SetError("nil receiver").(*Bytes)
 	}
-	r[0] = ifnil(r[0])
-	if r[0].IsSet() {
-		r[0].Free()
-	}
-	r[0].buf = nil
-	r[0].Unset()
-	r[0].UnsetError()
-	return r[0]
+	return r
 }
 
 /////////////////////////////////////////
@@ -55,17 +45,17 @@ func NewBytes(r ...*Bytes) *Bytes {
 /////////////////////////////////////////
 
 // Buf returns a variable pointing to the value stored in a Bytes.
-func (r *Bytes) Buf() *[]byte {
-	r = ifnil(r)
-	if r.buf == nil || !r.IsSet() {
-		return &[]byte{}
+func (r *Bytes) Buf() (R *[]byte) {
+	r = r.ifnil()
+	if r == nil || !r.IsSet() {
+		return &[]byte{0}
 	}
 	return r.buf
 }
 
 // Copy duplicates the data from the buffer provided and zeroes and replaces its contents, clearing the error value.
-func (r *Bytes) Copy(buf Buffer) Buffer {
-	r = ifnil(r)
+func (r *Bytes) Copy(buf Buffer) (R Buffer) {
+	r = r.ifnil()
 	r.UnsetError()
 	if buf == nil {
 		return r.Free().SetError("nil parameter")
@@ -85,77 +75,79 @@ func (r *Bytes) Copy(buf Buffer) Buffer {
 }
 
 // ForEach calls a function that is called with an index and allows iteration neatly with a closure
-func (r *Bytes) ForEach(f func(int)) Buffer {
-	r = ifnil(r)
-	for i := range *r.buf {
-		f(i)
+func (r *Bytes) ForEach(f func(int)) (R Buffer) {
+	r = r.ifnil()
+	if r.buf != nil {
+		for i := range *r.buf {
+			f(i)
+		}
 	}
 	return r
 }
 
-// Free zeroes the buffer and dereferences it
-func (r *Bytes) Free() Buffer {
+// Free dereferences the buffer
+func (r *Bytes) Free() (R Buffer) {
+	r = r.ifnil()
 	if r != nil {
+		r.Null()
 		r.buf = nil
 	}
 	return r
 }
 
 // Link nulls the Bytes and copies the pointer in from another Bytes. Whatever is done to one's []byte will also affect the other, but they keep separate error values
-func (r *Bytes) Link(bytes Buffer) Buffer {
-	r = ifnil(r)
+func (r *Bytes) Link(bytes Buffer) (R Buffer) {
+	r = r.ifnil()
 	r.Null()
 	r.buf, r.set = bytes.Buf(), bytes.IsSet()
 	return r
 }
 
 // Load nulls any existing data and sets its pointer to refer to the pointer to byte slice in the parameter.
-func (r *Bytes) Load(bytes *[]byte) Buffer {
-	r = ifnil(r)
+func (r *Bytes) Load(bytes *[]byte) (R Buffer) {
+	r = r.ifnil()
 	if bytes == nil {
-		r.SetError("nil parameter")
-		r.Unset()
-		r.Free()
+		r.SetError("nil parameter").Free().Unset()
 	} else {
-		r.Null()
 		r.buf = bytes
-		r.UnsetError()
-		r.Set()
 	}
 	return r
 }
 
 // Move copies the *[]byte pointer into the Bytes structure after removing what was in it, if anything. The value input into this function will be empty afterwards
-func (r *Bytes) Move(bytes Buffer) Buffer {
-	r = ifnil(r)
+func (r *Bytes) Move(bytes Buffer) (R Buffer) {
+	r = r.ifnil()
 	if bytes == nil {
-		r.err = errors.New("nil parameter")
+		r.SetError("nil parameter")
 	} else {
-		r.buf, r.set, r.err = bytes.Buf(), true, nil
-		bytes.Load(nil)
-		bytes.Unset()
-		bytes.SetError("")
+		r.Load(bytes.Buf())
+		r.UnsetError().Set()
+		bytes.Load(nil).UnsetError().Unset()
 	}
 	return r
 }
 
 // New nulls the Bytes and assigns an empty *[]byte with a specified size.
-func (r *Bytes) New(size int) Buffer {
-	r = ifnil(r)
-	r.Null()
-	rr := make([]byte, size)
-	r.buf = &rr
-	r.set = true
+func (r *Bytes) New(size int) (R Buffer) {
+	r = r.ifnil()
+	x := make([]byte, size)
+	r.Load(&x)
+	r.Set()
 	return r
 }
 
 // Null wipes the value stored, and restores the Bytes to the same state as a newly created one (with a nil *[]byte).
-func (r *Bytes) Null() Buffer {
-	return NewBytes(r)
+func (r *Bytes) Null() (R Buffer) {
+	r = r.ifnil()
+	R = r.ForEach(func(i int) {
+		r.SetElem(i, NewByte().Load(&[]byte{0}))
+	})
+	return
 }
 
 // Rand loads a cryptographically random string of []byte of a specified size.
-func (r *Bytes) Rand(size int) Buffer {
+func (r *Bytes) Rand(size int) (R Buffer) {
+	r = r.ifnil()
 	r = r.New(size).(*Bytes)
 	rand.Read(*r.Buf())
 	r.set = true
@@ -181,9 +173,7 @@ func (r *Bytes) Size() int {
 
 // Error gets the error string
 func (r *Bytes) Error() string {
-	if r == nil {
-		return "nil receiver"
-	}
+	r = r.ifnil()
 	if r.err != nil {
 		return r.err.Error()
 	}
@@ -195,14 +185,14 @@ func (r *Bytes) Error() string {
 /////////////////////////////////////////
 
 // Elem returns the byte at a given index of the buffer
-func (r *Bytes) Elem(i int) Buffer {
-	r = ifnil(r)
+func (r *Bytes) Elem(i int) (R Buffer) {
+	r = r.ifnil()
 	if r.buf == nil {
 		r.SetError("nil buffer")
 		return &Byte{}
 	}
-	R := NewByte().Load(&[]byte{(*r.buf)[i]})
-	return R
+	R = NewByte().Load(r.buf)
+	return
 }
 
 // Len is just a synonym for size, returns -1 if unallocated
@@ -222,11 +212,8 @@ func (r *Bytes) Cap() int {
 }
 
 // Purge zeroes out all of the buffers in the array
-func (r *Bytes) Purge() Array {
-	r = ifnil(r)
-	if r.buf == nil {
-		return r.SetError("nil buffer")
-	}
+func (r *Bytes) Purge() (R Array) {
+	r = r.ifnil()
 	r.ForEach(func(i int) {
 		(*r.buf)[i] = 0
 	})
@@ -234,10 +221,10 @@ func (r *Bytes) Purge() Array {
 }
 
 // SetElem sets an element in the buffer
-func (r *Bytes) SetElem(i int, b Buffer) Array {
-	r = ifnil(r)
-	if r.buf == nil {
-		return r.SetError("nil value")
+func (r *Bytes) SetElem(i int, b Buffer) (R Array) {
+	r = r.ifnil()
+	if b.Len() < 1 {
+		return r
 	}
 	if len(*r.buf) < i {
 		return r.SetError("index out of bounds")
@@ -259,14 +246,15 @@ func (r *Bytes) IsSet() bool {
 }
 
 // Set mark that the value has been initialised/loaded
-func (r *Bytes) Set() Toggle {
-	r = ifnil(r)
+func (r *Bytes) Set() (R Toggle) {
+	r = r.ifnil()
 	r.set = true
 	return r
 }
 
 // Unset changes the set flag in a Bytes to false and other functions will treat it as empty
 func (r *Bytes) Unset() Toggle {
+	r = r.ifnil()
 	r.set = false
 	return r
 }
@@ -276,18 +264,15 @@ func (r *Bytes) Unset() Toggle {
 /////////////////////////////////////////
 
 // SetError sets the error string
-func (r *Bytes) SetError(s string) Buffer {
-	r = ifnil(r)
+func (r *Bytes) SetError(s string) (R Buffer) {
+	r = r.ifnil()
 	r.err = errors.New(s)
 	return r
 }
 
 // UnsetError sets the error to nil
-func (r *Bytes) UnsetError() Buffer {
-	if r == nil {
-		r = NewBytes()
-		r.SetError("nil receiver")
-	}
+func (r *Bytes) UnsetError() (R Buffer) {
+	r = r.ifnil()
 	r.err = nil
 	return r
 }
@@ -298,7 +283,7 @@ func (r *Bytes) UnsetError() Buffer {
 
 // Coding returns the coding type to be used by the String function
 func (r *Bytes) Coding() string {
-	r = ifnil(r)
+	r = r.ifnil()
 	if r.coding >= len(*r.buf) {
 		r.coding = 0
 		r.SetError("invalid coding type in Bytes")
@@ -307,8 +292,8 @@ func (r *Bytes) Coding() string {
 }
 
 // SetCoding changes the encoding type
-func (r *Bytes) SetCoding(coding string) Buffer {
-	r = ifnil(r)
+func (r *Bytes) SetCoding(coding string) (R Buffer) {
+	r = r.ifnil()
 	found := false
 	for i := range CodeType {
 		if coding == CodeType[i] {
@@ -324,6 +309,7 @@ func (r *Bytes) SetCoding(coding string) Buffer {
 
 // Codes returns a copy of the array of CodeType
 func (r *Bytes) Codes() (R []string) {
+	r = r.ifnil()
 	for i := range CodeType {
 		R = append(R, CodeType[i])
 	}
@@ -335,8 +321,8 @@ func (r *Bytes) Codes() (R []string) {
 /////////////////////////////////////////
 
 // String returns the Bytes in the currently set coding format
-func (r *Bytes) String() string {
-	r = ifnil(r)
+func (r *Bytes) String() (S string) {
+	r = r.ifnil()
 	switch CodeType[r.coding] {
 	case "byte":
 		return fmt.Sprint(*r.Buf())
@@ -359,7 +345,7 @@ func (r *Bytes) String() string {
 
 // MarshalJSON renders the data as JSON
 func (r *Bytes) MarshalJSON() ([]byte, error) {
-	r = ifnil(r)
+	r = r.ifnil()
 	return json.Marshal(&struct {
 		Value  string
 		IsSet  bool

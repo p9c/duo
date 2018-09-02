@@ -1,6 +1,11 @@
 // Package interfaces contains interfaces defining the basic types in duo
 package interfaces
 
+// Nil is a helper interface to stop nil receiver panics
+type Nil interface {
+	ifnil() bool
+}
+
 // Buffer is a generic interface for structs that contain *[]byte slice elements
 type Buffer interface {
 	// Returns the pointer to the slice of bytes the buffer represents
@@ -31,7 +36,7 @@ type Buffer interface {
 	SetCoding(string) Buffer
 	// Returns an array of strings representing available coding types
 	Codes() []string
-
+	// Returns a string representing the content according to the coding mode set
 	String() string
 	// Return the string stored in the error. If implements status also implements errors
 	Error() string

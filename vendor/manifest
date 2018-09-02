@@ -10,6 +10,22 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/cjrd/allocate",
+			"repository": "https://github.com/cjrd/allocate",
+			"vcs": "git",
+			"revision": "0747e04b7870143edace88443ce64951974365a9",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/jinzhu/copier",
+			"repository": "https://github.com/jinzhu/copier",
+			"vcs": "git",
+			"revision": "7e38e58719c33e0d44d585c4ab477a30f8cb82dd",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "golang.org/x/crypto/blake2b",
 			"repository": "https://go.googlesource.com/crypto",
 			"vcs": "git",

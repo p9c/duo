@@ -3,13 +3,25 @@ package password
 
 import (
 	"encoding/json"
+	. "gitlab.com/parallelcoin/duo/pkg/byte"
 	. "gitlab.com/parallelcoin/duo/pkg/bytes"
+	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
 	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
 )
 
 // Password is just a LockedBuffer but recommended for use in storing password fields in other structures to signify what kind of data it is.
 type Password struct {
 	*LockedBuffer
+}
+
+// guards against nil pointer receivers
+func ifnil(r *Password) *Password {
+	if r == nil {
+		r = new(Password)
+		r.LockedBuffer = new(LockedBuffer)
+		r.SetError("nil receiver")
+	}
+	return r
 }
 
 // NewPassword creates a new Password
@@ -20,9 +32,9 @@ func NewPassword(r ...*Password) *Password {
 	}
 	if r[0] == nil {
 		r[0] = new(Password)
-		r[0].LockedBuffer = NewLockedBuffer(r[0].LockedBuffer)
+		r[0].LockedBuffer = NewLockedBuffer()
 	}
-	r[0].SetUTF8()
+	r[0].SetCoding("string")
 	return r[0]
 }
 
@@ -37,20 +49,19 @@ func (r *Password) FromString(s string) *Password {
 	if r == nil {
 		r = NewPassword(r)
 	}
-	S := []byte(s)
-	r.LockedBuffer = r.New(len(s))
-	R := *r.Buf()
-	for i := range S {
-		R[i] = S[i]
-	}
+	r.LockedBuffer = r.New(len(s)).(*LockedBuffer)
+	r.ForEach(func(i int) {
+		r.SetElem(i, NewByte().Load(&[]byte{s[i]}))
+	})
+	// for i := range S {
+	// 	R[i] = S[i]
+	// }
 	return r
 }
 
 // MarshalJSON marshalls the JSON for a Password
 func (r *Password) MarshalJSON() ([]byte, error) {
-	if r == nil {
-		r = NewPassword()
-	}
+	r = ifnil(r)
 	if r.LockedBuffer == nil {
 		r.LockedBuffer = NewLockedBuffer()
 	}
@@ -60,23 +71,22 @@ func (r *Password) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		Value  string
 		IsSet  bool
-		IsUTF8 bool
+		Coding string
 		Error  string
 	}{
 		Value:  string(*r.LockedBuffer.Buf()),
 		IsSet:  r.IsSet(),
-		IsUTF8: r.IsUTF8(),
+		Coding: r.Coding(),
 		Error:  r.Error(),
 	})
 }
 
-// String returns the password as a string. Not recommended, as the memory is immutable and may end up being copied several times.
-func (r *Password) String() *string {
-	if r == nil || r.LockedBuffer == nil {
-		s := ""
-		return &s
-	}
-	s := r.Buf()
-	S := string(*s)
-	return &S
+/////////////////////////////////////////
+// Stringer implementation
+/////////////////////////////////////////
+
+// String returns value encoded according to the current coding mode
+func (r *Password) String() string {
+	r = ifnil(r)
+	return r.LockedBuffer.String()
 }

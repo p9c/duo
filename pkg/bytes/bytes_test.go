@@ -23,6 +23,10 @@ func TestBytes(t *testing.T) {
 	fmt.Println("link emptied b to a", a.Buf(), *b.Buf())
 	c := a.Buf()
 	(*c)[0] = 1
+	var zz *Bytes
+	zz.Purge()
+	zz = nil
+	json.Marshal(zz)
 	fmt.Println("now both the same memory (changed byte zero of first only)", a.Buf(), b.Buf())
 	fmt.Println("Struct literal with Rand", struct{ *Bytes }{}.Rand(32).Buf())
 	fmt.Println("Struct literal with Null", struct{ *Bytes }{}.Null().String())
@@ -102,4 +106,6 @@ func TestBytes(t *testing.T) {
 	b.Coding()
 	fmt.Println("coding types", b.Codes())
 	fmt.Println(b.SetElem(b.Size()+4, NewByte()))
+	fmt.Println(NewBytes().String())
+	b.SetElem(100, NewByte().Rand(1))
 }

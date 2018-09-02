@@ -27,7 +27,7 @@ func Gen(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, er
 	if buf.Error() != "" {
 		return nil, nil, errors.New(buf.Error())
 	}
-	defer buf.Delete()
+	defer buf.Free()
 	Buf := *buf.Buf()
 	P := *p.Buf()
 	for i := range P {
@@ -43,12 +43,12 @@ func Gen(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, er
 		blake.Write(last)
 		last = blake.Sum(Buf)
 	}
-	C = NewLockedBuffer().New(32)
+	C = NewLockedBuffer().New(32).(*LockedBuffer)
 	c := *C.Buf()
 	for i := range c {
 		c[i] = last[i]
 	}
-	IV = NewBytes().New(12)
+	IV = NewBytes().New(12).(*Bytes)
 	ivb := *IV.Buf()
 	for i := range ivb {
 		ivb[i] = last[i+C.Len()]
@@ -79,7 +79,7 @@ func Bench(t time.Duration) (iter int) {
 		iter++
 		select {
 		case <-timerChan:
-			P.Delete()
+			P.Free()
 			return
 		default:
 		}

@@ -26,7 +26,7 @@ type LockedBuffer struct {
 	err    error
 }
 
-// Nil guards against nil pointer receivers
+// guards against nil pointer receivers
 func ifnil(r *LockedBuffer) *LockedBuffer {
 	if r == nil {
 		r = new(LockedBuffer)
@@ -247,9 +247,7 @@ func (r *LockedBuffer) Codes() (R []string) {
 
 // Error returns the string in the err field
 func (r *LockedBuffer) Error() string {
-	if r == nil {
-		return "nil receiver"
-	}
+	r = ifnil(r)
 	if r.err != nil {
 		return r.err.Error()
 	}
@@ -258,18 +256,14 @@ func (r *LockedBuffer) Error() string {
 
 // SetError sets the string of the error in the err field
 func (r *LockedBuffer) SetError(s string) Buffer {
-	if r == nil {
-		r = new(LockedBuffer)
-	}
+	r = ifnil(r)
 	r.err = errors.New(s)
 	return r
 }
 
 // UnsetError sets the error to nil
 func (r *LockedBuffer) UnsetError() Buffer {
-	if r == nil {
-		r = NewLockedBuffer()
-	}
+	r = ifnil(r)
 	r.err = nil
 	return r
 }

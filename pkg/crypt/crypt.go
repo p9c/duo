@@ -26,6 +26,14 @@ type Crypt struct {
 	err             error
 }
 
+// guards against nil pointer receivers
+func ifnil(r *Crypt) *Crypt {
+	if r == nil {
+		return NewCrypt()
+	}
+	return r
+}
+
 // NewCrypt empties a crypt or creates an empty crypt
 func NewCrypt(r ...*Crypt) *Crypt {
 	if len(r) == 0 {
