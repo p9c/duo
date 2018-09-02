@@ -26,12 +26,20 @@ type LockedBuffer struct {
 	err    error
 }
 
-// guards against nil pointer receivers
-func (r *LockedBuffer) ifnil() interface{} {
+func donil(r *Bytes, f1 func(), f2 func()) *Bytes {
 	if r == nil {
-		return NewLockedBuffer().SetError("nil receiver")
+		f1()
+	}
+	if f2 != nil {
+		f2()
 	}
 	return r
+}
+
+func doif(b bool, fn func()) {
+	if b {
+		fn()
+	}
 }
 
 // NewLockedBuffer clears the passed LockedBuffer or creates a new one if null

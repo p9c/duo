@@ -62,9 +62,7 @@ func (r *Bytes) Buf() (R *[]byte) {
 
 // Copy duplicates the data from the buffer provided and zeroes and replaces its contents, clearing the error value.
 func (r *Bytes) Copy(buf Buffer) (R Buffer) {
-	return donil(r, func() {
-		r = NewBytes().SetError("nil receiver").(*Bytes)
-	},
+	return donil(r, func() { r = NewBytes().SetError("nil receiver").(*Bytes) },
 		func() {
 			if buf != nil {
 				doif(r == buf, func() { R = r.SetError("parameter is receiver") })
