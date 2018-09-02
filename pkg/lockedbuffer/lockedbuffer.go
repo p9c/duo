@@ -27,27 +27,16 @@ type LockedBuffer struct {
 }
 
 // guards against nil pointer receivers
-func ifnil(r *LockedBuffer) *LockedBuffer {
+func (r *LockedBuffer) ifnil() interface{} {
 	if r == nil {
-		r = new(LockedBuffer)
-		r.SetError("nil receiver")
+		return NewLockedBuffer().SetError("nil receiver")
 	}
 	return r
 }
 
 // NewLockedBuffer clears the passed LockedBuffer or creates a new one if null
-func NewLockedBuffer(r ...*LockedBuffer) *LockedBuffer {
-	if len(r) == 0 {
-		r = append(r, new(LockedBuffer))
-	}
-	r[0] = ifnil(r[0])
-	if r[0].set {
-		if r[0].buf != nil {
-			r[0].buf.Destroy()
-		}
-	}
-	r[0].buf, r[0].set, r[0].err = nil, false, nil
-	return r[0]
+func NewLockedBuffer() *LockedBuffer {
+	return new(LockedBuffer)
 }
 
 /////////////////////////////////////////
@@ -56,9 +45,7 @@ func NewLockedBuffer(r ...*LockedBuffer) *LockedBuffer {
 
 // Buf returns a pointer to the byte slice in the LockedBuffer.
 func (r *LockedBuffer) Buf() *[]byte {
-	if r == nil {
-		return &[]byte{}
-	}
+	r = r.ifnil()
 	if r.set {
 		if r.buf != nil {
 			a := r.buf.Buffer()

@@ -29,7 +29,7 @@ func TestBytes(t *testing.T) {
 	json.Marshal(zz)
 	fmt.Println("now both the same memory (changed byte zero of first only)", a.Buf(), b.Buf())
 	fmt.Println("Struct literal with Rand", struct{ *Bytes }{}.Rand(32).Buf())
-	fmt.Println("Struct literal with Null", struct{ *Bytes }{}.Null().String())
+	fmt.Println("Struct literal with Null", struct{ *Bytes }{}.Null().Buf())
 	fmt.Println("Struct literal with Len()", struct{ *Bytes }{}.Size())
 	fmt.Println("Struct literal with Null().Len()", struct{ *Bytes }{}.Null().Size())
 	fmt.Println("Struct literal with Null().New(32)", struct{ *Bytes }{}.Null().New(32).SetCoding("decimal").String())

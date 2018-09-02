@@ -73,7 +73,12 @@ func (r *Byte) Link(b Buffer) (R Buffer) {
 // Load copies the first byte of a buffer
 func (r *Byte) Load(b *[]byte) (R Buffer) {
 	r = r.ifnil()
-	r.byte = byte((*b)[0])
+	if len(*b) >= 1 {
+		r.byte = byte((*b)[0])
+	}
+	if len(*b) <= 0 {
+		r.byte = 0
+	}
 	return r
 }
 
@@ -115,8 +120,6 @@ func (r *Byte) Size() int {
 	return 0
 }
 
-// Toggle implementation
-
 // IsSet returns the boolean indicating if the variable has been initialised/loaded
 func (r *Byte) IsSet() bool {
 	r = r.ifnil()
@@ -124,14 +127,14 @@ func (r *Byte) IsSet() bool {
 }
 
 // Set marks the Byte to set
-func (r *Byte) Set() Toggle {
+func (r *Byte) Set() Buffer {
 	r = r.ifnil()
 	r.isset = true
 	return r
 }
 
 // Unset marks the Byte to unset
-func (r *Byte) Unset() Toggle {
+func (r *Byte) Unset() Buffer {
 	r = r.ifnil()
 	r.isset = false
 	return r

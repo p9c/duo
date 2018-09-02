@@ -3,7 +3,7 @@ package interfaces
 
 // Nil is a helper interface to stop nil receiver panics
 type Nil interface {
-	ifnil() bool
+	ifnil() interface{}
 }
 
 // Buffer is a generic interface for structs that contain *[]byte slice elements
@@ -44,18 +44,13 @@ type Buffer interface {
 	SetError(string) Buffer
 	// Clears error to represent the nominal state
 	UnsetError() Buffer
-	Toggle
-	Array
-}
-
-// Toggle is the interface for a boolean switch
-type Toggle interface {
 	// Returns true if toggle is set
 	IsSet() bool
 	// Sets toggle to true
-	Set() Toggle
+	Set() Buffer
 	// Sets toggle to false
-	Unset() Toggle
+	Unset() Buffer
+	Array
 }
 
 // Array is an abstract type for a memory ordered, dense list store that can be walked by increment/decrement of indices
