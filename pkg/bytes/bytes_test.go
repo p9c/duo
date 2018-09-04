@@ -3,7 +3,6 @@ package bytes
 import (
 	"encoding/json"
 	"fmt"
-	. "gitlab.com/parallelcoin/duo/pkg/byte"
 	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
 	"testing"
 )
@@ -20,9 +19,7 @@ func TestBytes(t *testing.T) {
 	b.Move(a)
 	fmt.Println("after move a", *a, "b", *b)
 	a.Link(b)
-	fmt.Println("link emptied b to a", a.Buf(), *b.Buf())
-	c := a.Buf()
-	(*c)[0] = 1
+	fmt.Println("link emptied b to a", a.Buf(), b.Buf())
 	var zz *Bytes
 	zz.Purge()
 	zz = nil
@@ -32,9 +29,9 @@ func TestBytes(t *testing.T) {
 	fmt.Println("Struct literal with Null", struct{ *Bytes }{}.Null().Buf())
 	fmt.Println("Struct literal with Len()", struct{ *Bytes }{}.Size())
 	fmt.Println("Struct literal with Null().Len()", struct{ *Bytes }{}.Null().Size())
-	fmt.Println("Struct literal with Null().New(32)", struct{ *Bytes }{}.Null().New(32).SetCoding("decimal").String())
-	fmt.Println("Struct literal with Null().Rand(32) base64", struct{ *Bytes }{}.Null().Rand(32).SetCoding("base64").String())
-	fmt.Println("Struct literal with Null().Rand(32) hex", struct{ *Bytes }{}.Null().Rand(32).SetCoding("hex").String())
+	fmt.Println("Struct literal with Null().New(32)", struct{ *Bytes }{}.Null().New(32).SetCoding("decimal").(Buffer).String())
+	fmt.Println("Struct literal with Null().Rand(32) base64", struct{ *Bytes }{}.Null().Rand(32).SetCoding("base64").(Buffer).String())
+	fmt.Println("Struct literal with Null().Rand(32) hex", struct{ *Bytes }{}.Null().Rand(32).SetCoding("hex").(Buffer).String())
 	var d *Bytes
 	fmt.Println("nil pointer with Buf()", d.Buf())
 	d = nil
@@ -53,13 +50,13 @@ func TestBytes(t *testing.T) {
 	fmt.Println("nil pointer with Link()", a.Buf(), d.Link(a).Buf())
 	f := NewBytes().Rand(13)
 	fmt.Println("NewBytes().Rand(13)", f, f.Buf())
-	fmt.Println("NewBytes().Move(NewBytes().New(13)).Error()", NewBytes().Move(NewBytes().New(13)).Error())
+	fmt.Println("NewBytes().Move(NewBytes().New(13)).Error()", NewBytes().Move(NewBytes().New(13)).(Status).Error())
 	d = nil
 	fmt.Println("nil pointer with Move(empty)", d.Move(&Bytes{nil, false, 0, nil}))
 	d = nil
 	fmt.Println("nil pointer with Error()", d.Error())
 	d = nil
-	fmt.Println("nil pointer with Error().SetError()", d.SetError("testing").Error())
+	fmt.Println("nil pointer with Error().SetError()", d.SetError("testing").(Buffer).Error())
 	j, _ := json.MarshalIndent(d.Rand(32).SetCoding("decimal"), "", "    ")
 	fmt.Println(string(j))
 	j, _ = json.MarshalIndent(d.Rand(32).SetCoding("hex"), "", "    ")
@@ -82,18 +79,18 @@ func TestBytes(t *testing.T) {
 	fmt.Println("non nil IsSet()", f.IsSet())
 	fmt.Println("nil Load(nil)", d.Load(nil))
 	fmt.Println("nil Move(nil)", d.Move(nil))
-	fmt.Println("JSON UTF8", f.Load(&A).SetCoding("byte").Coding())
+	fmt.Println("JSON UTF8", f.Load(&A).SetCoding("byte").(Buffer).Coding())
 	B := []byte("this is longer    ")
-	fmt.Println("JSON hex", f.Load(&B).SetCoding("hex").Coding())
+	fmt.Println("JSON hex", f.Load(&B).SetCoding("hex").(Buffer).Coding())
 	fmt.Println("JSON nil val", f.Load(nil).String())
 	f.Elem(0)
-	f.SetElem(0, NewBytes().Load(&[]byte{100}))
+	f.SetElem(0, byte(100))
 	d.Purge()
 	var x *Bytes
-	x.SetCoding("binary").UnsetError()
+	x.SetCoding("binary").(Buffer).UnsetError()
 	x.Elem(0)
-	x.SetElem(0, NewBytes().Load(&[]byte{100}))
-	x.Load(&B).SetElem(0, NewBytes().Load(&[]byte{100}))
+	x.SetElem(0, byte(100))
+	x.Load(&B).SetElem(0, byte(100))
 	x.Load(&B).Elem(0)
 	var y *Bytes
 	y.UnsetError()
@@ -105,7 +102,6 @@ func TestBytes(t *testing.T) {
 	b.coding = len(CodeType) + 10
 	b.Coding()
 	fmt.Println("coding types", b.Codes())
-	fmt.Println(b.SetElem(b.Size()+4, NewByte()))
+	fmt.Println(b.SetElem(b.Size()+4, byte(0)))
 	fmt.Println(NewBytes().String())
-	b.SetElem(100, NewByte().Rand(1))
 }

@@ -10,6 +10,7 @@ import (
 	. "gitlab.com/parallelcoin/duo/pkg/byte"
 	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
 	"math/big"
+	"reflect"
 )
 
 // LockedBuffer is a struct that stores and manages memguard.LockedBuffers, ensuring that buffers are destroyed when no longer in use.
@@ -26,41 +27,31 @@ type LockedBuffer struct {
 	err    error
 }
 
-func donil(r *Bytes, f1 func(), f2 func()) *Bytes {
-	if r == nil {
-		f1()
-	}
-	if f2 != nil {
-		f2()
-	}
-	return r
-}
-
-func doif(b bool, fn func()) {
-	if b {
-		fn()
-	}
-}
-
 // NewLockedBuffer clears the passed LockedBuffer or creates a new one if null
 func NewLockedBuffer() *LockedBuffer {
 	return new(LockedBuffer)
 }
 
 /////////////////////////////////////////
-// Buffer implementations
+// Nil implementation
+/////////////////////////////////////////
+
+// IsNil returns true if the receiver is nil
+func (r *LockedBuffer) IsNil() bool {
+	return IsNil(r)
+}
+
+/////////////////////////////////////////
+// Buffer implementation
 /////////////////////////////////////////
 
 // Buf returns a pointer to the byte slice in the LockedBuffer.
-func (r *LockedBuffer) Buf() *[]byte {
-	r = r.ifnil()
-	if r.set {
-		if r.buf != nil {
-			a := r.buf.Buffer()
-			return &a
-		}
-	}
-	return nil
+func (r *LockedBuffer) Buf() (b *[]byte) {
+	donil(r, func() {
+		r = NewLockedBuffer().SetError("nil receiver").(*LockedBuffer)
+	}, nil)
+	doif(r.buf == nil, func() { b = &[]byte{} },
+		func() { *b = r.buf.Buffer() })
 }
 
 // Copy duplicates the buffer from another LockedBuffer.
@@ -326,14 +317,14 @@ func (r *LockedBuffer) IsSet() bool {
 }
 
 // Set signifies that the state of the data is consistent
-func (r *LockedBuffer) Set() Toggle {
+func (r *LockedBuffer) Set() Buffer {
 	r = ifnil(r)
 	r.set = true
 	return r
 }
 
 // Unset changes the set flag in a LockedBuffer to false and other functions will treat it as empty
-func (r *LockedBuffer) Unset() Toggle {
+func (r *LockedBuffer) Unset() Buffer {
 	r = ifnil(r)
 	r.set = false
 	return r
