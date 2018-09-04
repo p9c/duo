@@ -41,11 +41,11 @@ func donil(b bool, f ...func()) {
 			if f[0] != nil {
 				f[0]()
 			}
-			if f[0] != nil {
+			if f[1] != nil {
 				f[1]()
 			}
 		} else {
-			if f[0] != nil {
+			if f[1] != nil {
 				f[1]()
 			}
 		}
@@ -58,13 +58,15 @@ func DoIf(is interface{}, do ...func()) (R interface{}) {
 	case bool:
 		b := is.(bool)
 		doif(b, do...)
-	case Nil, *[]byte:
+	case Nil, *[]byte, error:
 		var b bool
 		switch is.(type) {
 		case Nil:
 			b = is.(Nil).Nil()
 		case *[]byte:
 			b = is.(*[]byte) != nil
+		case error:
+			b = is.(error) != nil
 		}
 		donil(b, do...)
 	}

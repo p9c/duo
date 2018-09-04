@@ -28,7 +28,7 @@ type Bytes struct {
 // NewBytes empties an existing bytes or makes a new one
 func NewBytes() (R *Bytes) {
 	R = new(Bytes)
-	buf := make([]byte, 1)
+	buf := make([]byte, 0)
 	R.buf = &buf
 	return
 }
@@ -76,7 +76,7 @@ func (r *Bytes) Copy(b Buffer) Buffer {
 							if bb.Size() > 0 {
 								bbuf := make([]byte, bb.Size())
 								r.buf = &bbuf
-								ForEach(*bb,
+								ForEach(bbuf,
 									func(i int) bool {
 										return r.SetElem(i, bb.Elem(i)) == nil
 									})
@@ -201,7 +201,7 @@ func (r *Bytes) Size() (i int) {
 func (r *Bytes) Error() (s string) {
 	DoIf(r == nil,
 		func() { s = "nil receiver" },
-		func() { DoIf(r.err, func() { s = r.err.Error() }) })
+		func() { DoIf(r.err, func() {}, func() { s = r.err.Error() }) })
 	return
 }
 
@@ -224,7 +224,7 @@ func (r *Bytes) Elem(i int) (R interface{}) {
 			DoIf(r.buf,
 				func() { r.SetError("nil buffer") },
 				func() {
-					DoIf(r.Len() >= i,
+					DoIf(r.Len() > i,
 						func() {
 							R = (*r.buf)[i]
 						},
@@ -237,16 +237,18 @@ func (r *Bytes) Elem(i int) (R interface{}) {
 }
 
 // ForEach calls a function that is called with an index and allows iteration neatly with a closure
-func (r *Bytes) ForEach(f func(int) bool) bool {
+func (r *Bytes) ForEach(f func(int) bool) (b bool) {
 	DoIf(r,
 		func() { r = nilError() },
 		func() {
 			DoIf(r.buf, func() {
-				ForEach(*r.buf,
-					func(i int) bool { return f(i) })
+				if f != nil {
+					b = ForEach(*r.buf,
+						func(i int) bool { return f(i) })
+				}
 			})
 		})
-	return false
+	return
 }
 
 // Len is just a synonym for size, returns -1 if unallocated
@@ -268,14 +270,17 @@ func (r *Bytes) Purge() (R interface{}) {
 
 // SetElem sets an element in the buffer
 func (r *Bytes) SetElem(i int, b interface{}) (R interface{}) {
+	switch b.(type) {
+	case byte:
+	default:
+		return r.SetError("parameter not a byte")
+	}
 	DoIf(r,
 		func() { r = nilError() },
 		func() {
-			DoIf(b == nil,
+			DoIf(b != nil,
 				func() {
-					DoIf(b, func() { r.SetError("nil parameter") })
-				}, func() {
-					DoIf(r.Len() >= i,
+					DoIf(r.Len() > i,
 						func() { (*r.buf)[i] = b.(byte) },
 						func() { r.SetError("index out of bounds") })
 				})
@@ -311,14 +316,15 @@ func (r *Bytes) Unset() (R interface{}) {
 
 // SetError sets the error string
 func (r *Bytes) SetError(s string) interface{} {
-	return DoIf(r,
+	DoIf(r,
 		func() { r = nilError() },
 		func() {
 			DoIf(s != "",
 				func() {
 					r.err = errors.New(s)
 				})
-		}).(Buffer)
+		})
+	return r
 }
 
 // UnsetError sets the error to nil
