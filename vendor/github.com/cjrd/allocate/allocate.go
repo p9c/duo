@@ -1,4 +1,4 @@
-/*
+//
 
 The allocate library provides helper functions for allocation/initializing structs.
 
@@ -6,7 +6,7 @@ The allocate library provides helper functions for allocation/initializing struc
 
 This library was seeded by this discussion in the golang-nuts mailing list:
 https://groups.google.com/forum/#!topic/golang-nuts/Wd9jiZswwMU
-*/
+
 
 package allocate
 

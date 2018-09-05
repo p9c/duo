@@ -1,3 +1,5 @@
+//
+	Package kdf implements a blake2b based key derivation function for stretching passwords 
 package kdf
 
 import (
@@ -10,9 +12,10 @@ import (
 	"time"
 )
 
-// Gen takes a password and a random 12 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 12 byte initialisation vector from the first 32 bytes and last 12 bytes respectively, after hashing the resultant hash iterations-1 more times.
 //
-// Blake2b is used because it is faster than SHA256/SHA512.
+	Gen takes a password and a random 12 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 12 byte initialisation vector from the first 32 bytes and last 12 bytes respectively, after hashing the resultant hash iterations-1 more times.
+
+	Blake2b is used because it is faster than SHA256/SHA512. 
 func Gen(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, err error) {
 	if p == nil {
 		return nil, nil, errors.New("nil password")
@@ -56,7 +59,8 @@ func Gen(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, er
 	return
 }
 
-// Bench returns the number of iterations performed in a given time on the current hardware
+//
+	Bench returns the number of iterations performed in a given time on the current hardware 
 func Bench(t time.Duration) (iter int) {
 	P := NewPassword().Rand(12)
 	p := *P.Buf()

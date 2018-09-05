@@ -8,6 +8,9 @@ import (
 )
 
 func TestBytes(t *testing.T) {
+	zzz := '1'
+	zzzz := `''''`
+	fmt.Println(zzz, zzzz)
 	a := new(Bytes)
 	A := []byte("test")
 	a.Load(&A)
@@ -39,8 +42,8 @@ func TestBytes(t *testing.T) {
 	d = nil
 	fmt.Println("nil pointer with Copy()", d.Copy(a).Buf())
 	d = nil
-	fmt.Println("nil pointer with Copy(empty)", d.Copy(&Bytes{nil, false, 0, nil}))
-	fmt.Println("nil pointer with Copy(Buf zero len)", d.Copy(&Bytes{&[]byte{}, false, 0, nil}))
+	fmt.Println("nil pointer with Copy(empty)", d.Copy(&Bytes{nil, 0, nil}))
+	fmt.Println("nil pointer with Copy(Buf zero len)", d.Copy(&Bytes{&[]byte{}, 0, nil}))
 	fmt.Println("Struct pointer with Copy(<nil>)", a.Load(&A).Copy(nil))
 	d = nil
 	A = []byte("this is longer")
@@ -52,7 +55,7 @@ func TestBytes(t *testing.T) {
 	fmt.Println("NewBytes().Rand(13)", f, f.Buf())
 	fmt.Println("NewBytes().Move(NewBytes().New(13)).Error()", NewBytes().Move(NewBytes().New(13)).(Status).Error())
 	d = nil
-	fmt.Println("nil pointer with Move(empty)", d.Move(&Bytes{nil, false, 0, nil}))
+	fmt.Println("nil pointer with Move(empty)", d.Move(&Bytes{nil, 0, nil}))
 	d = nil
 	fmt.Println("nil pointer with Error()", d.Error())
 	d = nil
@@ -75,8 +78,6 @@ func TestBytes(t *testing.T) {
 	j, _ = json.MarshalIndent(d.Load(&bbb).SetCoding("decimal"), "", "    ")
 	fmt.Println(string(j))
 	fmt.Println("copying self", f.Copy(f))
-	fmt.Println("nil IsSet()", d.IsSet())
-	fmt.Println("non nil IsSet()", f.IsSet())
 	fmt.Println("nil Load(nil)", d.Load(nil))
 	fmt.Println("nil Move(nil)", d.Move(nil))
 	fmt.Println("JSON UTF8", f.Load(&A).SetCoding("byte").(Buffer).Coding())
@@ -108,10 +109,35 @@ func TestBytes(t *testing.T) {
 	fmt.Println(NewBytes().New(13).SetElem(12, byte('#')).(Buffer).SetCoding("string").(Buffer).String())
 	fmt.Println("error?", NewBytes().New(13).SetElem(12, '#').(Buffer).Error())
 	var vv *Bytes
-	fmt.Println(vv.ForEach(func(i int) bool { return false }), vv.Error())
 	fmt.Println(vv.SetElem(0, nil))
-	fmt.Println(vv.Set(), vv.Unset(), vv.Coding(), vv.SetCoding("notacoding"), vv.Codes(), vv.String())
+	fmt.Println(vv.Coding(), vv.SetCoding("notacoding"), vv.Codes(), vv.String())
 	fmt.Println(vv.Move(nil), vv.New(32), vv.Link(nil), struct{ *Bytes }{}.Free(), vv.Copy(struct{ *Bytes }{}.Bytes))
 	fmt.Println(vv.Move(struct{ *Bytes }{}.Bytes))
 	fmt.Println(vv.MarshalJSON())
+	var ff *Bytes
+	ff.Size()
+	ff = ff.New(0).(*Bytes)
+	fmt.Println(ff.Error(), ff.Len(), *ff.buf)
+	ff.Buf()
+	fmt.Println(ff.Len())
+	fmt.Println(vv.Copy(ff))
+	vv.Rand(-4)
+	var vvv *Bytes
+	vvv.Elem(0)
+	vv.Load(nil).Load(vvv)
+	cks := make([]byte, 0)
+	vv = vv.Rand(23).(*Bytes)
+	vv.Elem(25)
+	vv.buf = &cks
+	vv.Elem(0)
+	vv.buf = nil
+	vv.Elem(2)
+	vv.Purge()
+	fmt.Println(vv.Size())
+	vv.Load(&[]byte{})
+	c3 := []byte{}
+	vvv.Copy(vv.Load(&c3))
+	vv.Elem(1)
+	vv.Elem(-10)
+	vv.SetError("testing 123").(*Bytes).MarshalJSON()
 }

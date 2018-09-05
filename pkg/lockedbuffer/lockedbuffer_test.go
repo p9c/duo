@@ -3,7 +3,6 @@ package lockedbuffer
 import (
 	"fmt"
 	"github.com/awnumar/memguard"
-	. "gitlab.com/parallelcoin/duo/pkg/byte"
 	. "gitlab.com/parallelcoin/duo/pkg/bytes"
 	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
 	"testing"
@@ -12,19 +11,19 @@ import (
 func TestLockedBuffer(t *testing.T) {
 	a := new(LockedBuffer)
 	A := []byte("test")
-	a.Load(&A)
-	fmt.Println("a", a.Buf())
+	fmt.Println(a.SetCoding("string").(*LockedBuffer).Load(&A).String())
+	fmt.Println(a.String())
+	fmt.Println("a", a.Buf(), a.String(), a.Error())
 	b := new(LockedBuffer)
-	b.Copy(a)
+	fmt.Println("copy a", a.Buf(), "to b", b.Buf())
+	fmt.Println(b.Copy(a))
 	fmt.Println("copy a", a.Buf(), "to b", b.Buf())
 	fmt.Println("before move a", *a, "b", *b)
-	b.Move(a)
+	fmt.Println(b.Move(a))
 	fmt.Println("after move a", *a, "b", *b)
 	a.Link(b)
 	fmt.Println("link b to (empty) a", a.Buf(), b.Buf())
-	c := a.Buf()
-	C := *c
-	C[0] = 1
+	a.SetElem(0, byte(0))
 	fmt.Println("now both the same memory (changed byte zero of a only)", a.Buf(), b.Buf())
 	var d *LockedBuffer
 	fmt.Println("copy to unallocated b", b, "d", d.Copy(b))
@@ -56,22 +55,18 @@ func TestLockedBuffer(t *testing.T) {
 	NewLockedBuffer().Free()
 	var n *LockedBuffer
 	fmt.Println("should be nil receiver:", n.Error())
-	fmt.Println("nil IsSet()", n.IsSet())
 	e.Rand(32)
-	fmt.Println("not nil IsSet()", e.IsSet())
 	fmt.Println("Move(nil)", n.Move(nil))
 	fmt.Println("nil SetError()", n.SetError("testing"))
 	fmt.Println("JSON", e.String())
 	var m *LockedBuffer
 	m.UnsetError()
-	m.SetElem(0, NewByte().Load(&[]byte{100}))
+	m.SetElem(0, byte(100))
 	m.Elem(0)
-	m.UnsetError().Unset()
 	fmt.Println("JSON", m.String())
 	m.MarshalJSON()
 	m.Load(NewBytes().Rand(32).Buf())
 	m = new(LockedBuffer)
-	m.set = true
 	m.SetCoding("string")
 	m.buf, m.err = memguard.NewImmutableRandom(32)
 	m.MarshalJSON()
@@ -79,9 +74,9 @@ func TestLockedBuffer(t *testing.T) {
 	oo.SetCoding("decimal")
 	var pp *LockedBuffer
 	pp.SetCoding("binary")
-	NewLockedBuffer().SetElem(0, NewByte().Load(&[]byte{100}))
+	NewLockedBuffer().SetElem(0, byte(100))
 	NewLockedBuffer().Copy(nil).Elem(0)
-	NewLockedBuffer(NewLockedBuffer().Load(&[]byte{'t', 'e', 's', 't'}).(*LockedBuffer)).Free()
+	NewLockedBuffer().Load(&[]byte{'t', 'e', 's', 't'}).(*LockedBuffer).Free()
 	yy := "test"
 	YY := []byte(yy)
 	xx := NewLockedBuffer().Load(&YY)
@@ -89,7 +84,7 @@ func TestLockedBuffer(t *testing.T) {
 	xbuf, xerr := memguard.NewMutable(12)
 	xx.(*LockedBuffer).buf = xbuf
 	xx.(*LockedBuffer).err = xerr
-	fmt.Println(xx.SetCoding("hex").String())
+	fmt.Println(xx.SetCoding("hex").(*LockedBuffer).String())
 	xx.Free()
 	fmt.Println(xx.String())
 	fmt.Println(xx.Coding())
@@ -99,8 +94,27 @@ func TestLockedBuffer(t *testing.T) {
 	xx.Cap()
 	xx.Purge().(*LockedBuffer).New(23).Cap()
 	xx.Purge()
-	fmt.Println(xx.Rand(23).SetCoding("decimal").String())
+	fmt.Println(xx.Rand(23).SetCoding("decimal").(*LockedBuffer).String())
 	xx.(*LockedBuffer).coding = len(CodeType) + 5
 	fmt.Println(xx.Rand(23).String())
-	fmt.Println(xx.Rand(23).SetCoding("base64").String())
+	fmt.Println(xx.Rand(23).SetCoding("base64").(*LockedBuffer).String())
+	xx.SetElem(-1, byte(123))
+	xx.Rand(23).SetElem(24, byte(23))
+	xx.Rand(23).SetElem(24, nil)
+	var xyz *LockedBuffer
+	xyz.Purge()
+	xyz.Coding()
+	NewLockedBuffer().Free()
+	nx := make([]byte, 0)
+	Nx := &nx
+	fmt.Println(Nx)
+	xyz.Copy(NewLockedBuffer().Load(Nx))
+	var abcd *LockedBuffer
+	abcd.Free()
+	abcd = abcd.Rand(23).(*LockedBuffer)
+	var xxxx *LockedBuffer
+	xxxx.Link(abcd)
+	xxxx.Link(nil)
+	xxxx.Link(NewBytes().Rand(23))
+	NewLockedBuffer().New(24).Link(NewLockedBuffer().New(23))
 }

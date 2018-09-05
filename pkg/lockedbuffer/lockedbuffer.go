@@ -7,10 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/awnumar/memguard"
-	. "gitlab.com/parallelcoin/duo/pkg/byte"
 	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
 	"math/big"
-	"reflect"
 )
 
 // LockedBuffer is a struct that stores and manages memguard.LockedBuffers, ensuring that buffers are destroyed when no longer in use.
@@ -22,167 +20,175 @@ import (
 // The maximum size of buffer is around 172500 bytes on a linux 4.18, it may be more may be less.
 type LockedBuffer struct {
 	buf    *memguard.LockedBuffer
-	set    bool
 	coding int
 	err    error
 }
 
 // NewLockedBuffer clears the passed LockedBuffer or creates a new one if null
-func NewLockedBuffer() *LockedBuffer {
-	return new(LockedBuffer)
+func NewLockedBuffer() (R *LockedBuffer) {
+	R = new(LockedBuffer)
+	return
 }
 
-/////////////////////////////////////////
-// Nil implementation
-/////////////////////////////////////////
-
-// IsNil returns true if the receiver is nil
-func (r *LockedBuffer) IsNil() bool {
-	return IsNil(r)
-}
-
-/////////////////////////////////////////
-// Buffer implementation
-/////////////////////////////////////////
-
-// Buf returns a pointer to the byte slice in the LockedBuffer.
-func (r *LockedBuffer) Buf() (b *[]byte) {
-	donil(r, func() {
-		r = NewLockedBuffer().SetError("nil receiver").(*LockedBuffer)
-	}, nil)
-	doif(r.buf == nil, func() { b = &[]byte{} },
-		func() { *b = r.buf.Buffer() })
-}
-
-// Copy duplicates the buffer from another LockedBuffer.
-func (r *LockedBuffer) Copy(buf Buffer) Buffer {
-	if r == nil {
-		r = NewLockedBuffer()
-		r.SetError("nil receiver")
-	}
-	r.UnsetError()
-	if buf == nil {
-		r.Free()
-		r.SetError("nil parameter")
-		return r
-	}
-	if r == buf {
-		r.SetError("parameter is receiver")
-		return r
-	}
-	if buf.Size() == 0 {
-		r.Null()
-		r.Load(buf.Buf())
-		r.SetError("empty buffer received")
-		return r
-	}
-	r.New(buf.Size())
-	r.ForEach(func(i int) {
-		r.SetElem(i, buf.Elem(i))
-	})
-	r.Set()
+func nilError(s string) *LockedBuffer {
+	r := NewLockedBuffer()
+	r.err = errors.New(s + " nil receiver")
 	return r
 }
 
-// ForEach calls a function that is called with an index and allows iteration neatly with a closure
-func (r *LockedBuffer) ForEach(f func(int)) Buffer {
-	r = ifnil(r)
-	if r.buf == nil {
+// Buffer implementation
+
+// Buf returns a pointer to the byte slice in the LockedBuffer.
+func (r *LockedBuffer) Buf() interface{} {
+	var b []byte
+	if nil == r {
+		r = nilError("Buf()")
+		return []byte{}
+	}
+	if nil == r.buf {
+		b = []byte{}
+		r.SetError("Buf() nil buffer")
+	} else {
+		b = r.UnsetError().(*LockedBuffer).buf.Buffer()
+	}
+	return &b
+}
+
+// Copy duplicates the buffer from another LockedBuffer.
+func (r *LockedBuffer) Copy(b Buffer) Buffer {
+	if nil == r {
+		r = nilError("Copy()")
+	}
+	if nil == b {
+		r.SetError("Copy() nil interface")
 		return r
 	}
-	for i := range *r.Buf() {
-		f(i)
+	if nil == b.(*LockedBuffer) {
+		r.SetError("Copy() nil parameter")
+		return r
+	} else {
+		if r == b.(*LockedBuffer) {
+			r.SetError("Copy() parameter is receiver")
+			return r
+		}
+		if b.(*LockedBuffer).buf == nil {
+			r.SetError("Copy() nil buffer received")
+			return r
+		}
+		r.New(b.Size())
+		for i := range b.(*LockedBuffer).buf.Buffer() {
+			r.SetElem(i, b.Elem(i))
+		}
 	}
 	return r
 }
 
 // Free destroys the LockedBuffer and dereferences it
 func (r *LockedBuffer) Free() Buffer {
-	r = ifnil(r)
-	if r.buf != nil {
-		r.buf.Destroy()
-		r.buf = nil
+	if nil == r {
+		r = nilError("Free()")
+		return r
 	}
-	r.UnsetError().Unset()
+	r.buf = nil
+	r.UnsetError()
 	return r
 }
 
 // Link copies the pointer from another LockedBuffer's content, meaning what is written to one will also be visible in the other
-func (r *LockedBuffer) Link(buf Buffer) Buffer {
-	if r == nil {
-		r = NewLockedBuffer()
+func (r *LockedBuffer) Link(buf interface{}) Buffer {
+	if nil == r {
+		r = nilError("Link()")
 	}
-	r.Null()
-	r.Load(buf.Buf())
+	if buf == nil {
+		r.SetError("Link() nil interface")
+		return r
+	}
+	switch buf.(type) {
+	case *LockedBuffer:
+		if buf.(*LockedBuffer) != nil {
+			if nil != r.buf {
+				r.buf.Destroy()
+			}
+		}
+		r.buf = buf.(*LockedBuffer).buf
+	default:
+		r.SetError("Link() cannot link to other type of buffer")
+	}
 	return r
 }
 
 // Load moves the contents of a byte slice into the LockedBuffer, erasing the original copy.
-func (r *LockedBuffer) Load(bytes *[]byte) Buffer {
-	r = ifnil(r)
-	if bytes == nil {
+func (r *LockedBuffer) Load(bytes interface{}) Buffer {
+	if nil == r {
+		r = nilError("Load()")
+	}
+	if nil == bytes {
 		r.SetError("nil parameter")
-	} else {
-		r.Null()
-		if r.buf, r.err = memguard.NewMutableFromBytes(*bytes); r.err != nil {
-			return r
-		}
-		r.Set()
+		return r
+	}
+	if r.buf, r.err = memguard.NewMutableFromBytes(*bytes.(*[]byte)); r.err == nil {
+		r.UnsetError()
 	}
 	return r
 }
 
 // Move copies the pointer to the buffer into the receiver and nulls the passed LockedBuffer
 func (r *LockedBuffer) Move(buf Buffer) Buffer {
-	if r == nil {
-		r = NewLockedBuffer()
+	if nil == r {
+		r = nilError("Move()")
 	}
-	if buf == nil {
-		r.err = errors.New("nil parameter")
-	} else {
-		r.buf = buf.(*LockedBuffer).buf
-		r.UnsetError().Set()
-		buf.(*LockedBuffer).buf = nil
-		buf.UnsetError().Unset()
+	if nil == buf {
+		r.SetError("Move() nil parameter")
+		return r
 	}
+	r.buf = buf.(*LockedBuffer).buf
+	r.UnsetError()
+	buf.UnsetError()
+	buf.(*LockedBuffer).buf = nil
 	return r
 }
 
 // New destroys the old Lockedbuffer and assigns a new one with a given length
 func (r *LockedBuffer) New(size int) Buffer {
-	if r == nil {
-		r = NewLockedBuffer()
+	if nil == r {
+		r = nilError("New()")
 	}
-	r.Null()
-	r.buf, r.err = memguard.NewMutable(size)
-	r.set = true
+	r.Null().(*LockedBuffer).buf, r.err = memguard.NewMutable(size)
+	if r.err != nil {
+		return r
+	}
+	r.UnsetError()
 	return r
 }
 
 // Null zeroes out a LockedBuffer
 func (r *LockedBuffer) Null() Buffer {
-	r = ifnil(r)
+	if nil == r {
+		r = nilError("Null()")
+	}
 	if r.buf != nil {
-		r.buf.Wipe()
+		r.UnsetError().(*LockedBuffer).buf.Wipe()
+	} else {
+		r.SetError("Null() nil .buf")
 	}
 	return r
 }
 
 // Rand loads the LockedBuffer with cryptographically random bytes to a specified length, destroying existing buffer if it was set
-func (r *LockedBuffer) Rand(size int) Buffer {
-	r = ifnil(r)
-	r.New(size)
-	r.buf, r.err = memguard.NewMutableRandom(size)
-	if r.err != nil {
-		return r
+func (r *LockedBuffer) Rand(size ...int) Buffer {
+	if nil == r {
+		r = nilError("Rand()")
 	}
-	r.set = true
+	if len(size) > 0 {
+		r.Null()
+	}
+	r.buf, r.err = memguard.NewMutableRandom(size[0])
 	return r
 }
 
 // Size returns the length of the LockedBuffer if it has been loaded, or -1 if not
-func (r *LockedBuffer) Size() int {
-	if r == nil {
+func (r *LockedBuffer) Size() (i int) {
+	if nil == r {
 		return -1
 	}
 	if r.buf == nil {
@@ -191,81 +197,93 @@ func (r *LockedBuffer) Size() int {
 	return r.buf.Size()
 }
 
-/////////////////////////////////////////
 // Coding implementation
-/////////////////////////////////////////
 
 // Coding returns the coding type to be used by the String function
 func (r *LockedBuffer) Coding() string {
-	r = ifnil(r)
+	if nil == r {
+		r = nilError("Coding()")
+	}
 	if r.coding >= len(CodeType) {
 		r.coding = 0
-		r.SetError("invalid coding type in LockedBuffer")
+		r.SetError("Coding() invalid coding type")
 	}
 	return CodeType[r.coding]
 }
 
 // SetCoding changes the encoding type
-func (r *LockedBuffer) SetCoding(coding string) Buffer {
-	r = ifnil(r)
+func (r *LockedBuffer) SetCoding(coding string) interface{} {
+	if nil == r {
+		r = nilError("SetCoding()")
+	}
 	found := false
 	for i := range CodeType {
 		if coding == CodeType[i] {
-			found = true
 			r.coding = i
+			found = true
+			break
 		}
 	}
 	if !found {
-		r.SetError("code type not found")
+		r.SetError("SetCoding() code type not found")
 	}
+	r.UnsetError()
 	return r
 }
 
-// Codes returns a copy of the array of CodeType
+//Codes returns a copy of the array of CodeType
 func (r *LockedBuffer) Codes() (R []string) {
-	copy(R, CodeType)
+	for i := range CodeType {
+		R = append(R, CodeType[i])
+	}
 	return
 }
 
-/////////////////////////////////////////
 // Status implementation
-/////////////////////////////////////////
 
-// Error returns the string in the err field
-func (r *LockedBuffer) Error() string {
-	r = ifnil(r)
-	if r.err != nil {
-		return r.err.Error()
+//  Error returns the string in the err field
+func (r *LockedBuffer) Error() (s string) {
+	if nil == r {
+		r = nilError("Error()")
 	}
-	return ""
+	if r.err != nil {
+		s = r.err.Error()
+	}
+	return s
 }
 
 // SetError sets the string of the error in the err field
-func (r *LockedBuffer) SetError(s string) Buffer {
-	r = ifnil(r)
+func (r *LockedBuffer) SetError(s string) interface{} {
+	if nil == r {
+		r = nilError("SetError()")
+	}
 	r.err = errors.New(s)
+	fmt.Println("SetError() [", s, "]")
 	return r
 }
 
 // UnsetError sets the error to nil
-func (r *LockedBuffer) UnsetError() Buffer {
-	r = ifnil(r)
-	r.err = nil
+func (r *LockedBuffer) UnsetError() interface{} {
+	if nil == r {
+		r = nilError("UnsetError()")
+	} else {
+		r.err = nil
+	}
 	return r
 }
 
-/////////////////////////////////////////
 // Array implementation
-/////////////////////////////////////////
 
 // Elem returns the byte at a given index of the buffer
-func (r *LockedBuffer) Elem(i int) Buffer {
-	r = ifnil(r)
-	if r.buf == nil {
-		r.SetError("nil buffer")
-		return &LockedBuffer{}
+func (r *LockedBuffer) Elem(i int) (I interface{}) {
+	if nil == r {
+		r = nilError("Elem()")
 	}
-	return NewByte().Load(&[]byte{r.buf.Buffer()[i]})
+	if nil == r.buf {
+		r.SetError("Elem() nil buffer")
+		return byte(0)
+	}
+	return r.buf.Buffer()[i]
 }
 
 // Len returns the length of the array
@@ -274,90 +292,83 @@ func (r *LockedBuffer) Len() int {
 }
 
 // Cap returns the amount of elements allocated (can be larger than the size)
-func (r *LockedBuffer) Cap() int {
-	if r == nil || r.buf == nil {
-		return 0
+func (r *LockedBuffer) Cap() (i int) {
+	if nil == r || r.buf == nil {
+		i = 0
 	}
-	return cap(*r.Buf())
+	i = cap(*(r.Buf().(*[]byte)))
+	return i
 }
 
 // SetElem sets an element in the buffer
-func (r *LockedBuffer) SetElem(i int, b Buffer) Array {
-	r = ifnil(r)
-	if r.buf == nil {
-		r.SetError("nil value")
-		return r
+func (r *LockedBuffer) SetElem(i int, b interface{}) interface{} {
+	switch b.(type) {
+	case byte:
+		if nil == r {
+			r = nilError("SetElem()")
+		}
+		if nil == r.buf {
+			r.SetError("SetElem() nil buffer")
+			return r
+		}
+		if i < 0 {
+			r.SetError("SetElem() negative index")
+			return r
+		}
+		if r.Len() > i {
+			rr := r.buf.Buffer()
+			rr[i] = b.(byte)
+		} else {
+			r.SetError("index out of bounds")
+		}
+	default:
+		return r.SetError("parameter not a byte")
 	}
-	R := r.buf.Buffer()
-	R[i] = (*b.Buf())[0]
 	return r
 }
 
 // Purge zeroes out all of the buffers in the array
-func (r *LockedBuffer) Purge() Array {
-	r = ifnil(r)
-	if r.buf == nil {
-		r.SetError("nil buffer")
-		return r
-	}
-	r.buf.Wipe()
-	return r
-}
-
-/////////////////////////////////////////
-// Toggle implementation
-/////////////////////////////////////////
-
-// IsSet returns true if the Lockedbuffer has been loaded with data
-func (r *LockedBuffer) IsSet() bool {
+func (r *LockedBuffer) Purge() interface{} {
 	if r == nil {
-		return false
+		r = nilError("Purge()")
+	} else {
+		if nil == r.buf {
+			r.SetError("Purge() nil buffer")
+		} else {
+			r.buf.Wipe()
+		}
 	}
-	return r.set
-}
-
-// Set signifies that the state of the data is consistent
-func (r *LockedBuffer) Set() Buffer {
-	r = ifnil(r)
-	r.set = true
 	return r
 }
 
-// Unset changes the set flag in a LockedBuffer to false and other functions will treat it as empty
-func (r *LockedBuffer) Unset() Buffer {
-	r = ifnil(r)
-	r.set = false
-	return r
-}
-
-/////////////////////////////////////////
 // JSON
-/////////////////////////////////////////
 
 // MarshalJSON marshals the data of this object into JSON
 func (r *LockedBuffer) MarshalJSON() ([]byte, error) {
-	r = ifnil(r)
+	if nil == r {
+		r = nilError("MarshalJSON()")
+	}
 	return json.Marshal(&struct {
 		Value  string
-		IsSet  bool
 		Coding string
 		Error  string
 	}{
 		Value:  r.String(),
-		IsSet:  r.set,
 		Coding: CodeType[r.coding],
 		Error:  r.Error(),
 	})
 }
 
-/////////////////////////////////////////
 // Stringer implementation
-/////////////////////////////////////////
 
-// String returns the JSON representing the data in a LockedBuffer
-func (r *LockedBuffer) String() string {
-	r = ifnil(r)
-	if r.buf == nil {
+//	String returns the JSON representing the data in a LockedBuffer
+func (r *LockedBuffer) String() (s string) {
+	if nil == r {
+		r = nilError("String()")
+		return "<nil>"
+	}
+	if nil == r.buf {
+		r.SetError("String() nil buffer")
 		return "<nil>"
 	}
 	if r.coding > len(CodeType) {
@@ -366,16 +377,16 @@ func (r *LockedBuffer) String() string {
 	}
 	switch CodeType[r.coding] {
 	case "byte":
-		return fmt.Sprint(*r.Buf())
+		return fmt.Sprint(*(r.Buf().(*[]byte)))
 	case "string":
-		return string(*r.Buf())
+		return string(*r.Buf().(*[]byte))
 	case "decimal":
 		bi := big.NewInt(0)
-		bi.SetBytes(*r.Buf())
+		bi.SetBytes(*r.Buf().(*[]byte))
 		return fmt.Sprint(bi)
 	case "hex":
-		return "0x" + hex.EncodeToString(*r.Buf())
+		return "0x" + hex.EncodeToString(*r.Buf().(*[]byte))
 	default:
-		return r.SetCoding("decimal").String()
+		return r.SetCoding("decimal").(Buffer).String()
 	}
 }

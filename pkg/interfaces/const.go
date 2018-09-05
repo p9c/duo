@@ -1,8 +1,6 @@
 package interfaces
 
-/////////////////////////////////////////
 // Coding interface
-/////////////////////////////////////////
 
 // CodeType is the types of encoding available, append only to add new ones for compatibility
 var CodeType = []string{
