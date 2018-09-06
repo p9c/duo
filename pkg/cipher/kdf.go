@@ -13,17 +13,18 @@ import (
 // Gen takes a password and a random 12 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 12 byte initialisation vector from the first 32 bytes and last 12 bytes respectively, after hashing the resultant hash iterations-1 more times.
 //
 // Blake2b is used because it is faster than SHA256/SHA512.
-func Gen(p *passbuf.Password, iv *bytes.Bytes, iterations int) (C *secbuf.SecBuf, IV *bytes.Bytes, err error) {
+func Gen(p *passbuf.Password, iv *buf.Unsafe, iterations int) (C *buf.Fenced, IV *buf.Unsafe, err error) {
+	if iterations < 1 {
+		return nil, nil, errors.New("iterations less than 1")
+	}
 	if p == nil {
 		return nil, nil, errors.New("nil password")
 	}
 	if iv == nil {
 		return nil, nil, errors.New("nil IV")
 	}
-	if iterations < 1 {
-		return nil, nil, errors.New("iterations less than 1")
-	}
-	buf := secbuf.New().New(p.Len() + iv.Len())
+
+	buf := buf.New().New(p.Len() + iv.Len())
 	defer buf.Free()
 	bb := buf.Buf().(*[]byte)
 	B := *bb
@@ -42,12 +43,12 @@ func Gen(p *passbuf.Password, iv *bytes.Bytes, iterations int) (C *secbuf.SecBuf
 		blake.Write(last)
 		last = blake.Sum(B)
 	}
-	C = secbuf.New().New(32).(*secbuf.SecBuf)
+	C = buf.New().New(32).(*buf.Fenced)
 	c := *C.Buf().(*[]byte)
 	for i := range c {
 		c[i] = last[i]
 	}
-	IV = bytes.New().New(12).(*bytes.Bytes)
+	IV = buf.New().New(12).(*buf.Unsafe)
 	ivb := *IV.Buf().(*[]byte)
 	for i := range ivb {
 		ivb[i] = last[i+C.Len()]
@@ -59,7 +60,7 @@ func Gen(p *passbuf.Password, iv *bytes.Bytes, iterations int) (C *secbuf.SecBuf
 func Bench(t time.Duration) (iter int) {
 	P := passbuf.New().Rand(12)
 	p := *P.Buf().(*[]byte)
-	iv := bytes.New().Rand(12)
+	iv := buf.New().Rand(12)
 	Buf := make([]byte, P.Len()+iv.Len())
 	for i := range p {
 		Buf[i] = p[i]

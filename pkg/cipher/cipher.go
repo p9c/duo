@@ -7,18 +7,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"gitlab.com/parallelcoin/duo/pkg/buf/bytes"
 	"gitlab.com/parallelcoin/duo/pkg/buf/pass"
 	"gitlab.com/parallelcoin/duo/pkg/buf/sec"
 	"time"
 )
 
-// Cipher has a primary embed from a bytes.Bytes type that stores the encrypted data, so loading it is simple.
+// Cipher has a primary embed from a buf.Unsafe type that stores the encrypted data, so loading it is simple.
 type Cipher struct {
-	crypt           *bytes.Bytes
+	crypt           *buf.Unsafe
 	password        *passbuf.Password
-	ciphertext      *secbuf.SecBuf
-	iv              *bytes.Bytes
+	ciphertext      *buf.Fenced
+	iv              *buf.Unsafe
 	iterations      int
 	unlocked, armed bool
 	gcm             *cipher.AEAD
@@ -40,7 +41,7 @@ func New(r ...*Cipher) *Cipher {
 		r[0] = new(Cipher)
 	}
 	if r[0].crypt == nil {
-		r[0].crypt = new(bytes.Bytes)
+		r[0].crypt = new(buf.Unsafe)
 	} else {
 		r[0].crypt.Null()
 	}
@@ -50,12 +51,12 @@ func New(r ...*Cipher) *Cipher {
 		r[0].password.Null()
 	}
 	if r[0].ciphertext == nil {
-		r[0].ciphertext = new(secbuf.SecBuf)
+		r[0].ciphertext = new(buf.Fenced)
 	} else {
 		r[0].ciphertext.Null()
 	}
 	if r[0].iv == nil {
-		r[0].iv = new(bytes.Bytes)
+		r[0].iv = new(buf.Unsafe)
 	} else {
 		r[0].iv.Null()
 	}
@@ -69,17 +70,20 @@ func New(r ...*Cipher) *Cipher {
 func (r *Cipher) Arm() *Cipher {
 	switch {
 	case r == nil:
-		r = nilError("Arm()")
-		r.SetError("nil receiver")
-	case r.Password().Len() == 0:
-		r.SetError("nil password")
-	case r.Cipher().Len() == 0:
-		r.SetError("nil crypt")
-	case r.IV().Len() == 0:
-		r.SetError("nil IV")
+		r = nilError("Arm() nil receiver")
+		return r
+	case r.Password().Len() < 1:
+		r.SetError("Arm() nil password")
+		return r
+	case r.Cipher().Len() < 1:
+		r.SetError("Arm() nil crypt")
+		return r
+	case r.IV().Len() < 1:
+		r.SetError("Arm() nil IV")
+		return r
 	default:
-		var C *secbuf.SecBuf
-		var IV *bytes.Bytes
+		var C *buf.Fenced
+		var IV *buf.Unsafe
 		C, IV, r.err = Gen(r.Password(), r.IV(), r.iterations)
 		if r.err != nil {
 			return r
@@ -90,9 +94,24 @@ func (r *Cipher) Arm() *Cipher {
 		blockmode, r.err = cipher.NewGCM(block)
 		var c []byte
 		c, r.err = blockmode.Open(nil, *IV.Buf().(*[]byte), *r.Cipher().Buf().(*[]byte), nil)
-		r.ciphertext = secbuf.New().Load(&c).(*secbuf.SecBuf)
+		if r.err == nil {
+			return r
+		}
+		r.ciphertext = buf.New().Load(&c).(*buf.Fenced)
 		block, r.err = aes.NewCipher(*r.ciphertext.Buf().(*[]byte))
+		if r.err == nil {
+			fmt.Println(r.err)
+			return r
+		}
+		if block == nil {
+			fmt.Println(r.err)
+			return r
+		}
 		blockmode, r.err = cipher.NewGCM(block)
+		if r.err == nil {
+			fmt.Println(r.err)
+			return r
+		}
 		r.gcm = &blockmode
 		r.armed = true
 	}
@@ -100,49 +119,49 @@ func (r *Cipher) Arm() *Cipher {
 }
 
 // Ciphertext returns the ciphertext stored in the crypt
-func (r *Cipher) Ciphertext() *secbuf.SecBuf {
+func (r *Cipher) Ciphertext() *buf.Fenced {
 	if r == nil {
-		r := secbuf.New()
-		r.SetError("receiver was nil")
+		r := buf.New()
+		r.SetError("Ciphertext() receiver was nil")
 		return r
 	}
 	if r.ciphertext == nil {
-		r.ciphertext = new(secbuf.SecBuf)
+		r.ciphertext = new(buf.Fenced)
 		r.SetError("ciphertext was nil")
 	}
 	return r.ciphertext
 }
 
-// Cipher returns the bytes.Bytes buffer crypt
-func (r *Cipher) Cipher() *bytes.Bytes {
+// Cipher returns the buf.Unsafe buffer crypt
+func (r *Cipher) Cipher() *buf.Unsafe {
 	if r == nil {
-		b := bytes.New()
-		b.SetError("nil receiver")
+		b := buf.New()
+		b.SetError("Cipher() nil receiver")
 		return b
 	}
 	if r.crypt == nil {
-		r.crypt = bytes.New()
-		r.crypt.SetError("nil crypt")
+		r.crypt = buf.New()
+		r.crypt.SetError("Cipher nil crypt")
 	}
 	return r.crypt
 }
 
-// Decrypt takes an encrypted bytes.Bytes and returns the decrypted data in a secbuf.SecBuf
-func (r *Cipher) Decrypt(b *bytes.Bytes) *secbuf.SecBuf {
+// Decrypt takes an encrypted buf.Unsafe and returns the decrypted data in a buf.Fenced
+func (r *Cipher) Decrypt(b *buf.Unsafe) *buf.Fenced {
 	switch {
 	case r == nil:
-		r.SetError("nil receiver")
+		r.SetError("Decrypt() nil receiver")
 	case !r.armed:
-		r.SetError("not armed")
+		r.SetError("Decrypt() not armed")
 	case r.gcm == nil:
-		r.SetError("nil gcm")
+		r.SetError("Decrypt() nil gcm")
 	default:
 		var bb []byte
 		bb, r.err = (*r.gcm).Open(nil, *r.IV().Buf().(*[]byte), *b.Buf().(*[]byte), nil)
-		B := secbuf.New().Load(&bb).(*secbuf.SecBuf)
+		B := buf.New().Load(&bb).(*buf.Fenced)
 		return B
 	}
-	B := secbuf.New()
+	B := buf.New()
 	B.SetError(r.Error())
 	return B
 }
@@ -151,7 +170,7 @@ func (r *Cipher) Decrypt(b *bytes.Bytes) *secbuf.SecBuf {
 func (r *Cipher) Disarm() *Cipher {
 	if r == nil {
 		r = New()
-		r.SetError("nil receiver")
+		r.SetError("Disarm() nil receiver")
 	}
 	if r.gcm != nil {
 		r.gcm = nil
@@ -162,21 +181,21 @@ func (r *Cipher) Disarm() *Cipher {
 	return r
 }
 
-// Encrypt encrypts a Lockedbuffer and returns the ciphertext as bytes.Bytes
-func (r *Cipher) Encrypt(lb *secbuf.SecBuf) *bytes.Bytes {
+// Encrypt encrypts a Lockedbuffer and returns the ciphertext as buf.Unsafe
+func (r *Cipher) Encrypt(lb *buf.Fenced) *buf.Unsafe {
 	switch {
 	case r == nil:
-		r.SetError("nil receiver")
+		r.SetError("Encrypt() nil receiver")
 	case !r.armed:
-		r.SetError("not armed")
+		r.SetError("Encrypt() not armed")
 	case r.gcm == nil:
-		r.SetError("nil gcm")
+		r.SetError("Encrypt() nil gcm")
 	default:
 		b := (*r.gcm).Seal(nil, *r.IV().Buf().(*[]byte), *lb.Buf().(*[]byte), nil)
-		B := bytes.New().Load(&b).(*bytes.Bytes)
+		B := buf.New().Load(&b).(*buf.Unsafe)
 		return B
 	}
-	b := bytes.New()
+	b := buf.New()
 	b.SetError(r.Error())
 	return b
 }
@@ -204,18 +223,18 @@ func (r *Cipher) Generate(p *passbuf.Password) *Cipher {
 		return r
 	}
 	r.password = p
-	r.ciphertext = secbuf.New().Rand(32).(*secbuf.SecBuf)
+	r.ciphertext = buf.New().Rand(32).(*buf.Fenced)
 	r.SetRandomIV()
 	r.iterations = Bench(time.Second)
-	var C *secbuf.SecBuf
-	var IV *bytes.Bytes
+	var C *buf.Fenced
+	var IV *buf.Unsafe
 	C, IV, r.err = Gen(r.Password(), r.IV(), r.iterations)
 	var block cipher.Block
 	block, r.err = aes.NewCipher(*C.Buf().(*[]byte))
 	var blockmode cipher.AEAD
 	blockmode, r.err = cipher.NewGCM(block)
 	c := blockmode.Seal(nil, *IV.Buf().(*[]byte), *r.Ciphertext().Buf().(*[]byte), nil)
-	r.crypt = r.crypt.Load(&c).(*bytes.Bytes)
+	r.crypt = r.crypt.Load(&c).(*buf.Unsafe)
 	block, r.err = aes.NewCipher(*r.Ciphertext().Buf().(*[]byte))
 	A := new(cipher.AEAD)
 	a := *A
@@ -226,12 +245,12 @@ func (r *Cipher) Generate(p *passbuf.Password) *Cipher {
 }
 
 // IV returns the initialisation vector stored in the crypt
-func (r *Cipher) IV() *bytes.Bytes {
+func (r *Cipher) IV() *buf.Unsafe {
 	if r == nil {
-		return new(bytes.Bytes)
+		return new(buf.Unsafe)
 	}
 	if r.iv == nil {
-		r.iv = new(bytes.Bytes)
+		r.iv = new(buf.Unsafe)
 	}
 	return r.iv
 }
@@ -261,12 +280,12 @@ func (r *Cipher) IsUnlocked() bool {
 }
 
 // Load moves a bytes into the crypt
-func (r *Cipher) Load(b *bytes.Bytes) *Cipher {
+func (r *Cipher) Load(b *buf.Unsafe) *Cipher {
 	if r == nil {
 		r = new(Cipher)
 	}
 	if r.crypt == nil {
-		r.crypt = bytes.New()
+		r.crypt = buf.New()
 	}
 	r.crypt.Move(b)
 	return r
@@ -332,12 +351,12 @@ func (r *Cipher) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// Null wipes the value stored, and restores the bytes.Bytes to the same state as a newly created one (with a nil *[]byte).
+// Null wipes the value stored, and restores the buf.Unsafe to the same state as a newly created one (with a nil *[]byte).
 func (r *Cipher) Null() *Cipher {
 	return New(r)
 }
 
-// passbuf.Password returns the password stored in the Cipher
+// Password returns the password stored in the Cipher
 func (r *Cipher) Password() *passbuf.Password {
 	if r == nil {
 		r = new(Cipher)
@@ -359,30 +378,30 @@ func (r *Cipher) SetError(s string) *Cipher {
 	return r
 }
 
-// SetIV loads the IV with a bytes.Bytes. It must be 12 bytes long.
-func (r *Cipher) SetIV(b *bytes.Bytes) *Cipher {
+// SetIV loads the IV with a buf.Unsafe. It must be 12 bytes long.
+func (r *Cipher) SetIV(b *buf.Unsafe) *Cipher {
 	if r == nil {
 		r = new(Cipher)
 	}
 	if b == nil {
-		b.SetError("nil bytes.Bytes")
+		b.SetError("nil buf.Unsafe")
 	} else if b.Len() != 12 {
 		b.SetError("must be 12 bytes")
 	}
 	if r.iv == nil {
-		r.iv = bytes.New()
+		r.iv = buf.New()
 	}
 	r.iv.Move(b)
 	return r
 }
 
-// SetRandomIV loads the IV with a random 12 bytes.
+// SetRandomIV loads the IV with a random 12 buf.
 func (r *Cipher) SetRandomIV() *Cipher {
 	if r == nil {
 		r = new(Cipher)
 	}
 	if r.iv == nil {
-		r.iv = new(bytes.Bytes)
+		r.iv = new(buf.Unsafe)
 	}
 	r.iv.Rand(12)
 	return r

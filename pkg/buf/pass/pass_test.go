@@ -1,4 +1,4 @@
-package passbuf
+package pass
 
 import (
 	"fmt"
@@ -19,4 +19,6 @@ func TestPassword(t *testing.T) {
 	fmt.Println(pp.MarshalJSON())
 	pp = new(Password)
 	fmt.Println(pp.MarshalJSON())
+	q := new(Password)
+	fmt.Println(q.String())
 }

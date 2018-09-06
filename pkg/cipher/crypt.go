@@ -11,16 +11,16 @@ import (
 type Crypt interface {
 	def.Buffer
 	Arm() Crypt
-	Ciphertext() *secbuf.SecBuf
+	Ciphertext() *buf.Fenced
 	Disarm() Crypt
-	IV() *bytes.Bytes
+	IV() *buf.Unsafe
 	IsArmed() bool
 	IsUnlocked() bool
 	IsSecure() bool
 	Lock() Crypt
 	Password() *passbuf.Password
-	Secure(*secbuf.SecBuf, *passbuf.Password, *bytes.Bytes) Crypt
-	SetIV(b *bytes.Bytes) Crypt
+	Secure(*buf.Fenced, *passbuf.Password, *buf.Unsafe) Crypt
+	SetIV(b *buf.Unsafe) Crypt
 	SetRandomIV() Crypt
 	Unlock(p *passbuf.Password) Crypt
 	Unsecure() Crypt

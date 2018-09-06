@@ -11,8 +11,8 @@ import (
 
 // B32 is a store  for 32 byte values either securely, using a cipher to keep data encrypted when not in use, or a regular, unsecure byteslice
 type B32 struct {
-	bytes        *bytes.Bytes
-	lockedbuffer *secbuf.SecBuf
+	bytes        *buf.Unsafe
+	lockedbuffer *buf.Fenced
 	cipher       *cipher.Cipher
 	secured      bool
 	err          error
@@ -22,10 +22,10 @@ type B32 struct {
 func New() *B32 {
 	r := new(B32)
 	if r.bytes == nil {
-		r.bytes = bytes.New()
+		r.bytes = buf.New()
 	}
 	if r.lockedbuffer == nil {
-		r.lockedbuffer = secbuf.New()
+		r.lockedbuffer = buf.New()
 	}
 	if r.cipher == nil {
 		r.cipher = cipher.New()
@@ -38,182 +38,290 @@ func New() *B32 {
 
 // Buf is
 func (r *B32) Buf() interface{} {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Copy is
 func (r *B32) Copy(def.Buffer) def.Buffer {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Free is
 func (r *B32) Free() def.Buffer {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Link is
 func (r *B32) Link(interface{}) def.Buffer {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Load is
 func (r *B32) Load(interface{}) def.Buffer {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Move is
 func (r *B32) Move(def.Buffer) def.Buffer {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // New is
 func (r *B32) New(int) def.Buffer {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Null is
 func (r *B32) Null() def.Buffer {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Rand is
 func (r *B32) Rand(...int) def.Buffer {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Size is
 func (r *B32) Size() int {
-	panic("not implemented")
+	if nil == r {
+		return -1
+	}
+	return 0
 }
 
 // String is
 func (r *B32) String() string {
-	panic("not implemented")
+	if nil == r {
+		return "nil receiver"
+	}
+	return ""
 }
 
 // Coding is
 func (r *B32) Coding() string {
-	panic("not implemented")
+	if nil == r {
+		return "nil receiver"
+	}
+	return ""
 }
 
 // SetCoding is
 func (r *B32) SetCoding(string) interface{} {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Codes is
 func (r *B32) Codes() []string {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return []string{}
 }
 
 // SetError is
 func (r *B32) SetError(string) interface{} {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // UnsetError is
 func (r *B32) UnsetError() interface{} {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Error is
 func (r *B32) Error() string {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return ""
 }
 
 // Cap is
 func (r *B32) Cap() int {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return 0
 }
 
 // Elem is
 func (r *B32) Elem(int) interface{} {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Len is
 func (r *B32) Len() int {
-	panic("not implemented")
+	if nil == r {
+		return -1
+	}
+	return 0
 }
 
 // Purge is
 func (r *B32) Purge() interface{} {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // SetElem is
 func (r *B32) SetElem(int, interface{}) interface{} {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Cipher implementation
 
 // Arm is
 func (r *B32) Arm() cipher.Crypt {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Ciphertext is
-func (r *B32) Ciphertext() *secbuf.SecBuf {
-	panic("not implemented")
+func (r *B32) Ciphertext() *buf.Fenced {
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return &buf.Fenced{}
 }
 
 // Disarm is
 func (r *B32) Disarm() cipher.Crypt {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // IV is
-func (r *B32) IV() *bytes.Bytes {
-	panic("not implemented")
+func (r *B32) IV() *buf.Unsafe {
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return &buf.Unsafe{}
 }
 
 // IsArmed is
 func (r *B32) IsArmed() bool {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return false
 }
 
 // IsUnlocked is
 func (r *B32) IsUnlocked() bool {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return false
 }
 
 // Lock is
 func (r *B32) Lock() cipher.Crypt {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Password is
 func (r *B32) Password() *passbuf.Password {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return &passbuf.Password{}
 }
 
 // SetIV is
-func (r *B32) SetIV(b *bytes.Bytes) cipher.Crypt {
-	panic("not implemented")
+func (r *B32) SetIV(b *buf.Unsafe) cipher.Crypt {
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // SetRandomIV is
 func (r *B32) SetRandomIV() cipher.Crypt {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Unlock is
 func (r *B32) Unlock(p *passbuf.Password) cipher.Crypt {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // IsSecure is
 func (r *B32) IsSecure() bool {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return false
 }
 
 // Secure is
-func (r *B32) Secure(*secbuf.SecBuf, *passbuf.Password, *bytes.Bytes) cipher.Crypt {
-	panic("not implemented")
+func (r *B32) Secure(*buf.Fenced, *passbuf.Password, *buf.Unsafe) cipher.Crypt {
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
 
 // Unsecure is
 func (r *B32) Unsecure() cipher.Crypt {
-	panic("not implemented")
+	if nil == r {
+		r = New().SetError("nil receiver").(*B32)
+	}
+	return r
 }
