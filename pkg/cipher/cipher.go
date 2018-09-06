@@ -210,9 +210,6 @@ func (r *Cipher) Generate(p *passbuf.Password) *Cipher {
 	var C *secbuf.SecBuf
 	var IV *bytes.Bytes
 	C, IV, r.err = Gen(r.Password(), r.IV(), r.iterations)
-	// if r.err != nil {
-	// 	return r
-	// }
 	var block cipher.Block
 	block, r.err = aes.NewCipher(*C.Buf().(*[]byte))
 	var blockmode cipher.AEAD
@@ -220,15 +217,9 @@ func (r *Cipher) Generate(p *passbuf.Password) *Cipher {
 	c := blockmode.Seal(nil, *IV.Buf().(*[]byte), *r.Ciphertext().Buf().(*[]byte), nil)
 	r.crypt = r.crypt.Load(&c).(*bytes.Bytes)
 	block, r.err = aes.NewCipher(*r.Ciphertext().Buf().(*[]byte))
-	// if r.err != nil {
-	// 	return r
-	// }
 	A := new(cipher.AEAD)
 	a := *A
 	a, r.err = cipher.NewGCM(block)
-	// if r.err != nil {
-	// 	return r
-	// }
 	r.gcm = &a
 	r.armed = true
 	return r

@@ -19,24 +19,19 @@ type B32 struct {
 }
 
 // New creates a new B32
-func New(r ...*B32) *B32 {
-	if len(r) == 0 {
-		r = append(r, new(B32))
+func New() *B32 {
+	r := new(B32)
+	if r.bytes == nil {
+		r.bytes = bytes.New()
 	}
-	if r[0] == nil {
-		r[0] = new(B32)
+	if r.lockedbuffer == nil {
+		r.lockedbuffer = secbuf.New()
 	}
-	if r[0].bytes == nil {
-		r[0].bytes = bytes.New()
+	if r.cipher == nil {
+		r.cipher = cipher.New()
 	}
-	if r[0].lockedbuffer == nil {
-		r[0].lockedbuffer = secbuf.New()
-	}
-	if r[0].cipher == nil {
-		r[0].cipher = cipher.New()
-	}
-	r[0].secured = false
-	return r[0]
+	r.secured = false
+	return r
 }
 
 // Buffer implementation
@@ -154,7 +149,7 @@ func (r *B32) SetElem(int, interface{}) interface{} {
 // Cipher implementation
 
 // Arm is
-func (r *B32) Arm() *cipher.Crypt {
+func (r *B32) Arm() cipher.Crypt {
 	panic("not implemented")
 }
 
@@ -164,7 +159,7 @@ func (r *B32) Ciphertext() *secbuf.SecBuf {
 }
 
 // Disarm is
-func (r *B32) Disarm() *cipher.Crypt {
+func (r *B32) Disarm() cipher.Crypt {
 	panic("not implemented")
 }
 
@@ -184,7 +179,7 @@ func (r *B32) IsUnlocked() bool {
 }
 
 // Lock is
-func (r *B32) Lock() *cipher.Crypt {
+func (r *B32) Lock() cipher.Crypt {
 	panic("not implemented")
 }
 
@@ -194,16 +189,31 @@ func (r *B32) Password() *passbuf.Password {
 }
 
 // SetIV is
-func (r *B32) SetIV(b *bytes.Bytes) *cipher.Crypt {
+func (r *B32) SetIV(b *bytes.Bytes) cipher.Crypt {
 	panic("not implemented")
 }
 
 // SetRandomIV is
-func (r *B32) SetRandomIV() *cipher.Crypt {
+func (r *B32) SetRandomIV() cipher.Crypt {
 	panic("not implemented")
 }
 
 // Unlock is
-func (r *B32) Unlock(p *passbuf.Password) *cipher.Crypt {
+func (r *B32) Unlock(p *passbuf.Password) cipher.Crypt {
+	panic("not implemented")
+}
+
+// IsSecure is
+func (r *B32) IsSecure() bool {
+	panic("not implemented")
+}
+
+// Secure is
+func (r *B32) Secure(*secbuf.SecBuf, *passbuf.Password, *bytes.Bytes) cipher.Crypt {
+	panic("not implemented")
+}
+
+// Unsecure is
+func (r *B32) Unsecure() cipher.Crypt {
 	panic("not implemented")
 }

@@ -10,15 +10,18 @@ import (
 // Crypt is a generic interface for a buffer that keeps data stored encrypted and decrypts it for read functions and encrypts it for write functions
 type Crypt interface {
 	def.Buffer
-	Arm() *Crypt
+	Arm() Crypt
 	Ciphertext() *secbuf.SecBuf
-	Disarm() *Crypt
+	Disarm() Crypt
 	IV() *bytes.Bytes
 	IsArmed() bool
 	IsUnlocked() bool
-	Lock() *Crypt
+	IsSecure() bool
+	Lock() Crypt
 	Password() *passbuf.Password
-	SetIV(b *bytes.Bytes) *Crypt
-	SetRandomIV() *Crypt
-	Unlock(p *passbuf.Password) *Crypt
+	Secure(*secbuf.SecBuf, *passbuf.Password, *bytes.Bytes) Crypt
+	SetIV(b *bytes.Bytes) Crypt
+	SetRandomIV() Crypt
+	Unlock(p *passbuf.Password) Crypt
+	Unsecure() Crypt
 }
