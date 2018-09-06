@@ -1,5 +1,4 @@
-//
-	Package kdf implements a blake2b based key derivation function for stretching passwords 
+// Package kdf implements a blake2b based key derivation function for stretching passwords
 package kdf
 
 import (
@@ -12,10 +11,9 @@ import (
 	"time"
 )
 
+// Gen takes a password and a random 12 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 12 byte initialisation vector from the first 32 bytes and last 12 bytes respectively, after hashing the resultant hash iterations-1 more times.
 //
-	Gen takes a password and a random 12 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext and 12 byte initialisation vector from the first 32 bytes and last 12 bytes respectively, after hashing the resultant hash iterations-1 more times.
-
-	Blake2b is used because it is faster than SHA256/SHA512. 
+// Blake2b is used because it is faster than SHA256/SHA512.
 func Gen(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, err error) {
 	if p == nil {
 		return nil, nil, errors.New("nil password")
@@ -31,46 +29,47 @@ func Gen(p *Password, iv *Bytes, iterations int) (C *LockedBuffer, IV *Bytes, er
 		return nil, nil, errors.New(buf.Error())
 	}
 	defer buf.Free()
-	Buf := *buf.Buf()
-	P := *p.Buf()
-	for i := range P {
-		Buf[i] = P[i]
+	bb := buf.Buf().(*[]byte)
+	B := *bb
+	pp := p.Buf().(*[]byte)
+	P := *pp
+	for i := range *pp {
+		B[i] = P[i]
 	}
 	for i := 0; i < iv.Len(); i++ {
-		Buf[i+p.Len()] = (*iv.Buf())[i]
+		B[i+p.Len()] = (*iv.Buf().(*[]byte))[i]
 	}
 	var blake hash.Hash
-	blake, err = blake2b.New384(Buf)
+	blake, err = blake2b.New384(B)
 	last := blake.Sum(nil)
 	for i := 1; i < iterations; i++ {
 		blake.Write(last)
-		last = blake.Sum(Buf)
+		last = blake.Sum(B)
 	}
 	C = NewLockedBuffer().New(32).(*LockedBuffer)
-	c := *C.Buf()
+	c := *C.Buf().(*[]byte)
 	for i := range c {
 		c[i] = last[i]
 	}
 	IV = NewBytes().New(12).(*Bytes)
-	ivb := *IV.Buf()
+	ivb := *IV.Buf().(*[]byte)
 	for i := range ivb {
 		ivb[i] = last[i+C.Len()]
 	}
 	return
 }
 
-//
-	Bench returns the number of iterations performed in a given time on the current hardware 
+// Bench returns the number of iterations performed in a given time on the current hardware
 func Bench(t time.Duration) (iter int) {
 	P := NewPassword().Rand(12)
-	p := *P.Buf()
+	p := *P.Buf().(*[]byte)
 	iv := NewBytes().Rand(12)
 	Buf := make([]byte, P.Len()+iv.Len())
 	for i := range p {
 		Buf[i] = p[i]
 	}
 	for i := 0; i < iv.Len(); i++ {
-		Buf[i+P.Len()] = (*iv.Buf())[i]
+		Buf[i+P.Len()] = (*iv.Buf().(*[]byte))[i]
 	}
 	var blake hash.Hash
 	blake, _ = blake2b.New384(Buf)

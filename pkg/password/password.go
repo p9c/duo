@@ -3,8 +3,6 @@ package password
 
 import (
 	"encoding/json"
-	. "gitlab.com/parallelcoin/duo/pkg/byte"
-	. "gitlab.com/parallelcoin/duo/pkg/bytes"
 	. "gitlab.com/parallelcoin/duo/pkg/interfaces"
 	. "gitlab.com/parallelcoin/duo/pkg/lockedbuffer"
 )
@@ -15,12 +13,10 @@ type Password struct {
 }
 
 // guards against nil pointer receivers
-func ifnil(r *Password) *Password {
-	if r == nil {
-		r = new(Password)
-		r.LockedBuffer = new(LockedBuffer)
-		r.SetError("nil receiver")
-	}
+func nilError(s string) *Password {
+	r := new(Password)
+	r.LockedBuffer = new(LockedBuffer)
+	r.SetError(s + " nil receiver")
 	return r
 }
 
@@ -38,55 +34,43 @@ func NewPassword(r ...*Password) *Password {
 	return r[0]
 }
 
-type passwordI interface {
-	FromString(string) *Password
-	MarshalJSON() ([]byte, error)
-	String() string
-}
-
 // FromString loads the Lockedbuffer with the bytes of a string. The string is immutable so it is not removed from memory except automatically.
 func (r *Password) FromString(s string) *Password {
 	if r == nil {
 		r = NewPassword(r)
 	}
 	r.LockedBuffer = r.New(len(s)).(*LockedBuffer)
-	r.ForEach(func(i int) {
-		r.SetElem(i, NewByte().Load(&[]byte{s[i]}))
-	})
-	// for i := range S {
-	// 	R[i] = S[i]
-	// }
+	for i := range s {
+		r.SetElem(i, s[i])
+	}
 	return r
 }
 
 // MarshalJSON marshalls the JSON for a Password
 func (r *Password) MarshalJSON() ([]byte, error) {
-	r = ifnil(r)
+	if nil == r {
+		r = nilError("MarshalJSON()")
+	}
 	if r.LockedBuffer == nil {
 		r.LockedBuffer = NewLockedBuffer()
 	}
-	if r.LockedBuffer.Len() == 0 {
-		r.LockedBuffer.Load(NewBytes().Rand(32).Buf())
-	}
 	return json.Marshal(&struct {
 		Value  string
-		IsSet  bool
 		Coding string
 		Error  string
 	}{
-		Value:  string(*r.LockedBuffer.Buf()),
-		IsSet:  r.IsSet(),
+		Value:  string(*(r.LockedBuffer.Buf()).(*[]byte)),
 		Coding: r.Coding(),
 		Error:  r.Error(),
 	})
 }
 
-/////////////////////////////////////////
 // Stringer implementation
-/////////////////////////////////////////
 
 // String returns value encoded according to the current coding mode
 func (r *Password) String() string {
-	r = ifnil(r)
+	if nil == r {
+		r = nilError("String()")
+	}
 	return r.LockedBuffer.String()
 }

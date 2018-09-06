@@ -26,11 +26,9 @@ type Crypt struct {
 	err             error
 }
 
-// guards against nil pointer receivers
-func ifnil(r *Crypt) *Crypt {
-	if r == nil {
-		return NewCrypt()
-	}
+func nilError(s string) *Crypt {
+	r := NewCrypt()
+	r.err = errors.New(s + " nil receiver")
 	return r
 }
 
@@ -68,36 +66,11 @@ func NewCrypt(r ...*Crypt) *Crypt {
 	return r[0]
 }
 
-type crypt interface {
-	Arm() *Crypt
-	Ciphertext() *LockedBuffer
-	Crypt() *Bytes
-	Decrypt(*Bytes) *LockedBuffer
-	Disarm() *Crypt
-	Encrypt(*LockedBuffer) *Bytes
-	Error() string
-	Generate(*Password) *Crypt
-	IV() *Bytes
-	IsArmed() bool
-	IsLoaded() bool
-	IsUnlocked() bool
-	Load(*Bytes) *Crypt
-	Lock() *Crypt
-	MarshalJSON() ([]byte, error)
-	Null()
-	Password() *Password
-	SetError(string) *crypt
-	SetIV(*Bytes) *Crypt
-	SetRandomIV() *Crypt
-	String() string
-	Unlock(*Password) *Crypt
-}
-
 // Arm generates the ciphertext from the password, uses it to decrypt the crypt into the crypt's main cyphertext, and creates the AES-GCM cipher
 func (r *Crypt) Arm() *Crypt {
 	switch {
 	case r == nil:
-		r = NewCrypt()
+		r = nilError("Arm()")
 		r.SetError("nil receiver")
 	case r.Password().Len() == 0:
 		r.SetError("nil password")
@@ -109,24 +82,18 @@ func (r *Crypt) Arm() *Crypt {
 		var C *LockedBuffer
 		var IV *Bytes
 		C, IV, r.err = kdf.Gen(r.Password(), r.IV(), r.iterations)
-		// if r.err != nil {
-		// 	return r
-		// }
+		if r.err != nil {
+			return r
+		}
 		var block cipher.Block
-		block, r.err = aes.NewCipher(*C.Buf())
+		block, r.err = aes.NewCipher(*C.Buf().(*[]byte))
 		var blockmode cipher.AEAD
 		blockmode, r.err = cipher.NewGCM(block)
 		var c []byte
-		c, r.err = blockmode.Open(nil, *IV.Buf(), *r.Crypt().Buf(), nil)
-		// if r.err != nil {
-		// 	return r
-		// }
-		r.ciphertext = NewLockedBuffer().Load(&c)
-		block, r.err = aes.NewCipher(*r.ciphertext.Buf())
+		c, r.err = blockmode.Open(nil, *IV.Buf().(*[]byte), *r.Crypt().Buf().(*[]byte), nil)
+		r.ciphertext = NewLockedBuffer().Load(&c).(*LockedBuffer)
+		block, r.err = aes.NewCipher(*r.ciphertext.Buf().(*[]byte))
 		blockmode, r.err = cipher.NewGCM(block)
-		// if r.err != nil {
-		// 	return r
-		// }
 		r.gcm = &blockmode
 		r.armed = true
 	}
@@ -172,8 +139,8 @@ func (r *Crypt) Decrypt(b *Bytes) *LockedBuffer {
 		r.SetError("nil gcm")
 	default:
 		var bb []byte
-		bb, r.err = (*r.gcm).Open(nil, *r.IV().Buf(), *b.Buf(), nil)
-		B := NewLockedBuffer().Load(&bb)
+		bb, r.err = (*r.gcm).Open(nil, *r.IV().Buf().(*[]byte), *b.Buf().(*[]byte), nil)
+		B := NewLockedBuffer().Load(&bb).(*LockedBuffer)
 		return B
 	}
 	B := NewLockedBuffer()
@@ -190,7 +157,7 @@ func (r *Crypt) Disarm() *Crypt {
 	if r.gcm != nil {
 		r.gcm = nil
 	}
-	r.ciphertext.Delete()
+	r.ciphertext.Null().Free()
 	r.ciphertext = nil
 	r.armed = false
 	return r
@@ -206,8 +173,8 @@ func (r *Crypt) Encrypt(lb *LockedBuffer) *Bytes {
 	case r.gcm == nil:
 		r.SetError("nil gcm")
 	default:
-		b := (*r.gcm).Seal(nil, *r.IV().Buf(), *lb.Buf(), nil)
-		B := NewBytes().Load(&b)
+		b := (*r.gcm).Seal(nil, *r.IV().Buf().(*[]byte), *lb.Buf().(*[]byte), nil)
+		B := NewBytes().Load(&b).(*Bytes)
 		return B
 	}
 	b := NewBytes()
@@ -238,7 +205,7 @@ func (r *Crypt) Generate(p *Password) *Crypt {
 		return r
 	}
 	r.password = p
-	r.ciphertext = NewLockedBuffer().Rand(32)
+	r.ciphertext = NewLockedBuffer().Rand(32).(*LockedBuffer)
 	r.SetRandomIV()
 	r.iterations = kdf.Bench(time.Second)
 	var C *LockedBuffer
@@ -248,12 +215,12 @@ func (r *Crypt) Generate(p *Password) *Crypt {
 	// 	return r
 	// }
 	var block cipher.Block
-	block, r.err = aes.NewCipher(*C.Buf())
+	block, r.err = aes.NewCipher(*C.Buf().(*[]byte))
 	var blockmode cipher.AEAD
 	blockmode, r.err = cipher.NewGCM(block)
-	c := blockmode.Seal(nil, *IV.Buf(), *r.Ciphertext().Buf(), nil)
-	r.crypt = r.crypt.Load(&c)
-	block, r.err = aes.NewCipher(*r.Ciphertext().Buf())
+	c := blockmode.Seal(nil, *IV.Buf().(*[]byte), *r.Ciphertext().Buf().(*[]byte), nil)
+	r.crypt = r.crypt.Load(&c).(*Bytes)
+	block, r.err = aes.NewCipher(*r.Ciphertext().Buf().(*[]byte))
 	// if r.err != nil {
 	// 	return r
 	// }
@@ -338,19 +305,19 @@ func (r *Crypt) Lock() *Crypt {
 func (r *Crypt) MarshalJSON() ([]byte, error) {
 	var crypt, ciphertext, iv, password string
 	if r.Crypt() != nil && r.Crypt().Len() != 0 {
-		crypt = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.Crypt().Buf()))...))
+		crypt = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.Crypt().Buf().(*[]byte)))...))
 	}
 	if r.Ciphertext() != nil && r.Ciphertext().Len() != 0 {
-		ciphertext = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.Ciphertext().Buf()))...))
+		ciphertext = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.Ciphertext().Buf().(*[]byte)))...))
 	}
 	if r.Error() == "ciphertext was nil" {
 		r.err = nil
 	}
 	if r.IV() != nil && r.IV().Len() != 0 {
-		iv = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.IV().Buf()))...))
+		iv = string(append([]byte("0x"), []byte(hex.EncodeToString(*r.IV().Buf().(*[]byte)))...))
 	}
 	if r.Password() != nil && r.Password().Len() != 0 {
-		password = string(*r.Password().Buf())
+		password = string(*r.Password().Buf().(*[]byte))
 	}
 	return json.Marshal(&struct {
 		Crypt      string

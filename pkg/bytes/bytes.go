@@ -34,7 +34,7 @@ func NewBytes() (R *Bytes) {
 
 func nilError(s string) *Bytes {
 	r := NewBytes()
-	r.err = errors.New(s + " nil receiver")
+	r.SetError(s + " nil receiver")
 	return r
 }
 
@@ -88,23 +88,27 @@ func (r *Bytes) Free() Buffer {
 
 // Link nulls the Bytes and copies the pointer in from another Bytes. Whatever is done to one's []byte will also affect the other, but they keep separate error values
 func (r *Bytes) Link(b interface{}) (R Buffer) {
-	switch {
-	case nil == r:
-		r = nilError("Link()")
-		fallthrough
-	case b == nil:
-		return r.SetError("nil parameter").(*Bytes)
+	switch b.(type) {
+	case *Bytes:
+		switch {
+		case nil == r:
+			r = nilError("Link()")
+			fallthrough
+		case b == nil:
+			return r.SetError("nil parameter").(*Bytes)
+		default:
+			r.Null().(*Bytes).buf = b.(*Bytes).buf
+		}
 	default:
-		r.Null().(*Bytes).buf = b.(*Bytes).buf
-		return r
+		r.SetError("Link() only accepts *Bytes")
 	}
+	return r
 }
 
 // Load nulls any existing data and sets its pointer to refer to the pointer to byte slice in the parameter
 func (r *Bytes) Load(bytes interface{}) (R Buffer) {
 	if nil == bytes {
-		r.SetError("Load() nil interface")
-		return r
+		r = nilError("Load()")
 	}
 	switch bytes.(type) {
 	case *[]byte:
@@ -195,7 +199,7 @@ func (r *Bytes) Size() int {
 // Error gets the error string
 func (r *Bytes) Error() string {
 	if nil == r {
-		return "nil receiver"
+		return "Error() nil receiver"
 	}
 	if nil == r.err {
 		return "<nil>"
@@ -206,14 +210,11 @@ func (r *Bytes) Error() string {
 //Array implementation
 
 // Cap returns the amount of elements allocated (can be larger than the size), returns -1 if unallocated
-func (r *Bytes) Cap() (i int) {
-	if nil == r {
+func (r *Bytes) Cap() int {
+	if nil == r || r.buf == nil {
 		return -1
 	}
-	if i != -1 {
-		i = cap(*r.buf)
-	}
-	return
+	return cap(*r.buf)
 }
 
 // Elem returns the byte at a given index of the buffer
@@ -226,16 +227,16 @@ func (r *Bytes) Elem(i int) (R interface{}) {
 		r.SetError("Elem() nil buffer")
 		return byte(0)
 	}
-	if r.Len() < i {
-		r.SetError("Elem() index out of bounds")
+	if r.Len() == 0 {
+		r.SetError("Elem() array is zero elements")
 		return byte(0)
 	}
 	if i < 0 {
 		r.SetError("Elem() index less than zero")
 		return byte(0)
 	}
-	if r.Len() == 0 {
-		r.SetError("Elem() array is zero elements")
+	if r.Len() < i {
+		r.SetError("Elem() index out of bounds")
 		return byte(0)
 	}
 	return (*r.buf)[i]
@@ -243,7 +244,10 @@ func (r *Bytes) Elem(i int) (R interface{}) {
 
 // Len is just a synonym for size, returns -1 if unallocated
 func (r *Bytes) Len() (i int) {
-	return r.Size()
+	if nil == r || r.buf == nil {
+		return -1
+	}
+	return len(*r.buf)
 }
 
 // Purge zeroes out all of the buffers in the array
@@ -290,7 +294,6 @@ func (r *Bytes) SetError(s string) interface{} {
 	}
 	if s != "" {
 		r.err = errors.New(s)
-		fmt.Println(r.err.Error())
 	}
 	return r
 }
@@ -312,8 +315,8 @@ func (r *Bytes) Coding() string {
 	if nil == r {
 		r = nilError("Coding()")
 	}
-	if r.coding >= len(CodeType) {
-		r.SetError("Coding() invalid coding type in Bytes")
+	if r.coding > len(CodeType) || r.coding < 0 {
+		r.SetError("Coding() invalid coding type")
 		r.coding = 0
 	}
 	return CodeType[r.coding]
@@ -356,6 +359,11 @@ func (r *Bytes) String() (S string) {
 	if nil == r {
 		r = nilError("String()")
 	}
+	if r.coding > len(CodeType) || r.coding < 0 {
+		r.SetError("String() invalid coding")
+		r.SetCoding("hex")
+		return "<invalid coding>"
+	}
 	switch CodeType[r.coding] {
 	case "byte":
 		S = fmt.Sprint(*r.Buf().(*[]byte))
@@ -367,8 +375,6 @@ func (r *Bytes) String() (S string) {
 		S = fmt.Sprint(bi)
 	case "hex":
 		S = "0x" + hex.EncodeToString(*r.Buf().(*[]byte))
-	default:
-		S = r.SetCoding("decimal").(Buffer).String()
 	}
 	return
 }
