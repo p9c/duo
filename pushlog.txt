@@ -1,7 +1,0 @@
-2810 SLOC Sun Sep  2 19:43:43 CEST 2018 pushed by loki
-2765 SLOC (go) Tue Sep  4 03:16:08 CEST 2018 pushed by loki
-2783 SLOC (go) Tue Sep  4 04:16:56 CEST 2018 pushed by loki
-2783 SLOC (go) Tue Sep  4 04:17:53 CEST 2018 pushed by loki
-2706 SLOC (go) Wed Sep  5 20:34:02 CEST 2018 pushed by loki
-2706 SLOC (go) Wed Sep  5 20:34:46 CEST 2018 pushed by loki
-2706 SLOC (go) Wed Sep  5 20:35:15 CEST 2018 pushed by loki
