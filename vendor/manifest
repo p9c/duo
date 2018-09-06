@@ -10,6 +10,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/jimlawless/whereami",
+			"repository": "https://github.com/jimlawless/whereami",
+			"vcs": "git",
+			"revision": "aebf70d4a772ea20216cfe6c428f439cb47cfaf2",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "golang.org/x/crypto/blake2b",
 			"repository": "https://go.googlesource.com/crypto",
 			"vcs": "git",

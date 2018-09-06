@@ -4,14 +4,13 @@ package def
 // Buffer is a generic interface for structs that contain *[]byte elements
 type Buffer interface {
 	Buf() interface{}        // returns the pointer to the slice it represents
-	Copy(Buffer) Buffer      // duplicates a passed buffer
+	Copy(interface{}) Buffer // duplicates a passed buffer
 	Free() Buffer            // dereferences the buffer after any necessary preprocessing
+	Len() int                // returns the byte length of the buffer
 	Link(interface{}) Buffer // copies the pointer of another Buffer
-	Load(interface{}) Buffer // copies content into the buffer, and wipes the original
 	OfSize(int) Buffer       // creates a new empty buffer of a given size
 	Null() Buffer            // zeroes out the buffer
-	Rand(...int) Buffer      // loads the buffer with some number of random buf. Has variadic parameter to allow fixed length buffers and specify element sizes in a list
-	Size() int               // returns the byte length of the buffer
+	Rand(...int) Buffer      // loads the buffer with some number of random bytes
 	Coding() Coding          // Defines  output encoding for the stringer
 	Status() Status          // Embeds error handling
 	Array() Array            // Allows the addressing of a buffer as a list of uniform sized subunits

@@ -2,13 +2,13 @@ package def
 
 import (
 	"errors"
+	"github.com/jimlawless/whereami"
+	"strings"
 )
 
-var me = "gitlab.com/parallelcoin/duo/pkg/def/const.go"
-
-func debug(s ...string) {
-	s = append([]string{me + " :"}, s...)
-	Debug(s)
+func dbg(s ...string) {
+	S := strings.Join(s, " ")
+	Debug(S)
 }
 
 // StringCoding is a coding type for converting data to strings
@@ -18,10 +18,10 @@ type StringCoding int
 func (r *StringCoding) Get() string {
 	switch {
 	case int(*r) > len(StringCodingTypes):
-		Debug("Get() code higher than maximum")
+		dbg("Get() code higher than maximum")
 		*r = 0
 	case int(*r) < 0:
-		Debug("Get() negative coding")
+		dbg("Get() negative coding")
 		*r = 0
 		return StringCodingTypes[*r]
 	}
@@ -55,7 +55,8 @@ type ErrorStatus struct {
 
 // Set the status string/error
 func (r *ErrorStatus) Set(s string) interface{} {
-	r.err = errors.New(s)
+	r.err = errors.New(whereami.WhereAmI() + s)
+	dbg(s)
 	return r
 }
 
