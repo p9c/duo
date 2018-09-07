@@ -2,13 +2,12 @@ package def
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jimlawless/whereami"
-	"strings"
 )
 
-func dbg(s ...string) {
-	S := strings.Join(s, " ")
-	Debug(S)
+func dbg(s ...interface{}) {
+	Debug(s)
 }
 
 // StringCoding is a coding type for converting data to strings
@@ -54,14 +53,25 @@ type ErrorStatus struct {
 }
 
 // Set the status string/error
-func (r *ErrorStatus) Set(s string) interface{} {
-	r.err = errors.New(whereami.WhereAmI() + s)
+func (r *ErrorStatus) Set(s interface{}) interface{} {
+	if r == nil {
+		r = new(ErrorStatus)
+	}
+	r.err = errors.New(whereami.WhereAmI() + fmt.Sprint(s))
 	dbg(s)
 	return r
 }
 
 // Unset the status string/error
 func (r *ErrorStatus) Unset() interface{} {
+	if r == nil {
+		r = new(ErrorStatus)
+	}
 	r.err = nil
 	return r
+}
+
+// Error returns the error field of a Status
+func (r *ErrorStatus) Error() *error {
+	return &r.err
 }

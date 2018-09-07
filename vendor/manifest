@@ -10,6 +10,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/fatih/color",
+			"repository": "https://github.com/fatih/color",
+			"vcs": "git",
+			"revision": "2d684516a8861da43017284349b7e303e809ac21",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/jimlawless/whereami",
 			"repository": "https://github.com/jimlawless/whereami",
 			"vcs": "git",

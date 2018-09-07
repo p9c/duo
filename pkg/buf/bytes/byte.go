@@ -1,4 +1,4 @@
-package byt
+package buf
 
 import (
 	"crypto/rand"
@@ -32,17 +32,21 @@ func (r *Byte) Buf() interface{} {
 func (r *Byte) Copy(b interface{}) def.Buffer {
 	if r == nil {
 		r = NewByte(0)
-		r.Status().Set("Copy() nil interface")
+		r.Status().Set("nil interface")
+	}
+	if b == nil {
+		r.Status().Set("parameter")
+		return r
 	}
 	switch b.(type) {
 	case *Byte:
 		B := b.(*Byte)
 		if B == nil {
 			r = NewByte(0)
-			r.Status().Set("Copy() nil receiver")
+			r.Status().Set("nil parameter")
 		}
 		if B == nil {
-			r.Status().Set("Copy() nil Byte")
+			r.Status().Set("nil Byte")
 		}
 		r.buf = B.Buf().(byte)
 		// r.coding = b.(*Byte).Coding().(*def.StringCoding)
@@ -51,14 +55,14 @@ func (r *Byte) Copy(b interface{}) def.Buffer {
 	case byte:
 		r.buf = b.(byte)
 	default:
-		r.Status().Set("Copy() buffer not Byte")
+		r.Status().Set("buffer not Byte")
 	}
 	return r
 }
 
 // Free is no-op as the buffer part of the struct
 func (r *Byte) Free() def.Buffer {
-	r.Status().Set("Free() no pointers, cannot deref")
+	r.Status().Set("no pointers, cannot deref")
 	return r
 }
 
@@ -68,13 +72,13 @@ func (r *Byte) Len() int {
 }
 
 // Link does nothing because bytes are stored in the struct
-func (r *Byte) Link(interface{}) def.Buffer {
-	r.Status().Set("Link() not a pointer type")
+func (r *Byte) Link(b def.Buffer) def.Buffer {
+	r.Status().Set("not a pointer type")
 	return r
 }
 
-// OfSize does nothing because this type only provides 1 byte
-func (r *Byte) OfSize(int) def.Buffer {
+// OfLen does nothing because this type only provides 1 byte
+func (r *Byte) OfLen(int) def.Buffer {
 	return NewByte(0)
 }
 
@@ -118,6 +122,6 @@ func (r *Byte) Array() def.Array {
 	if r == nil {
 		r = NewByte(0)
 	}
-	r.Status().Set("Array() Bytes does not implement array")
+	r.Status().Set("Bytes does not implement array")
 	return nil
 }
