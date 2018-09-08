@@ -128,12 +128,23 @@ func (r *Byte) UnsetStatus() status.Status {
 
 // GetCoding is
 func (r *Byte) GetCoding() string {
-	panic("not implemented")
+	return r.coding
 }
 
 // SetCoding is
-func (r *Byte) SetCoding(string) coding.Coding {
-
+func (r *Byte) SetCoding(s string) coding.Coding {
+	found := false
+	for i := range coding.Codings {
+		if s == coding.Codings[i] {
+			found = true
+		}
+	}
+	if found {
+		r.coding = s
+	} else {
+		r.coding = "hex"
+	}
+	return r
 }
 
 // ListCodings is
