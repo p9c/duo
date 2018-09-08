@@ -2,11 +2,28 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/anaskhan96/base58check",
+			"repository": "https://github.com/anaskhan96/base58check",
+			"vcs": "git",
+			"revision": "fcff33ba49dde3181fa69fb346f45582e52a3815",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/awnumar/memguard",
 			"repository": "https://github.com/awnumar/memguard",
 			"vcs": "git",
 			"revision": "8537cdf45263f3b75918fd7f0b455e0681cc754c",
 			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/davecgh/go-spew/spew",
+			"repository": "https://github.com/davecgh/go-spew",
+			"vcs": "git",
+			"revision": "d8f796af33cc11cb798c1aaeb27a4ebc5099927d",
+			"branch": "master",
+			"path": "/spew",
 			"notests": true
 		},
 		{

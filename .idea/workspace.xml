@@ -2,15 +2,23 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9397cb32-9d8c-4b23-8cac-db4d5db182ed" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/pkg/bits/bit.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/byteprint/byteprint.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/bytes/bytes.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/bytes/bytes.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/bytes/bytes_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/bytes/bytes_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/interfaces/const.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/interfaces/const.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/interfaces/interfaces.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/interfaces/interfaces.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/kdf/kdf.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/kdf/kdf.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/lockedbuffer/lockedbuffer.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/lockedbuffer/lockedbuffer.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/lockedbuffer/lockedbuffer_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/lockedbuffer/lockedbuffer_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/buf/bytes/byte.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/buf/bytes/byte.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/buf/bytes/byte_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/buf/bytes/byte_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/buf/bytes/sec.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/buf/bytes/sec.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/buf/bytes/sec_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/buf/bytes/sec_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/buf/bytes/unsafe.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/buf/bytes/unsafe.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/buf/bytes/unsafe_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/buf/bytes/unsafe_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/buf/pass/pass.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/buf/pass/pass.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/buf/pass/pass_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/buf/pass/pass_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/buf/uint256/uint256.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/buf/uint256/uint256.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/cipher/cipher.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/cipher/cipher.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/cipher/crypt.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/cipher/crypt.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/cipher/kdf.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/cipher/kdf.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/def/const.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/def/const.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/def/interfaces.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/def/interfaces.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/def/simple.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/manifest" beforeDir="false" afterPath="$PROJECT_DIR$/vendor/manifest" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -22,17 +30,28 @@
     <session id="-1131422691">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="1" />
+          <entry key="project.closed" value="2" />
+          <entry key="project.open.time.17" value="1" />
           <entry key="project.open.time.3" value="1" />
-          <entry key="project.opened" value="1" />
+          <entry key="project.opened" value="2" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="go" value="2" />
+          <entry key="go" value="3" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
+        <counts>
+          <entry key="Go" value="3" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="go" value="2" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="Go" value="2" />
         </counts>
@@ -40,21 +59,15 @@
     </session>
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/pkg/bytes/bytes.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="378">
-              <caret line="30" column="60" lean-forward="true" selection-start-line="30" selection-start-column="60" selection-end-line="30" selection-end-column="60" />
-            </state>
-          </provider>
-        </entry>
-      </file>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/pkg/interfaces/interfaces.go">
+        <entry file="file://$PROJECT_DIR$/pkg/buf/bytes/sec_test.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="504">
-              <caret line="40" column="9" lean-forward="true" selection-start-line="40" selection-start-column="9" selection-end-line="40" selection-end-column="9" />
+            <state relative-caret-position="486">
+              <caret line="27" column="12" selection-start-line="27" selection-start-column="12" selection-end-line="27" selection-end-column="12" />
+              <folding>
+                <element signature="e#13#123#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -64,6 +77,13 @@
   <component name="GOROOT" path="/usr/lib/go" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/pkg/buf/bytes/sec_test.go" />
+      </list>
+    </option>
   </component>
   <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
   <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
@@ -80,6 +100,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -101,13 +122,14 @@
               <item name="duo" type="b2602c69:ProjectViewProjectNode" />
               <item name="duo" type="462c0819:PsiDirectoryNode" />
               <item name="pkg" type="462c0819:PsiDirectoryNode" />
-              <item name="bytes" type="462c0819:PsiDirectoryNode" />
+              <item name="buf" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="duo" type="b2602c69:ProjectViewProjectNode" />
               <item name="duo" type="462c0819:PsiDirectoryNode" />
               <item name="pkg" type="462c0819:PsiDirectoryNode" />
-              <item name="interfaces" type="462c0819:PsiDirectoryNode" />
+              <item name="buf" type="462c0819:PsiDirectoryNode" />
+              <item name="bytes" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="duo" type="b2602c69:ProjectViewProjectNode" />
@@ -117,12 +139,12 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="go.gopath.indexing.explicitly.defined" value="true" />
     <property name="go.sdk.automatically.set" value="true" />
+    <property name="go.vendoring.notification.had.been.shown" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RunDashboard">
@@ -137,28 +159,46 @@
       </list>
     </option>
   </component>
+  <component name="RunManager">
+    <configuration name="TestFenced_Buf in sec_test.go" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="duo" />
+      <working_directory value="$PROJECT_DIR$/pkg/buf/bytes" />
+      <go_parameters value="-i" />
+      <framework value="gotest" />
+      <kind value="FILE" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/pkg/buf/bytes/sec_test.go" />
+      <pattern value="^TestFenced_Buf$" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.TestFenced_Buf in sec_test.go" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="3840" height="2080" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Favorites" side_tool="true" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.08857747" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.08913502" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
-      <window_info anchor="bottom" id="Database Changes" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Version Control" />
-      <window_info anchor="bottom" id="Terminal" />
-      <window_info anchor="bottom" id="Event Log" side_tool="true" />
+      <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="bottom" id="Run" order="2" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.39979446" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="right" id="Database" />
+      <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="8" />
+      <window_info anchor="bottom" id="Terminal" order="9" />
+      <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Database" order="3" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -171,14 +211,24 @@
     <entry file="file://$PROJECT_DIR$/pkg/bytes/bytes.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="378">
-          <caret line="30" column="60" lean-forward="true" selection-start-line="30" selection-start-column="60" selection-end-line="30" selection-end-column="60" />
+          <caret line="30" column="60" selection-start-line="30" selection-start-column="60" selection-end-line="30" selection-end-column="60" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/pkg/interfaces/interfaces.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="504">
-          <caret line="40" column="9" lean-forward="true" selection-start-line="40" selection-start-column="9" selection-end-line="40" selection-end-column="9" />
+        <state relative-caret-position="720">
+          <caret line="40" column="9" selection-start-line="40" selection-start-column="9" selection-end-line="40" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pkg/buf/bytes/sec_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="486">
+          <caret line="27" column="12" selection-start-line="27" selection-start-column="12" selection-end-line="27" selection-end-column="12" />
+          <folding>
+            <element signature="e#13#123#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
