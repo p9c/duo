@@ -1,3 +1,4 @@
 config.ini
 secret.go
 test
+gin-bin

@@ -34,11 +34,11 @@ var (
 func Append(entry ...string) string {
 	pc, fil, line, _ := runtime.Caller(0)
 	fun := runtime.FuncForPC(pc).Name()
-	out := "\"" + fmt.Sprint(time.Now().UTC().Format("06-01-02 15:04:05.00000")) + "\": {"
-	out += "\"func\":\"" + fun + "\","
-	out += "\"line\":\"" + fil + ":" + fmt.Sprint(line) + "\","
+	out := "\"datestamp\":\"" + fmt.Sprint(time.Now().UTC().Format("06-01-02 15:04:05.00000")) + "\""
+	out += ",\"func\":\"" + fun + "\","
+	out += "\"line\":\"" + fil + ":" + fmt.Sprint(line) + "\""
 	out += strings.Join(entry, " ")
-	out += "}}"
+	out += "}"
 	D.File.Write([]byte(out))
 	return out
 }

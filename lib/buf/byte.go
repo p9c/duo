@@ -27,14 +27,13 @@ func (r *Byte) Freeze() (S string) {
 		r = NewByte()
 	}
 	s := []string{
-		`"Byte": {`,
-		`"Buf":`,
+		`,"type":"Byte",`,
+		`"buf":`,
 		`"` + fmt.Sprint(r.buf) + `",`,
-		`"Status":`,
+		`"status":`,
 		`"` + r.status + `",`,
-		`"Coding":`,
+		`"coding":`,
 		`"` + r.coding + `"`,
-		"}",
 	}
 	S = strings.Join(s, " ")
 	return

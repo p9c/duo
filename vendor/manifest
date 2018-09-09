@@ -18,27 +18,10 @@
 			"notests": true
 		},
 		{
-			"importpath": "github.com/davecgh/go-spew/spew",
-			"repository": "https://github.com/davecgh/go-spew",
+			"importpath": "github.com/fsnotify/fsnotify",
+			"repository": "https://github.com/fsnotify/fsnotify",
 			"vcs": "git",
-			"revision": "d8f796af33cc11cb798c1aaeb27a4ebc5099927d",
-			"branch": "master",
-			"path": "/spew",
-			"notests": true
-		},
-		{
-			"importpath": "github.com/fatih/color",
-			"repository": "https://github.com/fatih/color",
-			"vcs": "git",
-			"revision": "2d684516a8861da43017284349b7e303e809ac21",
-			"branch": "master",
-			"notests": true
-		},
-		{
-			"importpath": "github.com/jimlawless/whereami",
-			"repository": "https://github.com/jimlawless/whereami",
-			"vcs": "git",
-			"revision": "aebf70d4a772ea20216cfe6c428f439cb47cfaf2",
+			"revision": "ccc981bf80385c528a65fbfdd49bf2d8da22aa23",
 			"branch": "master",
 			"notests": true
 		},
@@ -52,12 +35,11 @@
 			"notests": true
 		},
 		{
-			"importpath": "golang.org/x/sys/cpu",
+			"importpath": "golang.org/x/sys",
 			"repository": "https://go.googlesource.com/sys",
 			"vcs": "git",
-			"revision": "ebe1bf3edb3325c393447059974de898d5133eb8",
+			"revision": "4526dd3c8b56729dc6b5a24d9dafb1915e89945b",
 			"branch": "master",
-			"path": "/cpu",
 			"notests": true
 		}
 	]
