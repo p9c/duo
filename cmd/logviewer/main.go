@@ -41,11 +41,14 @@ func main() {
 				}
 				log.Println("error:", err)
 			}
-			log.Println("Reloading browser.")
 			sendReload()
 		}
 	}()
 	err = watcher.Add("/tmp/duo.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = watcher.Add("./jsoneditor.min.css")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,21 +61,21 @@ func startLogViewer() {
 	flag.Parse()
 	loghandler := func(w http.ResponseWriter, req *http.Request) {
 		j, err := ioutil.ReadFile(*file)
+		c, err := ioutil.ReadFile("./jsoneditor.min.css")
+		js, err := ioutil.ReadFile("./jsoneditor.min.js")
 		if err == nil {
-			c, err := ioutil.ReadFile("./jsoneditor.min.css")
-			js, err := ioutil.ReadFile("./jsoneditor.min.js")
+			ic, err := ioutil.ReadFile("./jsoneditor-icons.svg")
 			if err == nil {
-				ic, err := ioutil.ReadFile("./jsoneditor-icons.svg")
+				icons := "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString(ic)
 				if err == nil {
-					icons := "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString(ic)
-					if err == nil {
-						css := strings.Replace(string(c), "img/jsoneditor-icons.svg", icons, -1)
-						io.WriteString(w, `
+					css := strings.Replace(string(c), "img/jsoneditor-icons.svg", icons, -1)
+					io.WriteString(w, `
 			<head>
 				<title>JSON log viewer</title>
 				
 				<style>`+
-							css+`</style>
+						css+`
+						</style>
 				</head>
 					<body>
 						<div id="jsoneditor" style="width: 100%;"></div>
@@ -119,7 +122,6 @@ func startLogViewer() {
 				</script>
 						</body>
 				`)
-					}
 				}
 			}
 		}

@@ -2,17 +2,14 @@ package buf
 
 import (
 	"fmt"
+	"gitlab.com/parallelcoin/duo/lib/debug"
 	"runtime"
 	"testing"
-
-	"gitlab.com/parallelcoin/duo/lib/debug"
 )
 
 func TestFreezeThaw(t *testing.T) {
-
 	defer func() {
 		if recover() != nil {
-			fmt.Println("wooty")
 			pc, fil, line, _ := runtime.Caller(0)
 			fmt.Println(pc, fil, line)
 			dbg.D.Close()
@@ -20,6 +17,7 @@ func TestFreezeThaw(t *testing.T) {
 	}()
 	b := NewByte()
 	frozen := b.Freeze()
-	dbg.Append(frozen)
+	dbg.Append(`"parameters":""`, frozen)
 	dbg.D.Close()
+	// o7
 }

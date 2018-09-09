@@ -27,7 +27,7 @@ func (r *Byte) Freeze() (S string) {
 		r = NewByte()
 	}
 	s := []string{
-		`,"type":"Byte",`,
+		`"type":"Byte",`,
 		`"buf":`,
 		`"` + fmt.Sprint(r.buf) + `",`,
 		`"status":`,

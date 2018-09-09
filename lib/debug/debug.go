@@ -36,9 +36,9 @@ func Append(entry ...string) string {
 	fun := runtime.FuncForPC(pc).Name()
 	out := "\"datestamp\":\"" + fmt.Sprint(time.Now().UTC().Format("06-01-02 15:04:05.00000")) + "\""
 	out += ",\"func\":\"" + fun + "\","
-	out += "\"line\":\"" + fil + ":" + fmt.Sprint(line) + "\""
-	out += strings.Join(entry, " ")
-	out += "}"
+	out += "\"line\":\"" + fil + ":" + fmt.Sprint(line) + "\","
+	out += strings.Join(entry, ",")
+	// out += "}"
 	D.File.Write([]byte(out))
 	return out
 }
@@ -59,7 +59,7 @@ func init() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		D.File.Write([]byte("{\"start\":{},"))
+		D.File.Write([]byte(""))
 	} else {
 		D.File, err = os.OpenFile(LogFileName, os.O_RDWR|os.O_APPEND, 0755)
 		if err != nil {
