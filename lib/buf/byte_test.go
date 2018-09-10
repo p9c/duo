@@ -2,14 +2,14 @@ package buf
 
 import (
 	"fmt"
-	"gitlab.com/parallelcoin/duo/lib/array"
+	// "gitlab.com/parallelcoin/duo/lib/array"
 	"gitlab.com/parallelcoin/duo/lib/debug"
 	"runtime"
 	"strings"
 	"testing"
 )
 
-func TestEverything(t *testing.T) {
+func TestByte(t *testing.T) {
 	y := "*Byte"
 	dbg.Init()
 	defer func() {
@@ -55,7 +55,6 @@ func TestEverything(t *testing.T) {
 	pByte := &[]byte{0, 1, 1, 2, 3, 5, 8, 11, 19}
 	vByte := []byte{0, 1, 1, 2, 3, 5, 8, 11, 19}
 	c := NewByte()
-
 	dbg.Append(y, b.Copy(pByte).(*Byte))
 	dbg.Append(y, c.Copy(vByte).(*Byte))
 	dbg.Append(y, b.Copy(b).(*Byte))
@@ -79,14 +78,14 @@ func TestEverything(t *testing.T) {
 	dbg.Append(y, b)
 	dbg.Append("", dbg.NewNote(b.GetCoding()))
 	dbg.Append("", dbg.NewNote(strings.Join(b.ListCodings(), ",")))
-	var bits string
-	for i := 0; i < 8; i++ {
-		if i != 0 {
-			bits += ", "
-		}
-		bits += fmt.Sprint(b.Copy(131).(arr.Array).Elem(i).(byte))
-	}
-	dbg.Append("", dbg.NewNote(bits)) // from the value 131
+	// var bits string
+	// for i := 0; i < 8; i++ {
+	// 	if i != 0 {
+	// 		bits += ", "
+	// 	}
+	// 	bits += fmt.Sprint(b.Copy(131).(arr.Array).Elem(i).(byte))
+	// }
+	// dbg.Append("", dbg.NewNote(bits)) // from the value 131
 	b.Elem(8)
 	dbg.Append("", dbg.NewNote(b.Error()))
 	dbg.Append("", dbg.NewNote(fmt.Sprint(b.Len())))

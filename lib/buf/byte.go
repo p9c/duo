@@ -119,8 +119,8 @@ func (r *Byte) Null() Buf {
 		r = r.UnsetStatus().(*Byte)
 	}
 	r.Buf = 0
-	r.Status = ""
-	r.Coding = coding.Codings[0]
+	r.UnsetStatus()
+	r.SetCoding("")
 	return r
 }
 

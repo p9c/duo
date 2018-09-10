@@ -56,6 +56,9 @@ var (
 
 // Append an entry to the log
 func Append(key string, object Debugger) (out string) {
+	if object == nil {
+		return "no object provided"
+	}
 	out = ","
 	out += `"` + fmt.Sprint(time.Now().UTC().Format("06-01-02 15:04:05.0000000")) + "\":{"
 	pc, fil, line, _ := runtime.Caller(1)
@@ -121,7 +124,7 @@ func Init() {
 			D.File.Write([]byte(","))
 		}
 	}
-	D.File.Write([]byte("\"" + time.Now().UTC().Format("06-01-02 15:04:05") + "\":{"))
+	D.File.Write([]byte("\"" + time.Now().UTC().Format("06-01-02 15:04:05.0000") + "\":{"))
 	s := strconv.Quote(strings.Join(os.Args, " "))
 	s = s[1 : len(s)-2]
 	D.File.Write([]byte(`"Args":"` + s + `"`))
