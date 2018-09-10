@@ -1,4 +1,4 @@
-package array
+package arr
 
 // Array is an interface that allows a type to present access to uniform sized parts of the parent structure
 type Array interface {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"gitlab.com/parallelcoin/duo/lib/array"
 	"gitlab.com/parallelcoin/duo/lib/coding"
-	// "gitlab.com/parallelcoin/duo/lib/debug"
 	"gitlab.com/parallelcoin/duo/lib/status"
 	"strings"
 )
@@ -19,31 +18,40 @@ type Byte struct {
 
 // NewByte makes a new Byte
 func NewByte() *Byte {
-	return new(Byte)
+	b := new(Byte)
+	b.Coding = "string"
+	return b
 }
 
 // Freeze writes the current data structure into a string that format as content of a JSON struct node
 func (r *Byte) Freeze() (S string) {
 	if r == nil {
 		r = NewByte()
+		r.SetStatus("nil receiver")
 	}
 	s := []string{
-		`"Type":"*Byte","Value":{`,
-		`"Buf":`,
+		`{"Buf":`,
 		`` + fmt.Sprint(r.Buf) + `,`,
 		`"Status":`,
 		`"` + r.Status + `",`,
 		`"Coding":`,
 		`"` + r.Coding + `"}`,
 	}
-	S = strings.Join(s, " ")
+	S = strings.Join(s, "")
 	return
 }
 
 // Thaw is
 func (r *Byte) Thaw(s string) interface{} {
-	var out *Byte
-	json.Unmarshal([]byte(s), out)
+	if r == nil {
+		r = NewByte()
+		r.SetStatus("nil receiver")
+	}
+	out := NewByte()
+	err := json.Unmarshal([]byte(s), out)
+	if err != nil {
+		out.SetStatus(err.Error())
+	}
 	return out
 }
 
@@ -55,11 +63,7 @@ func (r *Byte) Data() interface{} {
 
 // Copy accepts a parameter and copies the (first) byte in it into its buffer
 func (r *Byte) Copy(b interface{}) Buf {
-	r.UnsetStatus()
-	if r == nil {
-		r = NewByte()
-		r.SetStatus("nil receiver")
-	}
+	r = r.UnsetStatus().(*Byte)
 	switch b.(type) {
 	case int:
 		r.Buf = byte(b.(int))
@@ -89,6 +93,13 @@ func (r *Byte) Copy(b interface{}) Buf {
 		if len(*b.(*[]byte)) > 0 {
 			r.Buf = (*b.(*[]byte))[0]
 		}
+	case *Byte:
+		B := b.(*Byte)
+		if r == B {
+			return r.SetStatus("copy to self").(*Byte)
+		}
+		r.Buf, r.Status, r.Coding = B.Buf, B.Status, B.Coding
+		return r
 	default:
 		r.SetStatus("parameter type not implemented")
 		return r
@@ -98,37 +109,25 @@ func (r *Byte) Copy(b interface{}) Buf {
 
 // Free doesn't really do anything but other buffers will need it
 func (r *Byte) Free() Buf {
-	if r == nil {
-		r = NewByte()
-		r.SetStatus("nil receiver")
-	} else {
-		r.UnsetStatus()
-	}
+	r = r.UnsetStatus().(*Byte)
 	return r
 }
 
 // Null is
 func (r *Byte) Null() Buf {
 	if r == nil {
-		r = NewByte()
-		r.SetStatus("nil receiver")
-	} else {
-		r.UnsetStatus()
-		r.Buf = 0
-		r.Status = coding.Codings[0]
-		r.Coding = ""
+		r = r.UnsetStatus().(*Byte)
 	}
+	r.Buf = 0
+	r.Status = ""
+	r.Coding = coding.Codings[0]
 	return r
 }
 
 // SetStatus sets the error state
 func (r *Byte) SetStatus(s string) status.Status {
-	if r == nil {
-		r = NewByte()
-		r.SetStatus("nil receiver")
-	} else {
-		r.Status = s
-	}
+	r = r.UnsetStatus().(*Byte)
+	r.Status = s
 	return r
 }
 
@@ -145,11 +144,17 @@ func (r *Byte) UnsetStatus() status.Status {
 
 // GetCoding is
 func (r *Byte) GetCoding() string {
+	r = r.UnsetStatus().(*Byte)
+	if r.Coding == "" {
+		r.Coding = "string"
+	}
+	r.SetCoding(r.Coding)
 	return r.Coding
 }
 
 // SetCoding is
 func (r *Byte) SetCoding(s string) coding.Coding {
+	r = r.UnsetStatus().(*Byte)
 	found := false
 	for i := range coding.Codings {
 		if s == coding.Codings[i] {
@@ -159,34 +164,48 @@ func (r *Byte) SetCoding(s string) coding.Coding {
 	if found {
 		r.Coding = s
 	} else {
-		r.Coding = "hex"
+		r.Coding = "string"
 	}
 	return r
 }
 
 // ListCodings is
 func (r *Byte) ListCodings() []string {
+	r = r.UnsetStatus().(*Byte)
 	return coding.Codings
 }
 
-// Elem is
-func (r *Byte) Elem(int) interface{} {
-	panic("not implemented")
+// Elem returns a byte of 1 or 0 representing a bit
+func (r *Byte) Elem(e int) interface{} {
+	r = r.UnsetStatus().(*Byte)
+	if e > 7 {
+		r.SetStatus("only 8 bits in byte")
+	}
+	// compl := byte(7 - e)
+	return r.Buf >> byte(e) & 1
 }
 
-// Len is
+// Len is 1, though we can also read the bits
 func (r *Byte) Len() int {
-	panic("not implemented")
+	r = r.UnsetStatus().(*Byte)
+	return 1
 }
 
 // SetElem is
-func (r *Byte) SetElem(int, interface{}) array.Array {
-	panic("not implemented")
+func (r *Byte) SetElem(e int, val interface{}) arr.Array {
+	if val == 0 {
+		mask := ^(byte(1) << byte(e))
+		r.Buf &= mask
+	} else {
+		r.Buf |= (byte(1) << byte(e))
+	}
+	return r
 }
 
 // String is
-func (r *Byte) String() string {
-	panic("not implemented")
+func (r *Byte) String() (S string) {
+	c := r.GetCoding()
+	return coding.Encode([]byte{r.Buf}, c)
 }
 
 // Error is

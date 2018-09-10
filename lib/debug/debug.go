@@ -1,6 +1,7 @@
 package dbg
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -54,18 +55,26 @@ var (
 )
 
 // Append an entry to the log
-func Append(params string, object Debugger) (out string) {
-	// switch {
-	// case D.Counter == 0:
-	// D.File.Write([]byte("{"))
-	// case D.Counter > 0:
+func Append(key string, object Debugger) (out string) {
 	out = ","
-	// }
+	out += `"` + fmt.Sprint(time.Now().UTC().Format("06-01-02 15:04:05.0000000")) + "\":{"
 	pc, fil, line, _ := runtime.Caller(1)
 	fun := runtime.FuncForPC(pc).Name()
-	out += `"` + fmt.Sprint(time.Now().UTC().Format("06-01-02 15:04:05.0000000")) + "\":{"
-	out += `"line":"` + fil + ":" + fmt.Sprint(line) + "\","
-	out += `"func":"` + fun + "\","
+	out += `"line":"file://` + fil + ":" + fmt.Sprint(line) + "\","
+	out += `"func":` + strconv.Quote(fun) + `,`
+	fileHandle, _ := os.Open(fil)
+	fileScanner := bufio.NewScanner(fileHandle)
+	i := 1
+	for fileScanner.Scan() {
+		if i == line {
+			out += `"code":` + strconv.Quote(fileScanner.Text()) + `,`
+		}
+		i++
+	}
+	fileHandle.Close()
+	if key != "" {
+		out += `"` + key + `":`
+	}
 	out += object.Freeze() + `}`
 	D.File.Write([]byte(out))
 	D.Counter++

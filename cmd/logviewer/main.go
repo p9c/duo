@@ -66,6 +66,8 @@ func startLogViewer() {
 		if J == "" {
 			j = []byte("{}")
 		}
+		j = []byte(strings.Replace(string(j), `\t`, ``, -1))
+		j = []byte(strings.Replace(string(j), `\"`, "`", -1))
 		c, err := ioutil.ReadFile("./jsoneditor.min.css")
 		js, err := ioutil.ReadFile("./jsoneditor.min.js")
 		if err == nil {
@@ -125,7 +127,14 @@ func startLogViewer() {
 				var options = { modes: ['tree','view','form','code','text'], mode: 'view', name: 'logs' };
 				var editor = new JSONEditor(container, options);
 				var json = `+string(j)+`;editor.set(json);
-				</script>
+				document.getElementById('getJSON').onclick = function () {
+					var json = editor.get();
+					alert(JSON.stringify(json, null, 2));
+				};
+				document.querySelectorAll('.jsoneditor-string').forEach(function(div) {
+						
+				});
+					</script>
 						</body>
 				`)
 			}
