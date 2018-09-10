@@ -23,7 +23,7 @@ func main() {
 	defer watcher.Close()
 	startReloadServer()
 	go startLogViewer()
-	done := make(chan bool)
+	// done := make(chan bool)
 	go func() {
 		for {
 			select {
@@ -44,15 +44,13 @@ func main() {
 			sendReload()
 		}
 	}()
-	err = watcher.Add("/tmp/duo.json")
-	if err != nil {
-		log.Fatal(err)
+	for {
+		err = watcher.Add("/tmp/duo.json")
+		if err != nil {
+			time.Sleep(time.Second)
+		}
 	}
-	err = watcher.Add("./jsoneditor.min.css")
-	if err != nil {
-		log.Fatal(err)
-	}
-	<-done
+	// <-done
 }
 
 func startLogViewer() {
@@ -61,20 +59,28 @@ func startLogViewer() {
 	flag.Parse()
 	loghandler := func(w http.ResponseWriter, req *http.Request) {
 		j, err := ioutil.ReadFile(*file)
+		if j == nil {
+			j = []byte("{}")
+		}
+		J := string(j)
+		if J == "" {
+			j = []byte("{}")
+		}
 		c, err := ioutil.ReadFile("./jsoneditor.min.css")
 		js, err := ioutil.ReadFile("./jsoneditor.min.js")
 		if err == nil {
-			ic, err := ioutil.ReadFile("./jsoneditor-icons.svg")
+		}
+		ic, err := ioutil.ReadFile("./jsoneditor-icons.svg")
+		if err == nil {
+			icons := "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString(ic)
 			if err == nil {
-				icons := "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString(ic)
-				if err == nil {
-					css := strings.Replace(string(c), "img/jsoneditor-icons.svg", icons, -1)
-					io.WriteString(w, `
+				css := strings.Replace(string(c), "img/jsoneditor-icons.svg", icons, -1)
+				io.WriteString(w, `
 			<head>
 				<title>JSON log viewer</title>
 				
 				<style>`+
-						css+`
+					css+`
 						</style>
 				</head>
 					<body>
@@ -116,13 +122,12 @@ func startLogViewer() {
 
 				`+string(js)+`
 				var container = document.getElementById("jsoneditor");
-				var options = { mode: 'view' };
+				var options = { modes: ['tree','view','form','code','text'], mode: 'view', name: 'logs' };
 				var editor = new JSONEditor(container, options);
 				var json = `+string(j)+`;editor.set(json);
 				</script>
 						</body>
 				`)
-				}
 			}
 		}
 	}

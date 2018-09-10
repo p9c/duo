@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"gitlab.com/parallelcoin/duo/lib/array"
 	"gitlab.com/parallelcoin/duo/lib/coding"
+	// "gitlab.com/parallelcoin/duo/lib/debug"
 	"gitlab.com/parallelcoin/duo/lib/status"
 	"strings"
 )
 
 // Byte is a simple buffer that just stores one byte
 type Byte struct {
-	buf    byte
-	status string
-	coding string
+	Buf    byte
+	Status string
+	Coding string
 }
 
 // NewByte makes a new Byte
@@ -27,13 +28,13 @@ func (r *Byte) Freeze() (S string) {
 		r = NewByte()
 	}
 	s := []string{
-		`"type":"Byte",`,
-		`"buf":`,
-		`"` + fmt.Sprint(r.buf) + `",`,
-		`"status":`,
-		`"` + r.status + `",`,
-		`"coding":`,
-		`"` + r.coding + `"`,
+		`"Type":"*Byte","Value":{`,
+		`"Buf":`,
+		`` + fmt.Sprint(r.Buf) + `,`,
+		`"Status":`,
+		`"` + r.Status + `",`,
+		`"Coding":`,
+		`"` + r.Coding + `"}`,
 	}
 	S = strings.Join(s, " ")
 	return
@@ -46,44 +47,51 @@ func (r *Byte) Thaw(s string) interface{} {
 	return out
 }
 
-// Data is
+// Data returns the content of the buffer
 func (r *Byte) Data() interface{} {
-	return r.buf
+	r = r.UnsetStatus().(*Byte)
+	return r.Buf
 }
 
 // Copy accepts a parameter and copies the (first) byte in it into its buffer
 func (r *Byte) Copy(b interface{}) Buf {
+	r.UnsetStatus()
 	if r == nil {
 		r = NewByte()
 		r.SetStatus("nil receiver")
 	}
 	switch b.(type) {
+	case int:
+		r.Buf = byte(b.(int))
+	case uint:
+		r.Buf = byte(b.(uint))
 	case byte:
-		r.buf = b.(byte)
+		r.Buf = b.(byte)
 	case int8:
-		r.buf = byte(b.(int8))
+		r.Buf = byte(b.(int8))
 	case uint16:
-		r.buf = byte(b.(uint16))
+		r.Buf = byte(b.(uint16))
 	case int16:
-		r.buf = byte(b.(int16))
+		r.Buf = byte(b.(int16))
 	case uint32:
-		r.buf = byte(b.(uint32))
+		r.Buf = byte(b.(uint32))
 	case int32:
-		r.buf = byte(b.(int32))
+		r.Buf = byte(b.(int32))
 	case uint64:
-		r.buf = byte(b.(uint64))
+		r.Buf = byte(b.(uint64))
 	case int64:
-		r.buf = byte(b.(int64))
+		r.Buf = byte(b.(int64))
 	case []byte:
 		if len(b.([]byte)) > 0 {
-			r.buf = b.([]byte)[0]
+			r.Buf = b.([]byte)[0]
 		}
 	case *[]byte:
 		if len(*b.(*[]byte)) > 0 {
-			r.buf = (*b.(*[]byte))[0]
+			r.Buf = (*b.(*[]byte))[0]
 		}
 	default:
 		r.SetStatus("parameter type not implemented")
+		return r
 	}
 	return r
 }
@@ -106,28 +114,38 @@ func (r *Byte) Null() Buf {
 		r.SetStatus("nil receiver")
 	} else {
 		r.UnsetStatus()
-		r.buf = 0
-		r.status = coding.Codings[0]
-		r.coding = ""
+		r.Buf = 0
+		r.Status = coding.Codings[0]
+		r.Coding = ""
 	}
 	return r
 }
 
 // SetStatus sets the error state
 func (r *Byte) SetStatus(s string) status.Status {
-	r.status = s
+	if r == nil {
+		r = NewByte()
+		r.SetStatus("nil receiver")
+	} else {
+		r.Status = s
+	}
 	return r
 }
 
 // UnsetStatus emptys the error state
 func (r *Byte) UnsetStatus() status.Status {
-	r.status = ""
+	if r == nil {
+		r = NewByte()
+		r.SetStatus("nil receiver")
+	} else {
+		r.Status = ""
+	}
 	return r
 }
 
 // GetCoding is
 func (r *Byte) GetCoding() string {
-	return r.coding
+	return r.Coding
 }
 
 // SetCoding is
@@ -139,9 +157,9 @@ func (r *Byte) SetCoding(s string) coding.Coding {
 		}
 	}
 	if found {
-		r.coding = s
+		r.Coding = s
 	} else {
-		r.coding = "hex"
+		r.Coding = "hex"
 	}
 	return r
 }
@@ -173,5 +191,5 @@ func (r *Byte) String() string {
 
 // Error is
 func (r *Byte) Error() string {
-	return r.status
+	return r.Status
 }
