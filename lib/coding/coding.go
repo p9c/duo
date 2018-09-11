@@ -23,6 +23,12 @@ var Codings = []string{"string", "golang", "octal", "decimal", "hex", "base32", 
 
 // Encode takes a byte slice and encodes it to a string with the prescribed format or if empty or not in the list, defaults to string
 func Encode(b []byte, code string, extra ...int) string {
+	if b == nil || len(b) == 0 {
+		return "nil"
+	}
+	if code == "" {
+		code = "string"
+	}
 	switch code {
 	case "golang":
 		return fmt.Sprint(b)

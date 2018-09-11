@@ -26,7 +26,10 @@ type Note struct {
 
 // NewNote creates a new note with a given string
 func NewNote(s string) *Note {
-	return &Note{s}
+	S := strconv.Quote(s)
+	S = S[1:]
+	S = S[:len(S)-1]
+	return &Note{S}
 }
 
 // Freeze renders the note into JSON

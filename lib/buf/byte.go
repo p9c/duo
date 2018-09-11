@@ -56,8 +56,11 @@ func (r *Byte) Thaw(s string) interface{} {
 }
 
 // Data returns the content of the buffer
-func (r *Byte) Data() interface{} {
+func (r *Byte) Data(out ...interface{}) interface{} {
 	r = r.UnsetStatus().(*Byte)
+	if len(out) > 0 {
+		out[0] = r.Buf
+	}
 	return r.Buf
 }
 
@@ -128,6 +131,14 @@ func (r *Byte) Null() Buf {
 func (r *Byte) SetStatus(s string) status.Status {
 	r = r.UnsetStatus().(*Byte)
 	r.Status = s
+	return r
+}
+
+// SetStatusIf sets an error from a standard error interface variable if it is set
+func (r *Byte) SetStatusIf(err error) status.Status {
+	if err != nil {
+		r.Status = err.Error()
+	}
 	return r
 }
 

@@ -2,9 +2,10 @@ package buf
 
 import (
 	"fmt"
+	"runtime/debug"
+	"strconv"
 	// "gitlab.com/parallelcoin/duo/lib/array"
 	"gitlab.com/parallelcoin/duo/lib/debug"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -13,11 +14,17 @@ func TestBytes(t *testing.T) {
 	y := "*Bytes"
 	dbg.Init()
 	defer func() {
-		if recover() != nil {
-			for i := 0; i < 9; i++ {
-				pc, fil, line, _ := runtime.Caller(i)
-				fmt.Println(pc, fil+":"+fmt.Sprint(line))
-			}
+		if r := recover(); r != nil {
+			fmt.Println("Recovered", r)
+			debug.PrintStack()
+			stack := strconv.Quote(string(debug.Stack()))
+			stack = stack[1:]
+			stack = stack[:len(stack)-2]
+			stack = strings.Replace(string(stack), `\t`, ``, -1)
+			stack = strings.Replace(string(stack), `\n`, ` `, -1)
+			stack = strings.Replace(string(stack), `\"`, "`", -1)
+			stack = strings.Replace(string(stack), `\`, ``, -1)
+			dbg.Append("", dbg.NewNote(stack))
 			dbg.D.Close()
 		}
 	}()

@@ -2,7 +2,6 @@ package buf
 
 import (
 	"encoding/json"
-	"fmt"
 	"gitlab.com/parallelcoin/duo/lib/array"
 	"gitlab.com/parallelcoin/duo/lib/coding"
 	"gitlab.com/parallelcoin/duo/lib/status"
@@ -56,13 +55,68 @@ func (r *Bytes) Thaw(s string) interface{} {
 	return out
 }
 
-// Data returns the content of the buffer
-func (r *Bytes) Data() interface{} {
+// Data returns the buffer as *[]byte and also loads a pointer passed, copying for integers and referencing for buffers
+func (r *Bytes) Data(out ...interface{}) (R interface{}) {
 	r = r.UnsetStatus().(*Bytes)
+	var o interface{}
 	if r.Buf == nil {
+		r.SetStatus("nil buffer")
 		return &[]byte{}
 	}
-	return r.Buf
+	if len(out) <= 0 {
+		return r.Buf
+	}
+	rr := *r.Buf
+	switch out[0].(type) {
+	case *[]byte:
+		o = *out[0].(*[]byte)
+		copy(*o.(*[]byte), rr)
+	case *int8:
+		o = *out[0].(*int8)
+		o = int8(rr[0])
+	case *uint16:
+		o = *out[0].(*uint16)
+		o = uint16(rr[0]) +
+			uint16(rr[1])<<8
+	case *int16:
+		o = *out[0].(*int16)
+		o = int16(rr[0]) +
+			int16(rr[1])<<8
+	case *uint32:
+		o = *out[0].(*uint32)
+		o = uint32(rr[0]) +
+			uint32(rr[1])<<8 +
+			uint32(rr[2])<<16 +
+			uint32(rr[3])<<24
+	case *int32:
+		o = *out[0].(*int32)
+		o = int32(rr[0]) +
+			int32(rr[1])<<8 +
+			int32(rr[2])<<16 +
+			int32(rr[3])<<24
+	case *uint64:
+		o = *out[0].(*uint64)
+		o = uint64(rr[0]) +
+			uint64(rr[1])<<8 +
+			uint64(rr[2])<<16 +
+			uint64(rr[3])<<24 +
+			uint64(rr[4])<<32 +
+			uint64(rr[5])<<40 +
+			uint64(rr[6])<<48 +
+			uint64(rr[7])<<56
+	case *int64:
+		o = *out[0].(*int64)
+		o = int64(rr[0]) +
+			int64(rr[1])<<8 +
+			int64(rr[2])<<16 +
+			int64(rr[3])<<24 +
+			int64(rr[4])<<32 +
+			int64(rr[5])<<40 +
+			int64(rr[6])<<48 +
+			int64(rr[7])<<56
+	}
+	R = o
+	return o
 }
 
 // Copy accepts a parameter and copies the (first) byte in it into its buffer
@@ -70,6 +124,9 @@ func (r *Bytes) Copy(b interface{}) Buf {
 	r = r.UnsetStatus().(*Bytes)
 	bi := big.NewInt(0)
 	switch b.(type) {
+	case nil:
+		r.SetStatus("nil parameter")
+		return r
 	case int:
 		bi.SetUint64(uint64(b.(int)))
 		bb := bi.Bytes()
@@ -83,9 +140,13 @@ func (r *Bytes) Copy(b interface{}) Buf {
 	case int8:
 		r.Buf = &[]byte{byte(b.(int8))}
 	case uint16:
-		r.Buf = &[]byte{byte(b.(uint16) >> 8), byte(b.(uint16))}
+		r.Buf = &[]byte{
+			byte(b.(uint16) >> 8),
+			byte(b.(uint16))}
 	case int16:
-		r.Buf = &[]byte{byte(uint16(b.(int16)) >> 8), byte(uint16(b.(int16)))}
+		r.Buf = &[]byte{
+			byte(uint16(b.(int16)) >> 8),
+			byte(uint16(b.(int16)))}
 	case uint32:
 		r.Buf = &[]byte{
 			byte(uint32(b.(uint32)) >> 24),
@@ -126,12 +187,22 @@ func (r *Bytes) Copy(b interface{}) Buf {
 				rb[i] = 0
 			}
 		}
-		fmt.Println(string(bb))
 		rr := make([]byte, len(bb))
 		copy(rr, bb)
 		r.Buf = &rr
 	case *[]byte:
-		r.Buf = b.(*[]byte)
+		bb := b.(*[]byte)
+		if *bb == nil {
+			r.SetStatus("nil parameter")
+			return r
+		}
+		if len(*bb) == 0 {
+			r.SetStatus("zero parameter")
+			return r
+		}
+		rr := make([]byte, len(*bb))
+		copy(rr, *bb)
+		r.Buf = &rr
 	case *Bytes:
 		B := b.(*Bytes)
 		if r == B {
@@ -139,8 +210,8 @@ func (r *Bytes) Copy(b interface{}) Buf {
 		}
 		bb := *B.Buf
 		rr := make([]byte, len(bb))
-		copy(rr, *B.Buf)
-		r.Buf, r.Status, r.Coding = B.Buf, B.Status, B.Coding
+		copy(rr, bb)
+		r.Buf, r.Status, r.Coding = &rr, B.Status, B.Coding
 		return r
 	default:
 		r.SetStatus("parameter type not implemented")
@@ -178,6 +249,14 @@ func (r *Bytes) Null() Buf {
 func (r *Bytes) SetStatus(s string) status.Status {
 	r = r.UnsetStatus().(*Bytes)
 	r.Status = s
+	return r
+}
+
+// SetStatusIf sets an error from a standard error interface variable if it is set
+func (r *Bytes) SetStatusIf(err error) status.Status {
+	if err != nil {
+		r.Status = err.Error()
+	}
 	return r
 }
 
