@@ -78,6 +78,6 @@ func (r *Byte) GetElem(int) interface{} {
 }
 
 // Len is a
-func (r *Byte) Len() int {
+func (r *Byte) Len(length *int) proto.Array {
 	panic("not implemented")
 }
