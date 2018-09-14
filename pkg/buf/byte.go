@@ -8,12 +8,12 @@ import (
 type Byte proto.Byte
 
 // Bytes is a
-func (r *Byte) Bytes() *[]byte {
+func (r *Byte) Bytes(out *[]byte) proto.Buffer {
 	panic("not implemented")
 }
 
 // Copy is a
-func (r *Byte) Copy(*[]byte) proto.Buffer {
+func (r *Byte) Copy(in *[]byte) proto.Buffer {
 	panic("not implemented")
 }
 
@@ -28,7 +28,7 @@ func (r *Byte) Free() proto.Buffer {
 }
 
 // GetCoding is a
-func (r *Byte) GetCoding() string {
+func (r *Byte) GetCoding(out string) proto.Coder {
 	panic("not implemented")
 }
 
@@ -38,17 +38,17 @@ func (r *Byte) SetCoding(string) proto.Coder {
 }
 
 // ListCodings is a
-func (r *Byte) ListCodings() []string {
+func (r *Byte) ListCodings(out *[]string) proto.Coder {
 	panic("not implemented")
 }
 
 // Freeze is a
-func (r *Byte) Freeze() *[]byte {
+func (r *Byte) Freeze(out *[]byte) proto.Streamer {
 	panic("not implemented")
 }
 
 // Thaw is a
-func (r *Byte) Thaw(*[]byte) interface{} {
+func (r *Byte) Thaw(in *[]byte) proto.Streamer {
 	panic("not implemented")
 }
 

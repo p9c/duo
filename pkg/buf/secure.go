@@ -8,12 +8,12 @@ import (
 type Secure proto.Secure
 
 // Bytes is a
-func (r *Secure) Bytes() *[]byte {
+func (r *Secure) Bytes(b *[]byte) proto.Buffer {
 	panic("not implemented")
 }
 
 // Copy is a
-func (r *Secure) Copy(*[]byte) proto.Buffer {
+func (r *Secure) Copy(in *[]byte) proto.Buffer {
 	panic("not implemented")
 }
 
@@ -28,7 +28,7 @@ func (r *Secure) Free() proto.Buffer {
 }
 
 // GetCoding is a
-func (r *Secure) GetCoding() string {
+func (r *Secure) GetCoding(out string) proto.Coder {
 	panic("not implemented")
 }
 
@@ -38,17 +38,17 @@ func (r *Secure) SetCoding(string) proto.Coder {
 }
 
 // ListCodings is a
-func (r *Secure) ListCodings() []string {
+func (r *Secure) ListCodings(out *[]string) proto.Coder {
 	panic("not implemented")
 }
 
 // Freeze is a
-func (r *Secure) Freeze() *[]byte {
+func (r *Secure) Freeze(out *[]byte) proto.Streamer {
 	panic("not implemented")
 }
 
 // Thaw is a
-func (r *Secure) Thaw(*[]byte) interface{} {
+func (r *Secure) Thaw(in *[]byte) proto.Streamer {
 	panic("not implemented")
 }
 
@@ -68,16 +68,16 @@ func (r *Secure) UnsetStatus() proto.Status {
 }
 
 // SetElem is a
-func (r *Secure) SetElem(int, interface{}) proto.Array {
+func (r *Secure) SetElem(index int, in interface{}) proto.Array {
 	panic("not implemented")
 }
 
 // GetElem is a
-func (r *Secure) GetElem(int) interface{} {
+func (r *Secure) GetElem(index int, out interface{}) proto.Array {
 	panic("not implemented")
 }
 
 // Len is a
-func (r *Secure) Len() int {
+func (r *Secure) Len(length *int) proto.Array {
 	panic("not implemented")
 }
