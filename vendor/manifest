@@ -2,10 +2,43 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/anaskhan96/base58check",
+			"repository": "https://github.com/anaskhan96/base58check",
+			"vcs": "git",
+			"revision": "fcff33ba49dde3181fa69fb346f45582e52a3815",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/awnumar/memguard",
 			"repository": "https://github.com/awnumar/memguard",
 			"vcs": "git",
 			"revision": "8537cdf45263f3b75918fd7f0b455e0681cc754c",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/fsnotify/fsnotify",
+			"repository": "https://github.com/fsnotify/fsnotify",
+			"vcs": "git",
+			"revision": "ccc981bf80385c528a65fbfdd49bf2d8da22aa23",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "golang.org/x/crypto/blake2b",
+			"repository": "https://go.googlesource.com/crypto",
+			"vcs": "git",
+			"revision": "0709b304e793a5edb4a2c0145f281ecdc20838a4",
+			"branch": "master",
+			"path": "/blake2b",
+			"notests": true
+		},
+		{
+			"importpath": "golang.org/x/sys",
+			"repository": "https://go.googlesource.com/sys",
+			"vcs": "git",
+			"revision": "4526dd3c8b56729dc6b5a24d9dafb1915e89945b",
 			"branch": "master",
 			"notests": true
 		}

@@ -26,6 +26,7 @@ type Status interface {
 	SetStatus(string) Status
 	SetStatusIf(error) Status
 	UnsetStatus() Status
+	OK() bool
 }
 
 // Array is an interface to access elements of a buffer
