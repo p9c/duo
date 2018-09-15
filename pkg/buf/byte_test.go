@@ -53,4 +53,20 @@ func TestByte(t *testing.T) {
 	err = errors.New("testing status")
 	a.SetStatusIf(err)
 	fmt.Println(a.Status, a.OK())
+	fmt.Println(a.String())
+	fmt.Println(b.String())
+	fmt.Println(c.String())
+	testtypes := []string{"bytes", "string", "hex", "base32", "base58check", "base64"}
+	for i := range testtypes {
+		b.SetCoding(testtypes[i])
+		fmt.Println(testtypes[i], b.String())
+	}
+	b.Freeze(out)
+	fmt.Println("not nil", string(*out))
+	b.Thaw(out)
+	fmt.Println(b.String())
+	c.Freeze(out)
+	fmt.Println("nil", string(*out))
+	c.Thaw(out)
+	fmt.Println(c.String())
 }

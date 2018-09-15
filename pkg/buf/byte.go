@@ -119,7 +119,7 @@ func (r *Byte) Freeze(out *[]byte) proto.Streamer {
 		r.SetStatus("nil receiver")
 	}
 	s := []string{
-		`{"Buf":`,
+		`{"Val":`,
 		`` + fmt.Sprint(*r.Val) + `,`,
 		`"Status":`,
 		`"` + r.Status + `",`,
@@ -127,7 +127,7 @@ func (r *Byte) Freeze(out *[]byte) proto.Streamer {
 		`"` + r.Coding + `"}`,
 	}
 	b := []byte(strings.Join(s, ""))
-	out = &b
+	*out = b
 	return r
 }
 
@@ -138,9 +138,12 @@ func (r *Byte) Thaw(in *[]byte) proto.Streamer {
 	}
 	out := NewByte()
 	err := json.Unmarshal(*in, out)
-	if err != nil {
-		out.SetStatus(err.Error())
+	out.SetStatusIf(err)
+	if r.Status != "" {
+		return r
 	}
+	r.Zero()
+	r = out
 	return r
 }
 
@@ -182,6 +185,9 @@ func (r *Byte) String() string {
 	if r == nil {
 		r = NewByte().SetStatus(er.NilRec).(*Byte)
 	}
+	if r.Val == nil {
+		return ""
+	}
 	switch r.Coding {
 	case "bytes":
 		r.UnsetStatus()
@@ -200,13 +206,13 @@ func (r *Byte) String() string {
 		return base32.StdEncoding.EncodeToString([]byte{*r.Val})
 	case "base58check":
 		r.UnsetStatus()
-		s, err := base58check.Encode("00", string([]byte{*r.Val}))
+		s, err := base58check.Encode("00", hex.EncodeToString([]byte{*r.Val}))
 		r.SetStatusIf(err)
 		return s
 	case "base64":
 		r.UnsetStatus()
-		var dst []byte
-		base64.StdEncoding.Encode(dst, []byte{*r.Val})
+		dst := make([]byte, 8)
+		base64.StdEncoding.Encode(dst, []byte{*r.Val, 0, 0, 0})
 		return string(dst)
 	default:
 		r.SetStatus("unrecognised coding")
