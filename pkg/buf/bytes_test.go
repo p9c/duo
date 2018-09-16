@@ -6,15 +6,22 @@ import (
 	"testing"
 )
 
-func TestByte(t *testing.T) {
+func TestBytes(t *testing.T) {
 	test := []byte("Test String")
-	a := NewByte()
-	b := new(Byte)
-	var c *Byte
+	a := NewBytes()
+	b := new(Bytes)
+	var c *Bytes
 	c.SetStatus("test")
 	c.SetStatusIf(errors.New("test"))
 	c.UnsetStatus()
 	c.OK()
+	c.SetElem(1, 1)
+	var byt byte
+	c.GetElem(1, &byt)
+	c.Len()
+	b.SetElem(1, 1)
+	b.GetElem(1, &byt)
+	b.Len()
 	a.Copy(&test)
 	b.Copy(&test)
 	out := new([]byte)
@@ -60,7 +67,7 @@ func TestByte(t *testing.T) {
 	fmt.Println(a.String())
 	fmt.Println(b.String())
 	fmt.Println(c.String())
-	testtypes := []string{"bytes", "string", "hex", "base32", "base58check", "base64"}
+	testtypes := []string{"bytes", "string", "decimal", "base32", "base58check", "base64"}
 	for i := range testtypes {
 		b.SetCoding(testtypes[i])
 		fmt.Println(testtypes[i], b.String())
@@ -73,4 +80,12 @@ func TestByte(t *testing.T) {
 	fmt.Println("nil", string(*out))
 	c.Thaw(out)
 	fmt.Println(c.String())
+	test = []byte("Test String")
+	f := NewBytes()
+	f.Copy(&test)
+	f.GetElem(14, &byt)
+	f.SetElem(14, &byt)
+	f.GetElem(1, &byt)
+	f.SetElem(1, &byt)
+	f.SetElem(1, &[]byte{})
 }

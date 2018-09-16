@@ -33,5 +33,5 @@ type Status interface {
 type Array interface {
 	SetElem(index int, in interface{}) Array
 	GetElem(index int, out interface{}) Array
-	Len(length *int) Array
+	Len() int
 }

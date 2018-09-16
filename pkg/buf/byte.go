@@ -109,7 +109,6 @@ func (r *Byte) SetCoding(in string) proto.Coder {
 func (r *Byte) ListCodings(out *[]string) proto.Coder {
 	*out = proto.StringCodings
 	return r
-
 }
 
 // Freeze is a
@@ -149,26 +148,42 @@ func (r *Byte) Thaw(in *[]byte) proto.Streamer {
 
 // SetStatus is a
 func (r *Byte) SetStatus(s string) proto.Status {
-	r.Status = s
+	if r == nil {
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+	} else {
+		r.Status = s
+	}
 	return r
 }
 
 // SetStatusIf is a
 func (r *Byte) SetStatusIf(err error) proto.Status {
-	if err != nil {
-		r.Status = err.Error()
+	if r == nil {
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+	} else {
+		if err != nil {
+			r.Status = err.Error()
+		}
 	}
 	return r
 }
 
 // UnsetStatus is a
 func (r *Byte) UnsetStatus() proto.Status {
-	r.Status = ""
+	if r == nil {
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+	} else {
+		r.Status = ""
+	}
 	return r
 }
 
 // OK returns true if there is no error
 func (r *Byte) OK() bool {
+	if r == nil {
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+		return false
+	}
 	return r.Status == ""
 }
 
@@ -188,29 +203,23 @@ func (r *Byte) String() string {
 	if r.Val == nil {
 		return ""
 	}
+	r.UnsetStatus()
 	switch r.Coding {
 	case "bytes":
-		r.UnsetStatus()
 		return fmt.Sprint([]byte{*r.Val})
 	case "string":
-		r.UnsetStatus()
 		return string([]byte{*r.Val})
 	case "decimal":
-		r.UnsetStatus()
 		return fmt.Sprint(*r.Val)
 	case "hex":
-		r.UnsetStatus()
 		return hex.EncodeToString([]byte{*r.Val})
 	case "base32":
-		r.UnsetStatus()
 		return base32.StdEncoding.EncodeToString([]byte{*r.Val})
 	case "base58check":
-		r.UnsetStatus()
 		s, err := base58check.Encode("00", hex.EncodeToString([]byte{*r.Val}))
 		r.SetStatusIf(err)
 		return s
 	case "base64":
-		r.UnsetStatus()
 		dst := make([]byte, 8)
 		base64.StdEncoding.Encode(dst, []byte{*r.Val, 0, 0, 0})
 		return string(dst)
