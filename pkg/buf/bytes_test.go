@@ -16,6 +16,7 @@ func TestBytes(t *testing.T) {
 	c.UnsetStatus()
 	c.OK()
 	c.SetElem(1, 1)
+	c.SetCoding(*c.GetCoding())
 	var byt *byte
 	byt = c.GetElem(1).(*byte)
 	c.Len()
@@ -24,6 +25,7 @@ func TestBytes(t *testing.T) {
 	b.Len()
 	a.Copy(&test)
 	b.Copy(&test)
+	b.Copy(&[]byte{})
 	out := a.Bytes()
 	fmt.Println(*out, a.Error())
 	out = b.Bytes()
@@ -64,16 +66,16 @@ func TestBytes(t *testing.T) {
 	fmt.Println(a.String())
 	fmt.Println(b.String())
 	fmt.Println(c.String())
-	testtypes := []string{"bytes", "string", "decimal", "base32", "base58check", "base64"}
+	testtypes := []string{"bytes", "string", "decimal", "hex", "base32", "base58check", "base64"}
 	for i := range testtypes {
 		b.SetCoding(testtypes[i])
 		fmt.Println(testtypes[i], b.String())
 	}
-	b.Freeze(out)
+	out = b.Freeze()
 	fmt.Println("not nil", string(*out))
 	b.Thaw(out)
 	fmt.Println(b.String())
-	c.Freeze(out)
+	out = c.Freeze()
 	fmt.Println("nil", string(*out))
 	c.Thaw(out)
 	fmt.Println(c.String())
@@ -81,8 +83,8 @@ func TestBytes(t *testing.T) {
 	f := NewBytes()
 	f.Copy(&test)
 	_ = f.GetElem(14)
-	f.SetElem(14, &byt)
+	f.SetElem(14, byt)
 	_ = f.GetElem(1)
-	f.SetElem(1, &byt)
+	f.SetElem(1, byt)
 	f.SetElem(1, &[]byte{})
 }

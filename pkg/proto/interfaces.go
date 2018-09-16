@@ -17,7 +17,7 @@ type Coder interface {
 
 // Streamer is an interface for serialising data
 type Streamer interface {
-	Freeze(out *[]byte) Streamer
+	Freeze() (out *[]byte)
 	Thaw(in *[]byte) Streamer
 }
 

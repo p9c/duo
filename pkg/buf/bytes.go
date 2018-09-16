@@ -18,13 +18,11 @@ type Bytes proto.Bytes
 // NewBytes creates a new Bytes
 func NewBytes() *Bytes {
 	r := new(Bytes)
-	b := make([]byte, 0)
-	r.Val = &b
 	r.Coding = "hex"
 	return r
 }
 
-// Bytes is a
+// Bytes returns a pointer to the buffer
 func (r *Bytes) Bytes() (out *[]byte) {
 	switch {
 	case r == nil:
@@ -32,7 +30,7 @@ func (r *Bytes) Bytes() (out *[]byte) {
 		fallthrough
 	case r.Val == nil:
 		r = NewBytes().SetStatus(er.NilBuf).(*Bytes)
-		fallthrough
+		out = &[]byte{}
 	default:
 		out = r.Val
 	}
@@ -66,7 +64,6 @@ func (r *Bytes) Zero() proto.Buffer {
 		r = NewBytes().SetStatus(er.NilRec).(*Bytes)
 	case r.Val == nil:
 		r = NewBytes().SetStatus(er.NilBuf).(*Bytes)
-		fallthrough
 	default:
 		b := *r.Val
 		for i := range b {
@@ -88,12 +85,18 @@ func (r *Bytes) Free() proto.Buffer {
 
 // GetCoding is a
 func (r *Bytes) GetCoding() (out *string) {
+	if r == nil {
+		r = NewBytes().SetStatus(er.NilRec).(*Bytes)
+	}
 	out = &r.Coding
 	return
 }
 
 // SetCoding is a
 func (r *Bytes) SetCoding(in string) proto.Coder {
+	if r == nil {
+		r = NewBytes().SetStatus(er.NilRec).(*Bytes)
+	}
 	found := false
 	for i := range proto.StringCodings {
 		if in == proto.StringCodings[i] {
@@ -102,7 +105,7 @@ func (r *Bytes) SetCoding(in string) proto.Coder {
 		}
 	}
 	if found != true {
-		r.Coding = "decimal"
+		r.Coding = "hex"
 	} else {
 		r.Coding = in
 	}
@@ -111,12 +114,15 @@ func (r *Bytes) SetCoding(in string) proto.Coder {
 
 // ListCodings is a
 func (r *Bytes) ListCodings() (out *[]string) {
+	if r == nil {
+		r = NewBytes().SetStatus(er.NilRec).(*Bytes)
+	}
 	out = &proto.StringCodings
 	return
 }
 
-// Freeze is a
-func (r *Bytes) Freeze(out *[]byte) proto.Streamer {
+// Freeze returns a json format struct of the data
+func (r *Bytes) Freeze() (out *[]byte) {
 	if r == nil {
 		r = NewBytes().SetStatus(er.NilRec).(*Bytes)
 	}
@@ -129,8 +135,8 @@ func (r *Bytes) Freeze(out *[]byte) proto.Streamer {
 		`"` + r.Coding + `"}`,
 	}
 	b := []byte(strings.Join(s, ""))
-	*out = b
-	return r
+	out = &b
+	return
 }
 
 // Thaw is a
@@ -285,7 +291,7 @@ func (r *Bytes) String() string {
 		return string(dst)
 	default:
 		r.SetStatus("unrecognised coding")
-		r.SetCoding("decimal")
-		return fmt.Sprint(*r.Val)
+		r.SetCoding("hex")
+		return hex.EncodeToString(*r.Val)
 	}
 }

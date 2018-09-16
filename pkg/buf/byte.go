@@ -85,12 +85,18 @@ func (r *Byte) Free() proto.Buffer {
 
 // GetCoding is a
 func (r *Byte) GetCoding() (out *string) {
+	if r == nil {
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+	}
 	out = &r.Coding
 	return
 }
 
 // SetCoding is a
 func (r *Byte) SetCoding(in string) proto.Coder {
+	if r == nil {
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+	}
 	found := false
 	for i := range proto.StringCodings {
 		if in == proto.StringCodings[i] {
@@ -108,12 +114,15 @@ func (r *Byte) SetCoding(in string) proto.Coder {
 
 // ListCodings is a
 func (r *Byte) ListCodings() (out *[]string) {
+	if r == nil {
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+	}
 	out = &proto.StringCodings
 	return
 }
 
 // Freeze is a
-func (r *Byte) Freeze(out *[]byte) proto.Streamer {
+func (r *Byte) Freeze() (out *[]byte) {
 	if r == nil {
 		r = NewByte()
 		r.SetStatus("nil receiver")
@@ -127,8 +136,8 @@ func (r *Byte) Freeze(out *[]byte) proto.Streamer {
 		`"` + r.Coding + `"}`,
 	}
 	b := []byte(strings.Join(s, ""))
-	*out = b
-	return r
+	out = &b
+	return
 }
 
 // Thaw is a
