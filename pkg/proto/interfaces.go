@@ -2,7 +2,7 @@ package proto
 
 // Buffer is a generic interface for []byte buffers
 type Buffer interface {
-	Bytes(out *[]byte) Buffer
+	Bytes() (out *[]byte)
 	Copy(in *[]byte) Buffer
 	Zero() Buffer
 	Free() Buffer
@@ -10,9 +10,9 @@ type Buffer interface {
 
 // Coder is an interface for encoding raw bytes in various base number formats
 type Coder interface {
-	GetCoding(out *string) Coder
+	GetCoding() (out *string)
 	SetCoding(in string) Coder
-	ListCodings(out *[]string) Coder
+	ListCodings() (out *[]string)
 }
 
 // Streamer is an interface for serialising data
@@ -32,6 +32,6 @@ type Status interface {
 // Array is an interface to access elements of a buffer
 type Array interface {
 	SetElem(index int, in interface{}) Array
-	GetElem(index int, out interface{}) Array
+	GetElem(index int) (out interface{})
 	Len() int
 }

@@ -26,7 +26,7 @@ func NewByte() *Byte {
 }
 
 // Bytes returns the byte as a slice with one
-func (r *Byte) Bytes(out *[]byte) proto.Buffer {
+func (r *Byte) Bytes() (out *[]byte) {
 	switch {
 	case r == nil:
 		r = NewByte().SetStatus(er.NilRec).(*Byte)
@@ -35,9 +35,10 @@ func (r *Byte) Bytes(out *[]byte) proto.Buffer {
 		r = NewByte().SetStatus(er.NilBuf).(*Byte)
 		fallthrough
 	default:
-		*out = []byte{*r.Val}
+		b := []byte{*r.Val}
+		out = &b
 	}
-	return r
+	return
 }
 
 // Copy copies the first byte from a given pointer to a byte slice
@@ -83,9 +84,9 @@ func (r *Byte) Free() proto.Buffer {
 }
 
 // GetCoding is a
-func (r *Byte) GetCoding(out *string) proto.Coder {
-	*out = r.Coding
-	return r
+func (r *Byte) GetCoding() (out *string) {
+	out = &r.Coding
+	return
 }
 
 // SetCoding is a
@@ -106,9 +107,9 @@ func (r *Byte) SetCoding(in string) proto.Coder {
 }
 
 // ListCodings is a
-func (r *Byte) ListCodings(out *[]string) proto.Coder {
-	*out = proto.StringCodings
-	return r
+func (r *Byte) ListCodings() (out *[]string) {
+	out = &proto.StringCodings
+	return
 }
 
 // Freeze is a
