@@ -17,16 +17,16 @@ func New() *BlockCrypt {
 	return new(BlockCrypt)
 }
 
-// WithCiphertext loads a ciphertext as from the file where the encryption is used
-func (r *BlockCrypt) WithCiphertext(ciphertext *[]byte) *BlockCrypt {
+// WithCiphertext loads a ciphertext, IV and iterations as from the file where the encryption is used
+func (r *BlockCrypt) WithCiphertext(ciphertext *[]byte, iv *[]byte, iterations int) *BlockCrypt {
 	if r == nil {
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)
 	}
 	if r.Ciphertext != nil {
 		r.Ciphertext.Val.Destroy()
 	}
-	if r.Ciphertext.Len() < 32 {
-		r.SetStatus("ciphertext is too short")
+	if r.Ciphertext.Len() != 32 {
+		r.SetStatus("ciphertext is not 32 bytes")
 	}
 	var err error
 	r.Ciphertext.Copy(ciphertext)
@@ -34,23 +34,16 @@ func (r *BlockCrypt) WithCiphertext(ciphertext *[]byte) *BlockCrypt {
 	if err != nil {
 		return r
 	}
-	return r
-}
-
-// WithRandom loads a random ciphertext as from the file where the encryption is used
-func (r *BlockCrypt) WithRandom() *BlockCrypt {
-	if r == nil {
-		r = New().SetStatus(er.NilRec).(*BlockCrypt)
-	}
-	if r.Ciphertext != nil {
-		r.Ciphertext.Val.Destroy()
-	}
-	var err error
-	r.Ciphertext.Val, err = memguard.NewMutableRandom(32)
-	r.SetStatusIf(err)
-	if err != nil {
+	if len(*iv) != 12 {
+		r.SetStatus("IV is not 12 bytes long")
 		return r
 	}
+	r.IV.Copy(iv)
+	if iterations < 0 {
+		r.SetStatus("iterations is negative")
+		return r
+	}
+	r.Iterations = iterations
 	return r
 }
 
@@ -80,34 +73,59 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 	}
 	if n != 12 {
 		r.SetStatus("did not get requested 12 random bytes")
+		return r
 	}
 	r.Iterations = Bench(time.Second)
-	var C *buf.Secure
-	var IV *buf.Bytes
-	C, IV, err = Gen(p, r.IV, r.Iterations)
-	var block cipher.Block
-	block, err = aes.NewCipher(*C.Bytes())
-	var blockmode cipher.AEAD
-	blockmode, err = cipher.NewGCM(block)
-	c := blockmode.Seal(nil, *IV.Bytes(), *r.Ciphertext.Bytes(), nil)
-	r.Crypt.Copy(&c)
-	block, err = aes.NewCipher(*r.Ciphertext.Bytes())
-	A := new(cipher.AEAD)
-	a := *A
-	a, err = cipher.NewGCM(block)
-	r.GCM = &a
-	r.Armed = true
+	r.Arm()
 	return r
 }
 
 // Arm generates the correct ciphertext that allows the encrypt/decrypt functions to operate
 func (r *BlockCrypt) Arm() *BlockCrypt {
-	if r == nil {
+	switch {
+	case r == nil:
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)
 		return r
-	}
-	if r.Crypt == nil {
+	case r.Crypt == nil:
 		r.SetStatus("no crypt is loaded")
+	case r.Password == nil:
+		r.SetStatus("no password given")
+	default:
+		var C *buf.Secure
+		var err error
+		C, err = Gen(r.Password, r.IV, r.Iterations)
+		if r.SetStatusIf(err); err != nil {
+			return r
+		}
+		var block cipher.Block
+		block, err = aes.NewCipher(*C.Bytes())
+		if r.SetStatusIf(err); err != nil {
+			return r
+		}
+		var blockmode cipher.AEAD
+		blockmode, err = cipher.NewGCM(block)
+		if r.SetStatusIf(err); err != nil {
+			return r
+		}
+		c, err := blockmode.Open(nil, *r.IV.Bytes(), *r.Crypt.Bytes(), nil)
+		if r.SetStatusIf(err); err != nil {
+			return r
+		}
+		r.Ciphertext.Copy(&c)
+		for i := range c {
+			c[i] = 0
+		}
+		block, err = aes.NewCipher(*r.Ciphertext.Bytes())
+		r.SetStatusIf(err)
+		if err != nil {
+			return r
+		}
+		a, err := cipher.NewGCM(block)
+		if r.SetStatusIf(err); err != nil {
+			return r
+		}
+		r.GCM = &a
+		r.Armed = true
 	}
 	return r
 }
