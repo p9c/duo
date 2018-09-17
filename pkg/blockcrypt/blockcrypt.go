@@ -60,8 +60,7 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 	r.Password.Val = p.Val
 	var err error
 	r.Ciphertext.Val, err = memguard.NewMutableRandom(32)
-	r.SetStatusIf(err)
-	if err != nil {
+	if r.SetStatusIf(err); err != nil {
 		return r
 	}
 	bb := make([]byte, 12)
@@ -76,7 +75,7 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 		return r
 	}
 	r.Iterations = Bench(time.Second)
-	r.Arm()
+
 	return r
 }
 
@@ -91,14 +90,16 @@ func (r *BlockCrypt) Arm() *BlockCrypt {
 	case r.Password == nil:
 		r.SetStatus("no password given")
 	default:
-		var C *buf.Secure
 		var err error
-		C, err = Gen(r.Password, r.IV, r.Iterations)
+		if r.Ciphertext != nil {
+			r.Ciphertext.Free()
+		}
+		r.Ciphertext, r.GCMIV, err = Gen(r.Password, r.IV, r.Iterations)
 		if r.SetStatusIf(err); err != nil {
 			return r
 		}
 		var block cipher.Block
-		block, err = aes.NewCipher(*C.Bytes())
+		block, err = aes.NewCipher(*r.Ciphertext.Bytes())
 		if r.SetStatusIf(err); err != nil {
 			return r
 		}
