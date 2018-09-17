@@ -1,5 +1,6 @@
 package proto
 
+// StringCodings is a list of the names of encoding types for the stringer
 var StringCodings = []string{
 	"bytes",       // golang format, square brackets and space separated decimal up to 255
 	"string",      // the raw bytes as a UTF-8 string
