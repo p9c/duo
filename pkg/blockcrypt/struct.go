@@ -13,7 +13,6 @@ type BlockCrypt struct {
 	IV              *buf.Bytes
 	Iterations      int
 	GCM             *cipher.AEAD
-	GCMIV           *buf.Bytes
 	Unlocked, Armed bool
 	Status          string
 }
