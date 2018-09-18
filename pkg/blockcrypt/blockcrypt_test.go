@@ -51,4 +51,47 @@ func TestBlockCrypt(t *testing.T) {
 	_ = nc.Error()
 	nc.Disarm()
 	nc.Arm()
+	ec.Generate(nil)
+	ec.LoadCrypt(nil, nil, 0)
+	ec.Unlock(nil)
+	ec.Lock()
+	ec.Arm()
+	ec.Encrypt(nil)
+	ec.Decrypt(nil)
+	p = []byte("testingpassword123!")
+	pass = buf.NewSecure().Copy(&p).(*buf.Secure)
+	nc.Ciphertext = nil
+	nc.Generate(pass)
+	nc.Generate(pass)
+	nc.Generate(nil)
+	nc.Iterations = 0
+	nc.Generate(pass)
+	IV = bc.IV
+	Crypt = bc.Crypt
+	Iterations = bc.Iterations
+	sc := New()
+	sc.LoadCrypt(Crypt.Bytes(), nil, Iterations)
+	sc.LoadCrypt(Crypt.Bytes(), IV.Bytes(), -1)
+	wrongIV := make([]byte, 11)
+	sc.LoadCrypt(Crypt.Bytes(), &wrongIV, Iterations)
+	sc.LoadCrypt(Crypt.Bytes(), IV.Bytes(), 0)
+	sc.Ciphertext = buf.NewSecure()
+	sc.LoadCrypt(Crypt.Bytes(), IV.Bytes(), Iterations)
+	sc.Password = buf.NewSecure()
+	sc.LoadCrypt(Crypt.Bytes(), IV.Bytes(), Iterations)
+	sc.Password = buf.NewSecure()
+	sc.Unlock(pass)
+	sc.Password = buf.NewSecure()
+	sc.Lock()
+	sc.LoadCrypt(Crypt.Bytes(), IV.Bytes(), -1).Arm()
+	sc.LoadCrypt(Crypt.Bytes(), IV.Bytes(), Iterations)
+	sc.Crypt = nil
+	sc.Arm()
+	sc.Password.Free()
+	sc.Password = nil
+	sc.LoadCrypt(Crypt.Bytes(), IV.Bytes(), Iterations).Arm()
+	bc.Encrypt(nil)
+	bc.Decrypt(nil)
+	bc.Encrypt(&[]byte{})
+	bc.Decrypt(&[]byte{})
 }

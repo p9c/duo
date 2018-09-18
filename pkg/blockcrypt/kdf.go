@@ -21,8 +21,12 @@ func Gen(p *buf.Secure, iv *buf.Bytes, iterations int) (C *buf.Secure, err error
 		return nil, errors.New("iterations less than 1")
 	}
 	b := make([]byte, p.Len()+iv.Len())
-	b1 := buf.NewSecure().Copy(&b)
-	defer b1.Free()
+	b1 := buf.NewSecure().Copy(&b).(*buf.Secure)
+	if b1.OK() {
+		defer b1.Free()
+	} else {
+		return nil, errors.New(b1.Error())
+	}
 	bb := b1.Bytes()
 	B := *bb
 	pp := p.Bytes()
@@ -35,9 +39,19 @@ func Gen(p *buf.Secure, iv *buf.Bytes, iterations int) (C *buf.Secure, err error
 	}
 	var blake hash.Hash
 	blake, err = blake2b.New384(B)
+	if err != nil {
+		return nil, err
+	}
 	last := blake.Sum(nil)
 	for i := 1; i < iterations; i++ {
-		blake.Write(last)
+		N := len(last)
+		n, err := blake.Write(last)
+		if err != nil {
+			return nil, err
+		}
+		if N != n {
+			return nil, errors.New("did not get all bytes from hash")
+		}
 		last = blake.Sum(B)
 	}
 	b = make([]byte, 32)

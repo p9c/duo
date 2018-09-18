@@ -47,10 +47,10 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 		bb := make([]byte, 12)
 		n, err := rand.Read(bb)
 		switch {
-		case err != nil:
-			r.SetStatusIf(err)
 		case n != 12:
 			r.SetStatus("did not get requested 12 random bytes")
+		case err != nil:
+			r.SetStatusIf(err)
 		default:
 			r.IV = buf.NewBytes()
 			r.IV.Copy(&bb)
