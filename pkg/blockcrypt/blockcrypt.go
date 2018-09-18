@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"fmt"
 	"github.com/awnumar/memguard"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/proto"
@@ -290,6 +291,7 @@ func (r *BlockCrypt) SetStatusIf(err error) proto.Status {
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)
 		fallthrough
 	case err != nil:
+		fmt.Println(err)
 		r.Status = err.Error()
 	}
 	return r
