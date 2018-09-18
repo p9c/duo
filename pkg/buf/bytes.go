@@ -114,9 +114,6 @@ func (r *Bytes) SetCoding(in string) proto.Coder {
 
 // ListCodings is a
 func (r *Bytes) ListCodings() (out *[]string) {
-	if r == nil {
-		r = NewBytes().SetStatus(er.NilRec).(*Bytes)
-	}
 	out = &proto.StringCodings
 	return
 }
