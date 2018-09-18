@@ -2,9 +2,12 @@ package wallet
 
 import (
 	"github.com/1lann/cete"
+	"github.com/parallelcointeam/duo/pkg/Uint"
+	"github.com/parallelcointeam/duo/pkg/block"
+	"github.com/parallelcointeam/duo/pkg/key"
 	// "github.com/parallelcointeam/duo/pkg/Uint"
 	// "github.com/parallelcointeam/duo/pkg/block"
-	// "github.com/parallelcointeam/duo/pkg/crypto"
+	"github.com/parallelcointeam/duo/pkg/crypto"
 	// "github.com/parallelcointeam/duo/pkg/key"
 	// "github.com/parallelcointeam/duo/pkg/server/args"
 	"time"
@@ -42,7 +45,7 @@ func init() {
 
 // DB is the structure for encryptable wallet database
 type DB struct {
-	*jvzc.DB
+	*cete.DB
 	UnlockedUntil int64
 	updateCount   uint64
 	Net           string
@@ -57,7 +60,7 @@ type dB interface {
 	EraseMasterKey(int64) error
 	ErasePool(int64) error
 	EraseTx(Uint.U256)
-	Find(int, interface{}) (*jvzc.Range, error)
+	Find(int, interface{}) (*cete.Range, error)
 	Flush()
 	GetAccountCreditDebit(string) int64
 	GetBalance() float64
@@ -95,7 +98,7 @@ type dB interface {
 // NewDB creates a new DB and opens it - if it already exists it just opens it
 func NewDB(path string) (db *DB, err error) {
 	db = new(DB)
-	db.DB, _ = jvzc.Open(path)
+	db.DB, _ = cete.Open(path)
 	db.UnlockedUntil = time.Now().Unix()
 	return db, err
 }
