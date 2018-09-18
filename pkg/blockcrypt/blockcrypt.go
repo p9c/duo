@@ -24,14 +24,21 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 	switch {
 	case r == nil:
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)
+		fallthrough
 	case p == nil:
 		r.SetStatus("no password given")
+	case r.Ciphertext != nil:
+		r.Ciphertext.Free()
 	case r.Password != nil:
 		r.Password.Free()
+		fallthrough
+	case r.Crypt != nil:
+		r.Crypt.Free()
 		fallthrough
 	default:
 		r.Password = p
 		var err error
+		r.Ciphertext = buf.NewSecure()
 		r.Ciphertext.Val, err = memguard.NewMutableRandom(32)
 		if r.SetStatusIf(err); err != nil {
 			return r
@@ -44,10 +51,14 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 		case n != 12:
 			r.SetStatus("did not get requested 12 random bytes")
 		default:
+			r.IV = buf.NewBytes()
 			r.IV.Copy(&bb)
 			r.Iterations = Bench(time.Second)
 			var C *buf.Secure
 			C, err = Gen(r.Password, r.IV, r.Iterations)
+			if r.SetStatusIf(err); err != nil {
+				return r
+			}
 			var block cipher.Block
 			block, err = aes.NewCipher(C.Val.Buffer())
 			if r.SetStatusIf(err); err != nil {
@@ -62,6 +73,7 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 			if r.SetStatusIf(err); err != nil {
 				return r
 			}
+			r.Crypt = buf.NewBytes()
 			r.Crypt.Copy(&c)
 			r.Unlocked = true
 			r.Ciphertext.Free()
@@ -108,7 +120,9 @@ func (r *BlockCrypt) LoadCrypt(crypt *[]byte, iv *[]byte, iterations int) *Block
 		case r.GCM != nil:
 			r.GCM = nil
 		default:
+			r.IV = buf.NewBytes()
 			r.IV.Copy(iv)
+			r.Crypt = buf.NewBytes()
 			r.Crypt.Copy(crypt)
 			r.Iterations = iterations
 			r.UnsetStatus()
@@ -128,7 +142,7 @@ func (r *BlockCrypt) Unlock(pass *buf.Secure) *BlockCrypt {
 	default:
 		r.Password = pass
 		r.Unlocked = true
-		r.UnsetStatus()
+		r.decryptCrypt()
 	}
 	return r
 }
@@ -169,6 +183,10 @@ func (r *BlockCrypt) decryptCrypt() *BlockCrypt {
 	if r.SetStatusIf(err); err != nil {
 		return r
 	}
+	if r.Ciphertext != nil {
+		r.Ciphertext.Free()
+	}
+	r.Ciphertext = buf.NewSecure()
 	r.Ciphertext.Copy(&c)
 	for i := range c {
 		c[i] = 0
@@ -226,7 +244,7 @@ func (r *BlockCrypt) Encrypt(buf *[]byte) (out *[]byte) {
 	case r.GCM == nil:
 		r.SetStatus("cipher was not found")
 	default:
-		o := (*r.GCM).Seal(nil, *buf, *r.IV.Bytes(), nil)
+		o := (*r.GCM).Seal(nil, *r.IV.Bytes(), *buf, nil)
 		out = &o
 	}
 	return
@@ -245,7 +263,7 @@ func (r *BlockCrypt) Decrypt(buf *[]byte) (out *[]byte) {
 	case r.GCM == nil:
 		r.SetStatus("cipher was not found")
 	default:
-		o, err := (*r.GCM).Open(nil, *buf, *r.IV.Bytes(), nil)
+		o, err := (*r.GCM).Open(nil, *r.IV.Bytes(), *buf, nil)
 		if r.SetStatusIf(err); err == nil {
 			out = &o
 		}
