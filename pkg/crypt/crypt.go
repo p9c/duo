@@ -53,9 +53,9 @@ func (r *Crypt) Get() (out proto.Buffer) {
 		r = r.SetStatus(er.NilRec).(*Crypt)
 		out = buf.NewSecure()
 	case r.BC == nil:
-		out = buf.NewBytes().Copy(r.Byte.Byte())
+		out = buf.NewByte().Copy(r.Byte.Bytes())
 	default:
-		out = buf.NewSecure().Copy(r.BC.Decrypt(r.Byte()))
+		out = buf.NewSecure().Copy(r.BC.Decrypt(r.Bytes()))
 	}
 	return out
 }
@@ -65,10 +65,10 @@ func (r *Crypt) Put(in proto.Buffer) *Crypt {
 	switch {
 	case r == nil:
 		r = r.SetStatus(er.NilRec).(*Crypt)
-	case r.BlockCrypt == nil:
-		r.Crypt.Copy(in.Byte())
+	case r.BC == nil:
+		r.Copy(in.Bytes())
 	default:
-		r.Crypt = in.Copy(r.Encrypt(in.Byte())).(*buf.Byte)
+		r.Copy(r.BC.Encrypt(in.Bytes()))
 	}
 	return r
 }

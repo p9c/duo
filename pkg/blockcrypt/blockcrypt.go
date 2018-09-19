@@ -52,7 +52,7 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 		case err != nil:
 			r.SetStatusIf(err)
 		default:
-			r.IV = buf.NewBytes()
+			r.IV = buf.NewByte()
 			r.IV.Copy(&bb)
 			r.Iterations = Bench(time.Second)
 			var C *buf.Secure
@@ -74,7 +74,7 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 			if r.SetStatusIf(err); err != nil {
 				return r
 			}
-			r.Crypt = buf.NewBytes()
+			r.Crypt = buf.NewByte()
 			r.Crypt.Copy(&c)
 			r.Unlocked = true
 			r.Ciphertext.Free()
@@ -121,9 +121,9 @@ func (r *BlockCrypt) LoadCrypt(crypt *[]byte, iv *[]byte, iterations int) *Block
 		case r.GCM != nil:
 			r.GCM = nil
 		default:
-			r.IV = buf.NewBytes()
+			r.IV = buf.NewByte()
 			r.IV.Copy(iv)
-			r.Crypt = buf.NewBytes()
+			r.Crypt = buf.NewByte()
 			r.Crypt.Copy(crypt)
 			r.Iterations = iterations
 			r.UnsetStatus()

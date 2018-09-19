@@ -10,7 +10,7 @@ import (
 )
 
 // Gen takes a password and a random 12 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext that is used to encrypt and decrypt the ciphertext from the crypt
-func Gen(p *buf.Secure, iv *buf.Bytes, iterations int) (C *buf.Secure, err error) {
+func Gen(p *buf.Secure, iv *buf.Byte, iterations int) (C *buf.Secure, err error) {
 	if p == nil {
 		return nil, errors.New("nil password")
 	}
@@ -71,7 +71,7 @@ func Bench(t time.Duration) (iter int) {
 	P := buf.NewSecure().Copy(&pp).(*buf.Secure)
 	p := *P.Bytes()
 	ivv := make([]byte, 12)
-	iv := buf.NewBytes().Copy(&ivv).(*buf.Bytes)
+	iv := buf.NewByte().Copy(&ivv).(*buf.Byte)
 	Buf := make([]byte, P.Len()+iv.Len())
 	for i := range p {
 		Buf[i] = p[i]

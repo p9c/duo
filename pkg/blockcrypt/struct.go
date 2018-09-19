@@ -7,10 +7,10 @@ import (
 
 // BlockCrypt stores the state of a GCM AES cipher for encrypting up to 4Gb of data
 type BlockCrypt struct {
-	Crypt           *buf.Bytes
+	Crypt           *buf.Byte
 	Password        *buf.Secure
 	Ciphertext      *buf.Secure
-	IV              *buf.Bytes
+	IV              *buf.Byte
 	Iterations      int
 	GCM             *cipher.AEAD
 	Unlocked, Armed bool
