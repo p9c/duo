@@ -13,9 +13,6 @@ import (
 	"strings"
 )
 
-// Secure is a simple single byte
-type Secure proto.Secure
-
 // NewSecure creates a new Secure
 func NewSecure() *Secure {
 	r := new(Secure)
@@ -87,6 +84,22 @@ func (r *Secure) Free() proto.Buffer {
 		r.Val.Destroy()
 	}
 	r.Val = nil
+	return r
+}
+
+// Rand creates a secure buffer containing cryptographically secure random bytes
+func (r *Secure) Rand(length int) *Secure {
+	if r == nil {
+		r = NewSecure().SetStatus(er.NilRec).(*Secure)
+	}
+	if r.Val != nil {
+		r.Val.Destroy()
+	}
+	var err error
+	r.Val, err = memguard.NewMutableRandom(length)
+	if r.SetStatusIf(err); err != nil {
+		return r
+	}
 	return r
 }
 

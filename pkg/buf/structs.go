@@ -1,18 +1,11 @@
-package proto
+package buf
 
 import (
 	"github.com/awnumar/memguard"
 )
 
-// Byte is a simple single byte
+// Byte is a simple byte slice
 type Byte struct {
-	Val    *byte
-	Status string
-	Coding string
-}
-
-// Bytes is a simple byte slice
-type Bytes struct {
 	Val    *[]byte
 	Status string
 	Coding string

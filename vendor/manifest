@@ -58,6 +58,24 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/glycerine/fast-elliptic-curve-p256/ecdsa",
+			"repository": "https://github.com/glycerine/fast-elliptic-curve-p256",
+			"vcs": "git",
+			"revision": "503d3dc9582881ce9d291c01d77fb464b7f8222c",
+			"branch": "master",
+			"path": "/ecdsa",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/glycerine/fast-elliptic-curve-p256/elliptic",
+			"repository": "https://github.com/glycerine/fast-elliptic-curve-p256",
+			"vcs": "git",
+			"revision": "503d3dc9582881ce9d291c01d77fb464b7f8222c",
+			"branch": "master",
+			"path": "elliptic",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/golang/protobuf/proto",
 			"repository": "https://github.com/golang/protobuf",
 			"vcs": "git",

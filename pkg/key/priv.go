@@ -1,144 +1,101 @@
 package key
 
 import (
-	"crypto/ecdsa"
-	"encoding/hex"
-	"github.com/anaskhan96/base58check"
-	"github.com/awnumar/memguard"
-	"github.com/parallelcointeam/duo/pkg/Uint"
-	"github.com/parallelcointeam/duo/pkg/ec"
+	"github.com/parallelcointeam/duo/pkg/crypt"
+	"github.com/parallelcointeam/duo/pkg/proto"
+	"gitlab.com/parallelcoin/duo/pkg/buf"
 )
 
-// In memory store for a private key (includes the public key)
+// Priv is a private key, stored in a Crypt
 type Priv struct {
-	*Pub
-	priv []byte
+	crypt.Crypt
+	valid      bool
+	compressed bool
 }
 
-// Creates a new private key from random bytes
-func NewPriv() (p Priv, err error) {
-	var k *memguard.LockedBuffer
-	k, err = memguard.NewMutableRandom(32)
-	priv, pub := ec.PrivKeyFromBytes(ec.S256(), k.Buffer())
-	p.SetPub(*pub)
-	p.Pub.Compress()
-	k.Copy(priv.Serialize())
-	p.Set(k)
-	return
+// NewPriv creates a new Priv
+func NewPriv() *Priv {
+	return new(Priv)
 }
 
-// Creates a new private key from a raw secret in a LockedBuffer
-func NewPrivFromBytes(key *memguard.LockedBuffer) (p *Priv) {
-	p.Set(key)
-	return
+// IsValid returns true if the Priv is currently valid
+func (r *Priv) IsValid() bool {
+	return r.valid
 }
 
-type priv interface {
-	Clear()
-	Bytes() memguard.LockedBuffer
-	Size() int
-	Invalidate()
-	IsValid() bool
-	Set(*Priv) bool
-	GetPub() *Pub
-	Sign(Uint.U256, []byte) bool
-	SignCompact(Uint.U256, []byte) bool
-	Verify(hash Uint.U256, S []byte)
-	ToBase58Check() string
+// IsCompressed returns true if the Priv is currently compressed
+func (r *Priv) IsCompressed() bool {
+	return r.compressed
 }
 
-// Zeroes out all of the contents of the priv and detaches from the unlock cipher
-func (p *Priv) Clear() {
-	for i := range p.priv {
-		p.priv[i] = 0
-	}
-	p.pub.X.SetBytes(make([]byte, 32))
-	p.pub.Y.SetBytes(make([]byte, 32))
-}
-
-// Returns the full private key as a byte slice
-func (p *Priv) Bytes() (B memguard.LockedBuffer) {
-	b, _ := memguard.NewMutableFromBytes(p.priv)
-	B.Copy(b.Buffer())
-	return
-}
-
-// Returns the size of the key
-func (p *Priv) Size() int {
-	if p.invalid {
-		return 0
-	}
-	return 65
-}
-
-// Marks the invalid flag true and wipes all the data
-func (p *Priv) Invalidate() {
-	p.Clear()
-	p.invalid = true
-}
-
-// Returns true if key is valid
-func (p *Priv) IsValid() bool {
-	return !p.invalid
-}
-
-// Sets the private key of a Priv from the unencrypted bytes
-func (p *Priv) Set(b *memguard.LockedBuffer) {
-	// TODO: encrypt key and generate Pub from unencrypted source
-	encrypted := b.Buffer()
-	p.priv = encrypted
-}
-
-// GetPub returns a copy of the public key
-func (p *Priv) GetPub() (P *Pub) {
-	if !p.invalid {
-		P = new(Pub)
-		P.SetPub(p.pub)
-	}
-	return
-}
-
-// Sign a 256 bit hash
-func (p *Priv) Sign(hash Uint.U256) (b []byte, err error) {
-	// TODO: need to decrypt private key before signing
-	// if sig, err := p.priv.Sign(hash.ToBytes()); err == nil {
-	// 	return sig.Serialize(), err
-	// }
-	return
-}
-
-// SignCompact makes a compact signature on a 256 bit hash
-func (p *Priv) SignCompact(hash Uint.U256) (sig Uint.U256, err error) {
-	return //ec.SignCompact(ec.S256(), p.priv, hash.ToBytes(), p.compressed)
-}
-
-// Verify a signature on a hash
-func (p *Priv) Verify(hash Uint.U256, S []byte) (key *Pub, err error) {
-	var sig *ec.Signature
-	if sig, err = ec.ParseSignature(S, ec.S256()); err != nil {
-		return
+// Invalidate zeroes the key and marks it invalid
+func (r *Priv) Invalidate() *Priv {
+	if r == nil {
+		r = NewPriv()
 	} else {
-		var keyEC *ec.PublicKey
-		keyEC, _, err = p.Recover(hash, S)
-		if !ecdsa.Verify(keyEC.ToECDSA(), hash.Bytes(), sig.R, sig.S) {
-			key = nil
-		}
-		key.SetPub(*keyEC)
-		return
+		r.Zero().Free()
 	}
+	r.valid = false
 }
 
-// Recover public key from a signature, identify if it was compressed
-func (p *Priv) Recover(hash Uint.U256, S []byte) (key *ec.PublicKey, compressed bool, err error) {
-	key, compressed, err = ec.RecoverCompact(ec.S256(), S, hash.Bytes())
+// SetCompress sets the key to generate compressed public keys
+func (r *Priv) SetCompress() *Priv {
+	r.compressed = true
+	return r
+}
+
+// UnsetCompress sets the key to generate uncompressed public keys
+func (r *Priv) UnsetCompress() *Priv {
+	r.compressed = false
+	return r
+}
+
+// Bytes returns the buffer via the Get function of the Crypt
+func (r *Priv) Bytes() (out *[]byte) {
+	out = r.Crypt.Get().Bytes()
 	return
 }
 
-// ToBase58Check returns a private key encoded in base58check with the network specified prefix
-func (p *Priv) ToBase58Check(net string) (b58 string, err error) {
-	// TODO: decrypt key first
-	decrypted := p.priv
-	h := hex.EncodeToString(decrypted)
-	b58, err = base58check.Encode(B58prefixes[net]["privkey"], h)
-	return
+// Copy stores the input buffer using the Put function of the Crypt
+func (r *Priv) Copy(in *[]byte) proto.Buffer {
+	b := buf.NewSecure().Copy(in)
+	r.Crypt.Put(b)
+	b.Free()
+	return r
 }
+
+// Zero zeroes the key and marks it invalid
+func (r *Priv) Zero() proto.Buffer {
+	r.valid = false
+	r.Crypt.Crypt.Zero()
+	return r
+}
+
+// Free frees the crypt inside the Priv and marks it invalid
+func (r *Priv) Free() proto.Buffer {
+	r.valid = false
+	return r.Crypt.Crypt.Free()
+}
+
+// SetPrivKey loads a private key from raw bytes, and zeroes the input bytes
+func (r *Priv) SetPrivKey(priv *[]byte, compressed bool) *Priv {
+	r.Copy(priv)
+	for i := range *priv {
+		*priv[i] = 0
+	}
+	r.compressed = compressed
+	return r
+}
+
+// Make generates a new private key from random bytes
+func (r *Priv) Make() *Priv {
+	if r != nil {
+		r.Zero().Free()
+	}
+	R := buf.NewPriv().Rand(32)
+	return r
+}
+
+// GetEC returns the key in ec format
+
+// GetPubKey returns the derived public key from the private key

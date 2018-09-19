@@ -8,24 +8,20 @@ import (
 	"fmt"
 	"github.com/anaskhan96/base58check"
 	"github.com/parallelcointeam/duo/pkg/proto"
+	"math/big"
 	"strings"
 )
-
-// Byte is a simple single byte
-type Byte proto.Byte
 
 var er = proto.Errors
 
 // NewByte creates a new Byte
 func NewByte() *Byte {
 	r := new(Byte)
-	b := byte(0)
-	r.Val = &b
-	r.Coding = "decimal"
+	r.Coding = "hex"
 	return r
 }
 
-// Bytes returns the byte as a slice with one
+// Bytes returns a pointer to the buffer
 func (r *Byte) Bytes() (out *[]byte) {
 	switch {
 	case r == nil:
@@ -33,15 +29,14 @@ func (r *Byte) Bytes() (out *[]byte) {
 		fallthrough
 	case r.Val == nil:
 		r = NewByte().SetStatus(er.NilBuf).(*Byte)
-		fallthrough
+		out = &[]byte{}
 	default:
-		b := []byte{*r.Val}
-		out = &b
+		out = r.Val
 	}
 	return
 }
 
-// Copy copies the first byte from a given pointer to a byte slice
+// Copy copies the byte from a provided byte slice to a new buffer
 func (r *Byte) Copy(in *[]byte) proto.Buffer {
 	switch {
 	case r == nil:
@@ -52,23 +47,27 @@ func (r *Byte) Copy(in *[]byte) proto.Buffer {
 	case len(*in) == 0:
 		r.SetStatus(er.ZeroLen)
 	case len(*in) > 0:
-		b := byte((*in)[0])
-		val := &b
-		r.Val = val
+		b := make([]byte, len(*in))
+		for i := range *in {
+			b[i] = (*in)[i]
+		}
+		r.Val = &b
 	}
 	return r
 }
 
-// Zero makes the value zero
+// Zero writes zeroes to the byte slice
 func (r *Byte) Zero() proto.Buffer {
 	switch {
 	case r == nil:
 		r = NewByte().SetStatus(er.NilRec).(*Byte)
 	case r.Val == nil:
 		r = NewByte().SetStatus(er.NilBuf).(*Byte)
-		fallthrough
 	default:
-		*r.Val = 0
+		b := *r.Val
+		for i := range b {
+			b[i] = 0
+		}
 	}
 	return r
 }
@@ -105,7 +104,7 @@ func (r *Byte) SetCoding(in string) proto.Coder {
 		}
 	}
 	if found != true {
-		r.Coding = "decimal"
+		r.Coding = "hex"
 	} else {
 		r.Coding = in
 	}
@@ -114,22 +113,18 @@ func (r *Byte) SetCoding(in string) proto.Coder {
 
 // ListCodings is a
 func (r *Byte) ListCodings() (out *[]string) {
-	if r == nil {
-		r = NewByte().SetStatus(er.NilRec).(*Byte)
-	}
 	out = &proto.StringCodings
 	return
 }
 
-// Freeze is a
+// Freeze returns a json format struct of the data
 func (r *Byte) Freeze() (out *[]byte) {
 	if r == nil {
-		r = NewByte()
-		r.SetStatus("nil receiver")
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
 	}
 	s := []string{
 		`{"Val":`,
-		`` + fmt.Sprint(*r.Val) + `,`,
+		`"` + r.String() + `",`,
 		`"Status":`,
 		`"` + r.Status + `",`,
 		`"Coding":`,
@@ -197,6 +192,58 @@ func (r *Byte) OK() bool {
 	return r.Status == ""
 }
 
+// SetElem is a
+func (r *Byte) SetElem(index int, in interface{}) proto.Array {
+	switch {
+	case r == nil:
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+	case r.Val == nil:
+		r.SetStatus(er.NilBuf)
+	case index > r.Len():
+		r.SetStatus(er.OutOfBounds)
+	default:
+		switch in.(type) {
+		case *byte:
+			(*r.Val)[index] = *in.(*byte)
+		default:
+			r.SetStatus(er.InvalidType)
+		}
+	}
+	return r
+}
+
+// GetElem is a
+func (r *Byte) GetElem(index int) (out interface{}) {
+	var byt byte
+	switch {
+	case r == nil:
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+		out = &byt
+	case r.Val == nil:
+		r.SetStatus(er.NilBuf)
+		out = &byt
+	case index > r.Len():
+		r.SetStatus(er.OutOfBounds)
+		out = &byt
+	default:
+		out = &(*r.Val)[index]
+	}
+	return
+}
+
+// Len is a
+func (r *Byte) Len() int {
+	if r == nil {
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+		return -1
+	}
+	if r.Val == nil {
+		r.SetStatus(er.NilBuf)
+		return -1
+	}
+	return len(*r.Val)
+}
+
 // Error implements the Error interface
 func (r *Byte) Error() string {
 	if r == nil {
@@ -215,27 +262,32 @@ func (r *Byte) String() string {
 	}
 	r.UnsetStatus()
 	switch r.Coding {
-	case "bytes":
-		return fmt.Sprint([]byte{*r.Val})
-	case "string":
-		return string([]byte{*r.Val})
-	case "decimal":
+	case "byte":
 		return fmt.Sprint(*r.Val)
+	case "string":
+		return string(*r.Val)
+	case "decimal":
+		bi := big.NewInt(0)
+		bi.SetBytes(*r.Val)
+		return fmt.Sprint(bi)
 	case "hex":
-		return hex.EncodeToString([]byte{*r.Val})
+		return hex.EncodeToString(*r.Val)
 	case "base32":
-		return base32.StdEncoding.EncodeToString([]byte{*r.Val})
+		return base32.StdEncoding.EncodeToString(*r.Val)
 	case "base58check":
-		s, err := base58check.Encode("00", hex.EncodeToString([]byte{*r.Val}))
+		b := *r.Val
+		pre := hex.EncodeToString(b[0:0])
+		body := hex.EncodeToString(b[1:])
+		s, err := base58check.Encode(pre, body)
 		r.SetStatusIf(err)
 		return s
 	case "base64":
-		dst := make([]byte, 8)
-		base64.StdEncoding.Encode(dst, []byte{*r.Val, 0, 0, 0})
+		dst := make([]byte, len(*r.Val)*4)
+		base64.StdEncoding.Encode(dst, *r.Val)
 		return string(dst)
 	default:
 		r.SetStatus("unrecognised coding")
-		r.SetCoding("decimal")
-		return fmt.Sprint(*r.Val)
+		r.SetCoding("hex")
+		return hex.EncodeToString(*r.Val)
 	}
 }
