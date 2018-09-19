@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/crypt"
 	"github.com/parallelcointeam/duo/pkg/proto"
@@ -28,7 +29,7 @@ func (r *Priv) IsValid() bool {
 	return r.valid
 }
 
-// IsCompressed returns true if the Priv is currently compressed
+// IsCompressed returns true if the Priv is currently producing compressed public keys
 func (r *Priv) IsCompressed() bool {
 	return r.compressed
 }
@@ -44,14 +45,29 @@ func (r *Priv) Invalidate() *Priv {
 	return r
 }
 
-// SetCompress sets the key to generate compressed public keys
-func (r *Priv) SetCompress() *Priv {
+// Compress compresses the public key
+func (r *Priv) Compress() *Priv {
+	var prefix byte
+	x, y := elliptic.Unmarshal(elliptic.P256(), *r.Pub.Bytes())
+	yb := y.Bytes()[0]
+	if 1&yb == 1 {
+		prefix = 3
+	} else {
+		prefix = 2
+	}
 	r.compressed = true
+	b := append([]byte{prefix}, x.Bytes()...)
+	r.Pub.Copy(&b)
 	return r
 }
 
-// UnsetCompress sets the key to generate uncompressed public keys
-func (r *Priv) UnsetCompress() *Priv {
+// Uncompress compresses key pair
+func (r *Priv) Uncompress() *Priv {
+	priv, err := x509.MarshalECPrivateKey(r.GetEC())
+	if r.SetStatusIf(err); err != nil {
+		return r
+	}
+	r.Copy(&priv)
 	r.compressed = false
 	return r
 }
@@ -118,7 +134,7 @@ func (r *Priv) GetEC() (priv *ecdsa.PrivateKey) {
 	x, y := elliptic.Unmarshal(elliptic.P256(), *r.Crypt.Bytes())
 	bi := big.NewInt(0)
 	bi.SetBytes(*r.Bytes())
-	r.Bytes()
+	// r.Bytes()
 	return &ecdsa.PrivateKey{
 		PublicKey: ecdsa.PublicKey{
 			Curve: elliptic.P256(), X: x, Y: y},

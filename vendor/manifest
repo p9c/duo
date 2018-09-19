@@ -50,6 +50,15 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/btcsuite/btcd/btcec",
+			"repository": "https://github.com/btcsuite/btcd",
+			"vcs": "git",
+			"revision": "cff30e1d23fc9e800b2b5b4b41ef1817dda07e9f",
+			"branch": "master",
+			"path": "/btcec",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/fsnotify/fsnotify",
 			"repository": "https://github.com/fsnotify/fsnotify",
 			"vcs": "git",
