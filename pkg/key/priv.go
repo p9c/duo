@@ -69,6 +69,10 @@ func (r *Priv) Free() proto.Buffer {
 
 // SetKey loads a private key from raw bytes, and zeroes the input bytes of the private key
 func (r *Priv) SetKey(priv *[]byte, pub *[]byte) *Priv {
+	if r != nil {
+		r.Zero().Free()
+		r.pub.Zero().Free()
+	}
 	p := buf.NewByte().Copy(priv)
 	r.Put(p)
 	p.Zero().Free()
@@ -79,7 +83,7 @@ func (r *Priv) SetKey(priv *[]byte, pub *[]byte) *Priv {
 	return r
 }
 
-// Make generates a new private key from random bytes. By default it uses compressed format for the public key
+// Make generates a new private key from random bytes. By default it uses compressed format for the public key, to get another format append a further decompression or hybrid method invocation.
 func (r *Priv) Make() *Priv {
 	if r != nil {
 		r.Zero().Free()

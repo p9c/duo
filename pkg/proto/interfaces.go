@@ -6,6 +6,7 @@ type Buffer interface {
 	Copy(in *[]byte) Buffer
 	Zero() Buffer
 	Free() Buffer
+	IsEqual(*[]byte) bool
 }
 
 // Coder is an interface for encoding raw bytes in various base number formats

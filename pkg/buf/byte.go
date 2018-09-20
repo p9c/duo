@@ -89,6 +89,31 @@ func (r *Byte) GetCoding() (out *string) {
 	return
 }
 
+// IsEqual returns true if a serialized public key matches this one, also in format (compressed is preferred in a distributed ledger due to size)
+func (r *Byte) IsEqual(p *[]byte) (is bool) {
+	switch {
+	case r == nil:
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+	case r.Len() != len(*p):
+		r.SetStatus("buffers are different length")
+	case r.Len() < 1:
+		r.SetStatus(er.ZeroLenBuf)
+		fallthrough
+	case len(*p) < 1:
+		r.SetStatus(er.ZeroLen)
+		fallthrough
+	default:
+		is = true
+		for i := range *p {
+			if (*p)[i] != (*r.Bytes())[i] {
+				is = false
+				break
+			}
+		}
+	}
+	return
+}
+
 // SetCoding is a
 func (r *Byte) SetCoding(in string) proto.Coder {
 	if r == nil {

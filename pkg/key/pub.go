@@ -101,28 +101,3 @@ func (r *Pub) ID() (out *buf.Byte) {
 	out.Copy(&o)
 	return
 }
-
-// IsEqual returns true if a serialized public key matches this one, also in format (compressed is preferred in a distributed ledger due to size)
-func (r *Pub) IsEqual(p *Pub) (is bool) {
-	switch {
-	case r == nil:
-		r = NewPub().SetStatus(er.NilRec).(*Pub)
-	case r.Len() != p.Len():
-		r.SetStatus("keys are different length")
-	case r.Len() < 1:
-		r.SetStatus(er.ZeroLen)
-		fallthrough
-	case p.Len() < 1:
-		p.SetStatus(er.ZeroLenBuf)
-		fallthrough
-	default:
-		is = true
-		for i := range *p.Bytes() {
-			if (*p.Bytes())[i] != (*r.Bytes())[i] {
-				is = false
-				break
-			}
-		}
-	}
-	return
-}
