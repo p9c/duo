@@ -13,10 +13,10 @@ var StringCodings = []string{
 
 // CommonErrors are common error values from library functions
 type CommonErrors struct {
-	NilRec, NilParam, NilBuf, ZeroLen, OutOfBounds, InvalidType string
+	NilRec, NilParam, NilBuf, ZeroLen, OutOfBounds, InvalidType, ZeroLenBuf string
 }
 
 // Errors gives a short readable reference to indicate a common error string
 var Errors = CommonErrors{
-	"nil receiver", "nil parameter", "nil buffer", "zero length parameter", "index out of bounds", "invalid type",
+	"nil receiver", "nil parameter", "nil buffer", "zero length parameter", "index out of bounds", "invalid type", "zero length buffer",
 }

@@ -12,8 +12,6 @@ import (
 	"strings"
 )
 
-var er = proto.Errors
-
 // NewByte creates a new Byte
 func NewByte() *Byte {
 	r := new(Byte)
