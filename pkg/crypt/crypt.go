@@ -24,8 +24,8 @@ func New() *Crypt {
 	return new(Crypt)
 }
 
-// New creates a new crypt out of the current one like a factory
-func (r *Crypt) New() (R *Crypt) {
+// CopyBC creates a new crypt out of the current one like a factory
+func (r *Crypt) CopyBC() (R *Crypt) {
 	R = New()
 	if r.BC != nil {
 		R.BC = r.BC
@@ -33,10 +33,10 @@ func (r *Crypt) New() (R *Crypt) {
 	return
 }
 
-// WithBlockCrypt loads a crypter into the Crypt
-func (r *Crypt) WithBlockCrypt(bc *blockcrypt.BlockCrypt) *Crypt {
+// WithBC loads a crypter into the Crypt
+func (r *Crypt) WithBC(bc *blockcrypt.BlockCrypt) *Crypt {
 	if r == nil {
-		r = New()
+		r = New().SetStatus(er.NilRec).(*Crypt)
 	}
 	if bc == nil {
 		r.SetStatus(er.NilParam)
