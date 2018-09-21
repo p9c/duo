@@ -80,15 +80,6 @@ func (r *Byte) Free() proto.Buffer {
 	return r
 }
 
-// GetCoding is a
-func (r *Byte) GetCoding() (out *string) {
-	if r == nil {
-		r = NewByte().SetStatus(er.NilRec).(*Byte)
-	}
-	out = &r.Coding
-	return
-}
-
 // IsEqual returns true if a serialized public key matches this one, also in format (compressed is preferred in a distributed ledger due to size)
 func (r *Byte) IsEqual(p *[]byte) (is bool) {
 	switch {
@@ -111,6 +102,15 @@ func (r *Byte) IsEqual(p *[]byte) (is bool) {
 			}
 		}
 	}
+	return
+}
+
+// GetCoding is a
+func (r *Byte) GetCoding() (out *string) {
+	if r == nil {
+		r = NewByte().SetStatus(er.NilRec).(*Byte)
+	}
+	out = &r.Coding
 	return
 }
 

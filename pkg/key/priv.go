@@ -2,7 +2,6 @@ package key
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/buf"
@@ -160,10 +159,12 @@ func (r *Priv) Sign(h *[]byte) (out *Sig) {
 	if r.SetStatusIf(err); err != nil {
 		return
 	}
-	s := sig.Serialize()
-	fmt.Println(s)
-	out = NewSig()
-	out.Copy(&s)
+	if sig != nil {
+		s := sig.Serialize()
+		out = NewSig()
+		out.Copy(&s)
+		out.mh.Copy(h)
+	}
 	return
 }
 
@@ -182,6 +183,7 @@ func (r *Priv) SignCompact(h *[]byte) (out *Sig) {
 	if sig != nil {
 		out = NewSig()
 		out.Copy(&sig)
+		out.mh.Copy(h)
 	}
 	return
 }
