@@ -91,14 +91,14 @@ func (r *Secure) Free() proto.Buffer {
 func (r *Secure) IsEqual(p *[]byte) (is bool) {
 	switch {
 	case r == nil:
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-	case r.Len() != len(*p):
-		r.SetStatus("buffers are different length")
-	case r.Len() < 1:
-		r.SetStatus(er.ZeroLenBuf)
-		fallthrough
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
+	case p == nil:
+		r.SetStatus(er.NilParam)
 	case len(*p) < 1:
 		r.SetStatus(er.ZeroLen)
+	case r.Len() != len(*p):
+		r.SetStatus("buffers are different length")
 	default:
 		is = true
 		for i := range *p {

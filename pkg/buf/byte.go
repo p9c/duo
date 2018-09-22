@@ -40,12 +40,12 @@ func (r *Byte) Copy(in *[]byte) proto.Buffer {
 		r = NewByte()
 		r.SetStatus(er.NilRec)
 		fallthrough
+	case in == nil:
+		r.SetStatus(er.NilParam)
 	case len(*in) > 0:
 		v := make([]byte, len(*in))
 		copy(v, *in)
 		r.Val = &v
-	case in == nil:
-		r.SetStatus(er.NilParam)
 	case len(*in) == 0:
 		r.SetStatus(er.ZeroLen)
 	}
@@ -82,15 +82,14 @@ func (r *Byte) Free() proto.Buffer {
 func (r *Byte) IsEqual(p *[]byte) (is bool) {
 	switch {
 	case r == nil:
-		r = NewByte().SetStatus(er.NilRec).(*Byte)
-	case r.Len() != len(*p):
-		r.SetStatus("buffers are different length")
-	case r.Len() < 1:
-		r.SetStatus(er.ZeroLenBuf)
-		fallthrough
+		r = NewByte()
+		r.SetStatus(er.NilRec)
+	case p == nil:
+		r.SetStatus(er.NilParam)
 	case len(*p) < 1:
 		r.SetStatus(er.ZeroLen)
-		fallthrough
+	case r.Len() != len(*p):
+		r.SetStatus("buffers are different length")
 	default:
 		is = true
 		for i := range *p {
@@ -283,7 +282,7 @@ func (r *Byte) String() string {
 	}
 	r.UnsetStatus()
 	switch r.Coding {
-	case "byte":
+	case "bytes":
 		return fmt.Sprint(*r.Val)
 	case "string":
 		return string(*r.Val)

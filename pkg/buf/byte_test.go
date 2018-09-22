@@ -8,9 +8,9 @@ import (
 
 func TestBytes(t *testing.T) {
 	test := []byte("Test String")
-	a := NewBytes()
-	b := new(Bytes)
-	var c *Bytes
+	a := NewByte()
+	b := new(Byte)
+	var c *Byte
 	c.SetStatus("test")
 	c.SetStatusIf(errors.New("test"))
 	c.UnsetStatus()
@@ -80,11 +80,24 @@ func TestBytes(t *testing.T) {
 	c.Thaw(out)
 	fmt.Println(c.String())
 	test = []byte("Test String")
-	f := NewBytes()
+	f := NewByte()
 	f.Copy(&test)
 	_ = f.GetElem(14)
 	f.SetElem(14, byt)
 	_ = f.GetElem(1)
 	f.SetElem(1, byt)
 	f.SetElem(1, &[]byte{})
+	fmt.Println(f.Free())
+	fmt.Println(f.Bytes())
+	fmt.Println(f.IsEqual(f.Bytes()))
+	fmt.Println(a.IsEqual(a.Bytes()))
+	fmt.Println(a.IsEqual(&[]byte{}))
+	fmt.Println(a.IsEqual(nil))
+	fmt.Println(c.IsEqual(nil))
+	bt := &[]byte{100, 112, 134, 234, 22, 151}
+	fmt.Println(a.IsEqual(bt))
+	a.Copy(bt)
+	fmt.Println(a.IsEqual(a.Bytes()))
+	ct := &[]byte{100, 112, 134, 234, 22, 51}
+	fmt.Println(a.IsEqual(ct))
 }
