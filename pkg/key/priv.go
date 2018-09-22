@@ -10,17 +10,22 @@ import (
 )
 
 // NewPriv creates a new Priv
-func NewPriv() *Priv {
-	return new(Priv)
+func NewPriv() (priv *Priv) {
+	priv = new(Priv)
+	priv.Crypt = crypt.New()
+	priv.pub = NewPub()
+	return
 }
 
 // WithBC copies in the reference to a BlockCrypt to enable encryption
 func (r *Priv) WithBC(bc *blockcrypt.BlockCrypt) *Priv {
-	if r == nil {
+	switch {
+	case r == nil:
 		r = NewPriv()
 		r.SetStatus(er.NilRec)
+	default:
+		r.Crypt = crypt.New().WithBC(bc)
 	}
-	r.Crypt = *crypt.New().WithBC(bc)
 	return r
 }
 
@@ -63,8 +68,7 @@ func (r *Priv) Bytes() (out *[]byte) {
 // Copy stores the input buffer using the Put function of the Crypt
 func (r *Priv) Copy(in *[]byte) proto.Buffer {
 	b := buf.NewByte().Copy(in)
-	r.Put(b)
-	b.Zero().Free()
+	r.Crypt.Put(b)
 	return r
 }
 
@@ -73,12 +77,11 @@ func (r *Priv) Zero() proto.Buffer {
 	if r == nil {
 		r = NewPriv()
 		r.SetStatus(er.NilRec)
-		return r
-	}
-	r.valid = false
-	r.Crypt.Zero()
-	if r.pub != nil {
-		r.pub.Zero()
+	} else {
+		r.Crypt.Free()
+		if r.pub != nil {
+			r.pub.Zero()
+		}
 	}
 	r.valid = false
 	return r
@@ -86,8 +89,17 @@ func (r *Priv) Zero() proto.Buffer {
 
 // Free frees the crypt inside the Priv and marks it invalid
 func (r *Priv) Free() proto.Buffer {
+	if r == nil {
+		r = NewPriv()
+		r.SetStatus(er.NilRec)
+	} else {
+		r.Crypt.Free()
+		if r.pub != nil {
+			r.pub.Free()
+		}
+	}
 	r.valid = false
-	return r.Crypt.Free()
+	return r
 }
 
 // SetKey loads a private key from raw bytes, and zeroes the input bytes of the private key
@@ -96,9 +108,7 @@ func (r *Priv) SetKey(priv *[]byte, pub *[]byte) *Priv {
 		r.Zero().Free()
 		r.pub.Zero().Free()
 	}
-	p := buf.NewByte().Copy(priv)
-	r.Put(p)
-	p.Zero().Free()
+	r.Copy(priv)
 	for i := range *priv {
 		(*priv)[i] = 0
 	}
@@ -109,21 +119,18 @@ func (r *Priv) SetKey(priv *[]byte, pub *[]byte) *Priv {
 
 // Make generates a new private key from random bytes. By default it uses compressed format for the public key, to get another format append a further decompression or hybrid method invocation.
 func (r *Priv) Make() *Priv {
-	if r != nil {
-		r.Zero().Free()
-	} else {
+	if r == nil {
 		r = NewPriv()
 	}
 	priv, err := btcec.NewPrivateKey(btcec.S256())
-	if r.SetStatusIf(err); err != nil {
-		return r
+	if r.SetStatusIf(err); err == nil {
+		pr := priv.Serialize()
+		r.Crypt.Put(buf.NewByte().Copy(&pr))
+		pub := priv.PubKey().SerializeCompressed()
+		r.pub = NewPub()
+		r.pub.Copy(&pub)
+		r.valid = true
 	}
-	pr := priv.Serialize()
-	r.Copy(&pr)
-	pub := priv.PubKey().SerializeCompressed()
-	r.pub = NewPub()
-	r.pub.Copy(&pub)
-	r.valid = true
 	return r
 }
 
@@ -156,14 +163,13 @@ func (r *Priv) Sign(h *[]byte) (out *Sig) {
 	}
 	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), *r.Bytes())
 	sig, err := priv.Sign(*h)
-	if r.SetStatusIf(err); err != nil {
-		return
-	}
-	if sig != nil {
-		s := sig.Serialize()
-		out = NewSig()
-		out.Copy(&s)
-		out.mh.Copy(h)
+	if r.SetStatusIf(err); err == nil {
+		if sig != nil {
+			s := sig.Serialize()
+			out = NewSig()
+			out.Byte = out.Copy(&s).(*buf.Byte)
+			out.mh = buf.NewByte().Copy(h).(*buf.Byte)
+		}
 	}
 	return
 }
@@ -177,13 +183,22 @@ func (r *Priv) SignCompact(h *[]byte) (out *Sig) {
 	}
 	pk, _ := btcec.PrivKeyFromBytes(btcec.S256(), *r.Bytes())
 	sig, err := btcec.SignCompact(btcec.S256(), pk, *h, true)
-	if r.SetStatusIf(err); err != nil {
-		return
-	}
-	if sig != nil {
-		out = NewSig()
-		out.Copy(&sig)
-		out.mh.Copy(h)
+	if r.SetStatusIf(err); err == nil {
+		if sig != nil {
+			out = NewSig()
+			out.Byte = out.Copy(&sig).(*buf.Byte)
+			out.mh.Copy(h)
+		}
 	}
 	return
+}
+
+// GetID returns the hash160 ID of the public key
+func (r *Priv) GetID() proto.ID {
+	if r == nil {
+		r = NewPriv()
+		r.SetStatus(er.NilRec)
+		return ""
+	}
+	return NewID(r.pub.Bytes())
 }

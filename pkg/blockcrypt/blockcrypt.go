@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"github.com/awnumar/memguard"
 	"github.com/parallelcointeam/duo/pkg/buf"
+	"github.com/parallelcointeam/duo/pkg/kdf"
 	"github.com/parallelcointeam/duo/pkg/proto"
 	"time"
 )
-
-var er = proto.Errors
 
 // New creates a new, empty BlockCrypt
 func New() *BlockCrypt {
@@ -54,9 +53,9 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 		default:
 			r.IV = buf.NewByte()
 			r.IV.Copy(&bb)
-			r.Iterations = Bench(time.Second)
+			r.Iterations = kdf.Bench(time.Second)
 			var C *buf.Secure
-			C, err = Gen(r.Password, r.IV, r.Iterations)
+			C, err = kdf.Gen(r.Password, r.IV, r.Iterations)
 			if r.SetStatusIf(err); err != nil {
 				return r
 			}
@@ -168,7 +167,7 @@ func (r *BlockCrypt) decryptCrypt() *BlockCrypt {
 	if r.Ciphertext != nil {
 		r.Ciphertext.Free()
 	}
-	passCiphertext, err := Gen(r.Password, r.IV, r.Iterations)
+	passCiphertext, err := kdf.Gen(r.Password, r.IV, r.Iterations)
 	if r.SetStatusIf(err); err != nil {
 		return r
 	}

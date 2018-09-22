@@ -1,4 +1,4 @@
-package blockcrypt
+package kdf
 
 import (
 	"crypto/rand"

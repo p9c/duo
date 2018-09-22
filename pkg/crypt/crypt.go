@@ -15,13 +15,15 @@ var er = proto.Errors
 
 // Crypt is a generic structure for storing bytes encrypted and reading them to a another buffer, using a BlockCrypt AES-GCM 256 cipher
 type Crypt struct {
+	*buf.Byte
 	BC *blockcrypt.BlockCrypt
-	buf.Byte
 }
 
 // New returns a new, empty Crypt
 func New() *Crypt {
-	return new(Crypt)
+	r := new(Crypt)
+	r.Byte = buf.NewByte()
+	return r
 }
 
 // CopyBC creates a new crypt out of the current one like a factory
@@ -36,7 +38,8 @@ func (r *Crypt) CopyBC() (R *Crypt) {
 // WithBC loads a crypter into the Crypt
 func (r *Crypt) WithBC(bc *blockcrypt.BlockCrypt) *Crypt {
 	if r == nil {
-		r = New().SetStatus(er.NilRec).(*Crypt)
+		r = New()
+		r.SetStatus(er.NilRec)
 	}
 	if bc == nil {
 		r.SetStatus(er.NilParam)
@@ -50,7 +53,8 @@ func (r *Crypt) WithBC(bc *blockcrypt.BlockCrypt) *Crypt {
 func (r *Crypt) Get() (out proto.Buffer) {
 	switch {
 	case r == nil:
-		r = r.SetStatus(er.NilRec).(*Crypt)
+		r = New()
+		r.SetStatus(er.NilRec)
 		out = buf.NewSecure()
 	case r.BC == nil:
 		out = buf.NewByte().Copy(r.Byte.Bytes())
@@ -64,11 +68,13 @@ func (r *Crypt) Get() (out proto.Buffer) {
 func (r *Crypt) Put(in proto.Buffer) *Crypt {
 	switch {
 	case r == nil:
-		r = r.SetStatus(er.NilRec).(*Crypt)
+		r = New()
+		r.SetStatus(er.NilRec)
+		fallthrough
 	case r.BC == nil:
-		r.Copy(in.Bytes())
+		r.Byte.Copy(in.Bytes())
 	default:
-		r.Copy(r.BC.Encrypt(in.Bytes()))
+		r.Byte.Copy(r.BC.Encrypt(in.Bytes()))
 	}
 	return r
 }

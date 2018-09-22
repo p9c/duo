@@ -21,13 +21,12 @@ func NewByte() *Byte {
 
 // Bytes returns a pointer to the buffer
 func (r *Byte) Bytes() (out *[]byte) {
+	out = &[]byte{}
 	switch {
 	case r == nil:
 		r = NewByte().SetStatus(er.NilRec).(*Byte)
-		fallthrough
 	case r.Val == nil:
 		r = NewByte().SetStatus(er.NilBuf).(*Byte)
-		out = &[]byte{}
 	default:
 		out = r.Val
 	}
@@ -38,18 +37,17 @@ func (r *Byte) Bytes() (out *[]byte) {
 func (r *Byte) Copy(in *[]byte) proto.Buffer {
 	switch {
 	case r == nil:
-		r = NewByte().SetStatus(er.NilRec).(*Byte)
+		r = NewByte()
+		r.SetStatus(er.NilRec)
 		fallthrough
+	case len(*in) > 0:
+		v := make([]byte, len(*in))
+		copy(v, *in)
+		r.Val = &v
 	case in == nil:
 		r.SetStatus(er.NilParam)
 	case len(*in) == 0:
 		r.SetStatus(er.ZeroLen)
-	case len(*in) > 0:
-		b := make([]byte, len(*in))
-		for i := range *in {
-			b[i] = (*in)[i]
-		}
-		r.Val = &b
 	}
 	return r
 }

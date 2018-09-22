@@ -5,23 +5,75 @@ import (
 	"github.com/parallelcointeam/duo/pkg/proto"
 )
 
-// Store is a keychain for public and private keys
-type Store struct {
-	BC     *blockcrypt.BlockCrypt
-	privs  map[ID]*Priv
-	pubs   map[ID]*Pub
-	Status string
-}
-
 // NewStore creates a new Store
 func NewStore() *Store {
-	return new(Store)
+	r := new(Store)
+	r.privs = make(map[proto.ID]*Priv)
+	r.pubs = make(map[proto.ID]*Pub)
+	return r
+}
+
+// AddPriv adds a new private key to the store
+func (r *Store) AddPriv(priv *Priv) *Store {
+	switch {
+	case r == nil:
+		r = NewStore()
+		r.SetStatus(er.NilRec)
+	case priv == nil:
+		r.SetStatus(er.NilParam)
+	default:
+		id := priv.GetID()
+		if _, ok := r.privs[id]; ok {
+			r.SetStatus("priv already in store")
+		} else {
+			r.privs[id] = priv
+			r.UnsetStatus()
+		}
+	}
+	return r
+}
+
+// AddPub adds a new public key to the store
+func (r *Store) AddPub(pub *Pub) *Store {
+	if r == nil {
+		r = NewStore()
+		r.SetStatus(er.NilRec)
+	}
+	id := NewID(pub.Bytes())
+	if _, ok := r.privs[id]; ok {
+		r.SetStatus("pub already in as priv")
+	} else if _, ok := r.pubs[id]; ok {
+		r.SetStatus("pub already in store")
+	} else {
+		r.pubs[id] = pub
+		r.UnsetStatus()
+	}
+	return r
+}
+
+// Remove a key from the store by ID (address)
+func (r *Store) Remove(id proto.ID) *Store {
+	if r == nil {
+		r = NewStore()
+		r.SetStatus(er.NilRec)
+		return r
+	}
+	if _, ok := r.privs[id]; ok {
+		delete(r.privs, id)
+		return r.UnsetStatus().(*Store)
+	} else if _, ok := r.pubs[id]; ok {
+		delete(r.pubs, id)
+		return r.UnsetStatus().(*Store)
+	}
+	r.SetStatus("id not found")
+	return r
 }
 
 // Encrypt sets the store to encrypt private keys
 func (r *Store) Encrypt(bc *blockcrypt.BlockCrypt) *Store {
 	if r == nil {
-		r = NewStore().SetStatus(er.NilRec).(*Store)
+		r = NewStore()
+		r.SetStatus(er.NilRec)
 	} else {
 		for i := range r.privs {
 			r.privs[i].BC = bc
@@ -34,34 +86,34 @@ func (r *Store) Encrypt(bc *blockcrypt.BlockCrypt) *Store {
 // Decrypt sets the store to not encrypt private keys
 func (r *Store) Decrypt() *Store {
 	if r == nil {
-		r = NewStore().SetStatus(er.NilRec).(*Store)
+		r = NewStore()
+		r.SetStatus(er.NilRec)
 	} else {
 		for i := range r.privs {
 			tmp := r.privs[i].Bytes()
 			r.privs[i].BC = nil
 			r.privs[i].Copy(tmp)
 		}
+		r.UnsetStatus()
 	}
 	return r
 }
 
 // Find returns the key with matching ID as requested. The return type is Priv but if there is no private key the field is empty
-func (r *Store) Find(id *ID) (out *Priv) {
+func (r *Store) Find(id proto.ID) (out *Priv) {
 	if r == nil {
-		r = NewStore().SetStatus(er.NilRec).(*Store)
+		r = NewStore()
+		r.SetStatus(er.NilRec)
+		return &Priv{}
 	}
 	out = new(Priv)
-	for i := range r.privs {
-		if r.privs[i].IsEqual(id.Bytes()) {
-			out = r.privs[i]
-			return
-		}
+	I := proto.ID(id)
+	if _, ok := r.privs[I]; ok {
+		return r.privs[I]
 	}
-	for i := range r.pubs {
-		if r.pubs[i].IsEqual(id.Bytes()) {
-			out.pub = r.pubs[i]
-			return
-		}
+	if _, ok := r.pubs[I]; ok {
+		out.pub = r.pubs[I]
+		return
 	}
 	return
 }
@@ -69,7 +121,8 @@ func (r *Store) Find(id *ID) (out *Priv) {
 // SetStatus is a
 func (r *Store) SetStatus(s string) proto.Status {
 	if r == nil {
-		r = NewStore().SetStatus(er.NilRec).(*Store)
+		r = NewStore()
+		r.SetStatus(er.NilRec)
 	} else {
 		r.Status = s
 	}
@@ -79,7 +132,8 @@ func (r *Store) SetStatus(s string) proto.Status {
 // SetStatusIf is a
 func (r *Store) SetStatusIf(err error) proto.Status {
 	if r == nil {
-		r = NewStore().SetStatus(er.NilRec).(*Store)
+		r = NewStore()
+		r.SetStatus(er.NilRec)
 	} else {
 		if err != nil {
 			r.Status = err.Error()
@@ -91,7 +145,8 @@ func (r *Store) SetStatusIf(err error) proto.Status {
 // UnsetStatus is a
 func (r *Store) UnsetStatus() proto.Status {
 	if r == nil {
-		r = NewStore().SetStatus(er.NilRec).(*Store)
+		r = NewStore()
+		r.SetStatus(er.NilRec)
 	} else {
 		r.Status = ""
 	}
@@ -101,7 +156,8 @@ func (r *Store) UnsetStatus() proto.Status {
 // OK returns true if there is no error
 func (r *Store) OK() bool {
 	if r == nil {
-		r = NewStore().SetStatus(er.NilRec).(*Store)
+		r = NewStore()
+		r.SetStatus(er.NilRec)
 		return false
 	}
 	return r.Status == ""

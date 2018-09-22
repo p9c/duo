@@ -6,12 +6,6 @@ import (
 	"github.com/parallelcointeam/duo/pkg/hash160"
 )
 
-// Sig is a bitcoin EC signature
-type Sig struct {
-	buf.Byte
-	mh *buf.Byte
-}
-
 // NewSig creates a new signature
 func NewSig() (out *Sig) {
 	return new(Sig)
@@ -41,6 +35,20 @@ func (r *Sig) Recover(h *[]byte, addr *[]byte) (out *Pub) {
 		out.SetStatus(er.NilRec)
 		return
 	}
+	if h == nil {
+		r.SetStatus(er.NilParam)
+		out = NewPub()
+		out.SetStatus(er.NilParam)
+		return
+	}
+	if addr == nil {
+		r.SetStatus("no address given")
+		out = NewPub()
+		out.SetStatus("no address given")
+		return
+	}
+	r.mh.Copy(h)
+	r.addr.Copy(addr)
 	pub, _, err := btcec.RecoverCompact(btcec.S256(), *r.Bytes(), *h)
 	if pub != nil {
 		out = NewPub()
@@ -49,31 +57,39 @@ func (r *Sig) Recover(h *[]byte, addr *[]byte) (out *Pub) {
 		return
 	}
 	if r.SetStatusIf(err); err != nil {
-		var btcsig []byte
-		btcsig = (*r.Bytes())[4:37]
-		var prefix byte
-		if (*r.Bytes())[1] == 69 {
-			btcsig = append(btcsig[1:], (*r.Bytes())[39:]...)
-		} else {
-			btcsig = append(btcsig[:len(btcsig)-1], (*r.Bytes())[38:]...)
+		_, err := btcec.ParseSignature(*r.Byte.Bytes(), btcec.S256())
+		if r.SetStatusIf(err); err != nil {
+			out = NewPub()
+			out.SetStatus(err.Error())
+			return
 		}
-		btcsig = append([]byte{0}, btcsig...)
-		for prefix = 27; prefix < 35; prefix++ {
-			btcsig[0] = prefix
-			var comp bool
-			pub, comp, err = btcec.RecoverCompact(btcec.S256(), btcsig, *h)
-			if pub != nil {
-				var p []byte
-				out = NewPub()
-				if comp {
-					p = pub.SerializeCompressed()
-				} else {
-					p = pub.SerializeUncompressed()
-				}
-				ar := buf.NewByte().Copy(hash160.Sum(&p))
-				if ar.IsEqual(addr) {
-					out.Copy(&p)
-					return
+		if r.Byte.Len() > 65 {
+			var btcsig []byte
+			btcsig = (*r.Byte.Bytes())[4:37]
+			var prefix byte
+			if (*r.Bytes())[1] == 69 {
+				btcsig = append(btcsig[1:], (*r.Bytes())[39:]...)
+			} else {
+				btcsig = append(btcsig[:len(btcsig)-1], (*r.Bytes())[38:]...)
+			}
+			btcsig = append([]byte{0}, btcsig...)
+			for prefix = 27; prefix < 35; prefix++ {
+				btcsig[0] = prefix
+				var comp bool
+				pub, comp, err = btcec.RecoverCompact(btcec.S256(), btcsig, *h)
+				if pub != nil {
+					var p []byte
+					out = NewPub()
+					if comp {
+						p = pub.SerializeCompressed()
+					} else {
+						p = pub.SerializeUncompressed()
+					}
+					ar := buf.NewByte().Copy(hash160.Sum(&p))
+					if ar.IsEqual(addr) {
+						out.Copy(&p)
+						break
+					}
 				}
 			}
 		}
