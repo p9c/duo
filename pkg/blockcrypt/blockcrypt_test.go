@@ -37,9 +37,6 @@ func TestBlockCrypt(t *testing.T) {
 	if bytes.Compare(p, *ppp) != 0 {
 		t.Fatal("Did not correctly encrypt and decrypt")
 	}
-	Gen(nil, nil, 0)
-	Gen(nc.Password, nil, 0)
-	Gen(nc.Password, nc.IV, 0)
 	var ec *BlockCrypt
 	err := errors.New("")
 	ec.SetStatus("test")
@@ -94,4 +91,7 @@ func TestBlockCrypt(t *testing.T) {
 	bc.Decrypt(nil)
 	bc.Encrypt(&[]byte{})
 	bc.Decrypt(&[]byte{})
+	bc.GCM = nil
+	bc.Encrypt(&[]byte{1, 2, 3, 4, 5, 6, 7, 8})
+	bc.Decrypt(&[]byte{1, 2, 3, 4, 5, 6, 7, 8})
 }

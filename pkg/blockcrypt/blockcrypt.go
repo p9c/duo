@@ -40,45 +40,37 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 		var err error
 		r.Ciphertext = buf.NewSecure()
 		r.Ciphertext.Val, err = memguard.NewMutableRandom(32)
-		if r.SetStatusIf(err); err != nil {
-			return r
-		}
-		bb := make([]byte, 12)
-		n, err := rand.Read(bb)
-		switch {
-		case n != 12:
-			r.SetStatus("did not get requested 12 random bytes")
-		case err != nil:
-			r.SetStatusIf(err)
-		default:
-			r.IV = buf.NewByte()
-			r.IV.Copy(&bb)
-			r.Iterations = kdf.Bench(time.Second)
-			var C *buf.Secure
-			C, err = kdf.Gen(r.Password, r.IV, r.Iterations)
-			if r.SetStatusIf(err); err != nil {
-				return r
+		if r.SetStatusIf(err); err == nil {
+			bb := make([]byte, 12)
+			n, err := rand.Read(bb)
+			if r.SetStatusIf(err); n == 12 {
+				if err == nil {
+					r.IV = buf.NewByte()
+					r.IV.Copy(&bb)
+					r.Iterations = kdf.Bench(time.Second)
+					var C *buf.Secure
+					C, err = kdf.Gen(r.Password, r.IV, r.Iterations)
+					if r.SetStatusIf(err); err == nil {
+						var block cipher.Block
+						block, err = aes.NewCipher(C.Val.Buffer())
+						if r.SetStatusIf(err); err == nil {
+							var blockmode cipher.AEAD
+							blockmode, err = cipher.NewGCM(block)
+							if r.SetStatusIf(err); err == nil {
+								c := blockmode.Seal(nil, *r.IV.Bytes(), *r.Ciphertext.Bytes(), nil)
+								if r.SetStatusIf(err); err == nil {
+									r.Crypt = buf.NewByte()
+									r.Crypt.Copy(&c)
+									r.Unlocked = true
+									r.Ciphertext.Free()
+									r.Armed = false
+									r.UnsetStatus()
+								}
+							}
+						}
+					}
+				}
 			}
-			var block cipher.Block
-			block, err = aes.NewCipher(C.Val.Buffer())
-			if r.SetStatusIf(err); err != nil {
-				return r
-			}
-			var blockmode cipher.AEAD
-			blockmode, err = cipher.NewGCM(block)
-			if r.SetStatusIf(err); err != nil {
-				return r
-			}
-			c := blockmode.Seal(nil, *r.IV.Bytes(), *r.Ciphertext.Bytes(), nil)
-			if r.SetStatusIf(err); err != nil {
-				return r
-			}
-			r.Crypt = buf.NewByte()
-			r.Crypt.Copy(&c)
-			r.Unlocked = true
-			r.Ciphertext.Free()
-			r.Armed = false
-			r.UnsetStatus()
 		}
 	}
 	return r
@@ -172,24 +164,21 @@ func (r *BlockCrypt) decryptCrypt() *BlockCrypt {
 		return r
 	}
 	block, err := aes.NewCipher(*passCiphertext.Bytes())
-	if r.SetStatusIf(err); err != nil {
-		return r
-	}
-	blockmode, err := cipher.NewGCM(block)
-	if r.SetStatusIf(err); err != nil {
-		return r
-	}
-	c, err := blockmode.Open(nil, *r.IV.Bytes(), *r.Crypt.Bytes(), nil)
-	if r.SetStatusIf(err); err != nil {
-		return r
-	}
-	if r.Ciphertext != nil {
-		r.Ciphertext.Free()
-	}
-	r.Ciphertext = buf.NewSecure()
-	r.Ciphertext.Copy(&c)
-	for i := range c {
-		c[i] = 0
+	if r.SetStatusIf(err); err == nil {
+		blockmode, err := cipher.NewGCM(block)
+		if r.SetStatusIf(err); err == nil {
+			c, err := blockmode.Open(nil, *r.IV.Bytes(), *r.Crypt.Bytes(), nil)
+			if r.SetStatusIf(err); err == nil {
+				if r.Ciphertext != nil {
+					r.Ciphertext.Free()
+				}
+				r.Ciphertext = buf.NewSecure()
+				r.Ciphertext.Copy(&c)
+				for i := range c {
+					c[i] = 0
+				}
+			}
+		}
 	}
 	return r
 }
@@ -208,15 +197,13 @@ func (r *BlockCrypt) Arm() *BlockCrypt {
 	default:
 		r.decryptCrypt()
 		block, err := aes.NewCipher(*r.Ciphertext.Bytes())
-		if r.SetStatusIf(err); err != nil {
-			return r
+		if r.SetStatusIf(err); err == nil {
+			a, err := cipher.NewGCM(block)
+			if r.SetStatusIf(err); err == nil {
+				r.GCM = &a
+				r.Armed = true
+			}
 		}
-		a, err := cipher.NewGCM(block)
-		if r.SetStatusIf(err); err != nil {
-			return r
-		}
-		r.GCM = &a
-		r.Armed = true
 	}
 	return r
 }
