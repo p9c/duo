@@ -191,7 +191,7 @@ func (r *Pub) ID() (out *buf.Byte) {
 }
 
 // GetID returns the hash160 ID of the public key
-func (r *Pub) GetID() proto.ID {
+func (r *Pub) GetID() proto.Address {
 	if r == nil {
 		r = NewPub()
 		r.SetStatus(er.NilRec)

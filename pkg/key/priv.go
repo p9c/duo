@@ -113,11 +113,10 @@ func (r *Priv) SetKey(priv *[]byte, pub *[]byte) *Priv {
 	case r != nil:
 		r.Zero().Free()
 		r.pub.Zero().Free()
+		fallthrough
 	default:
-		r.Copy(priv)
-		for i := range *priv {
-			(*priv)[i] = 0
-		}
+		r.Crypt.Copy(priv)
+		proto.Zero(priv)
 		r.pub.Copy(pub)
 		r.valid = true
 	}
@@ -203,7 +202,7 @@ func (r *Priv) SignCompact(h *[]byte) (out *Sig) {
 }
 
 // GetID returns the hash160 ID of the public key
-func (r *Priv) GetID() proto.ID {
+func (r *Priv) GetID() proto.Address {
 	if r == nil {
 		r = NewPriv()
 		r.SetStatus(er.NilRec)

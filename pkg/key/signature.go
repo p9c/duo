@@ -49,7 +49,7 @@ func (r *Sig) Recover(h *[]byte, addr *[]byte) (out *Pub) {
 		return
 	}
 	r.mh.Copy(h)
-	r.addr = proto.ID(*addr)
+	r.addr = proto.Address(*addr)
 	pub, comp, err := btcec.RecoverCompact(btcec.S256(), *r.Bytes(), *h)
 	if pub != nil {
 		out = NewPub()
