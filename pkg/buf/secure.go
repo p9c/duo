@@ -32,6 +32,7 @@ func (r *Secure) Bytes() (out *[]byte) {
 	default:
 		b := r.Val.Buffer()
 		out = &b
+		r.UnsetStatus()
 	}
 	return
 }
@@ -47,16 +48,14 @@ func (r *Secure) Copy(in *[]byte) proto.Buffer {
 	case len(*in) == 0:
 		r.SetStatus(er.ZeroLen)
 	case len(*in) > 0:
-		B, err := memguard.NewMutable(len(*in))
-		r.SetStatusIf(err)
-		if r != nil {
-			b := B.Buffer()
-			for i := range *in {
-				b[i] = (*in)[i]
-			}
+		b := make([]byte, len(*in))
+		copy(b, *in)
+		B, err := memguard.NewMutableFromBytes(b)
+		if r.SetStatusIf(err).OK() {
 			r.Val = B
 		}
 	}
+	r.UnsetStatus()
 	return r
 }
 
@@ -70,20 +69,23 @@ func (r *Secure) Zero() proto.Buffer {
 	default:
 		r.Val.Wipe()
 	}
+	r.UnsetStatus()
 	return r
 
 }
 
 // Free is a
 func (r *Secure) Free() proto.Buffer {
-	if r == nil {
+	switch {
+	case r == nil:
 		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-	}
-	r.UnsetStatus()
-	if r.Val != nil {
+	case r.Val != nil:
 		r.Val.Destroy()
+		fallthrough
+	default:
+		r.Val = nil
+		r.UnsetStatus()
 	}
-	r.Val = nil
 	return r
 }
 
@@ -113,16 +115,16 @@ func (r *Secure) IsEqual(p *[]byte) (is bool) {
 
 // Rand creates a secure buffer containing cryptographically secure random bytes
 func (r *Secure) Rand(length int) *Secure {
-	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-	}
-	if r.Val != nil {
+	switch {
+	case r == nil:
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
+	case r.Val != nil:
 		r.Val.Destroy()
-	}
-	var err error
-	r.Val, err = memguard.NewMutableRandom(length)
-	if r.SetStatusIf(err); err != nil {
-		return r
+	default:
+		var err error
+		r.Val, err = memguard.NewMutableRandom(length)
+		r.SetStatusIf(err)
 	}
 	return r
 }
@@ -130,17 +132,20 @@ func (r *Secure) Rand(length int) *Secure {
 // GetCoding is a
 func (r *Secure) GetCoding() (out *string) {
 	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
 	}
 	out = &r.Coding
 	return
 }
 
-// SetCoding is a
+// SetCoding sets the encoding for the stringer
 func (r *Secure) SetCoding(in string) proto.Coder {
 	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
 	}
+	r.Coding = "hex"
 	found := false
 	for i := range proto.StringCodings {
 		if in == proto.StringCodings[i] {
@@ -148,18 +153,17 @@ func (r *Secure) SetCoding(in string) proto.Coder {
 			break
 		}
 	}
-	if found != true {
-		r.Coding = "hex"
-	} else {
+	if found {
 		r.Coding = in
 	}
 	return r
 }
 
-// ListCodings is a
+// ListCodings returns the set of codings available
 func (r *Secure) ListCodings() (out *[]string) {
 	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
 	}
 	out = &proto.StringCodings
 	return
@@ -168,7 +172,8 @@ func (r *Secure) ListCodings() (out *[]string) {
 // Freeze returns a json format struct of the data
 func (r *Secure) Freeze() (out *[]byte) {
 	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
 	}
 	s := []string{
 		`{"Val":`,
@@ -180,30 +185,31 @@ func (r *Secure) Freeze() (out *[]byte) {
 	}
 	b := []byte(strings.Join(s, ""))
 	out = &b
+	r.UnsetStatus()
 	return
 }
 
-// Thaw is a
+// Thaw turns a json representation back into a variable
 func (r *Secure) Thaw(in *[]byte) proto.Streamer {
 	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
 	}
 	out := NewSecure()
-	err := json.Unmarshal(*in, out)
-	out.SetStatusIf(err)
-	if r.Status != "" {
-		return r
+	if err := json.Unmarshal(*in, out); !out.SetStatusIf(err).OK() {
+		r.Zero()
+		r = out
 	}
-	r.Zero()
-	r = out
 	return r
 }
 
-// SetStatus is a
+// SetStatus sets the status of an object after an operation
 func (r *Secure) SetStatus(s string) proto.Status {
-	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-	} else {
+	switch {
+	case r == nil:
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
+	default:
 		r.Status = s
 	}
 	return r
@@ -211,21 +217,25 @@ func (r *Secure) SetStatus(s string) proto.Status {
 
 // SetStatusIf is a
 func (r *Secure) SetStatusIf(err error) proto.Status {
-	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-	} else {
-		if err != nil {
-			r.Status = err.Error()
-		}
+	switch {
+	case r == nil:
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
+	case err != nil:
+		r.Status = err.Error()
+	default:
+		r.UnsetStatus()
 	}
 	return r
 }
 
 // UnsetStatus is a
 func (r *Secure) UnsetStatus() proto.Status {
-	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-	} else {
+	switch {
+	case r == nil:
+		r = NewSecure()
+		r.Status = er.NilRec
+	default:
 		r.Status = ""
 	}
 	return r
@@ -234,8 +244,8 @@ func (r *Secure) UnsetStatus() proto.Status {
 // OK returns true if there is no error
 func (r *Secure) OK() bool {
 	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-		return false
+		r = NewSecure()
+		return r.SetStatus(er.NilRec).OK()
 	}
 	return r.Status == ""
 }
@@ -263,17 +273,15 @@ func (r *Secure) SetElem(index int, in interface{}) proto.Array {
 
 // GetElem is a
 func (r *Secure) GetElem(index int) (out interface{}) {
-	var byt byte
+	o := byte(0)
+	out = &o
 	switch {
 	case r == nil:
 		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-		out = &byt
 	case r.Val == nil:
 		r.SetStatus(er.NilBuf)
-		out = &byt
 	case index > r.Len():
 		r.SetStatus(er.OutOfBounds)
-		out = &byt
 	default:
 		out = &r.Val.Buffer()[index]
 	}
@@ -282,61 +290,66 @@ func (r *Secure) GetElem(index int) (out interface{}) {
 
 // Len is a
 func (r *Secure) Len() (length int) {
-	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
+	switch {
+	case r == nil:
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
 		return -1
-	}
-	if r.Val == nil {
+	case r.Val == nil:
 		r.SetStatus(er.NilBuf)
 		return -1
+	default:
+		return r.Val.Size()
 	}
-	return r.Val.Size()
 }
 
 // Error implements the Error interface
 func (r *Secure) Error() string {
 	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
 	}
 	return r.Status
 }
 
 // String implements the stringer, uses coding to determine how the string is contstructed
-func (r *Secure) String() string {
-	if r == nil {
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-	}
-	if r.Val == nil {
-		return ""
-	}
-	r.UnsetStatus()
-	switch r.Coding {
-	case "bytes":
-		return fmt.Sprint(*r.Val)
-	case "string":
-		return string(r.Val.Buffer())
-	case "decimal":
-		bi := big.NewInt(0)
-		bi.SetBytes(r.Val.Buffer())
-		return fmt.Sprint(bi)
-	case "hex":
-		return hex.EncodeToString(r.Val.Buffer())
-	case "base32":
-		return base32.StdEncoding.EncodeToString(r.Val.Buffer())
-	case "base58check":
-		b := r.Val.Buffer()
-		pre := hex.EncodeToString(b[0:0])
-		body := hex.EncodeToString(b[1:])
-		s, err := base58check.Encode(pre, body)
-		r.SetStatusIf(err)
-		return s
-	case "base64":
-		dst := make([]byte, r.Val.Size()*4)
-		base64.StdEncoding.Encode(dst, r.Val.Buffer())
-		return string(dst)
+func (r *Secure) String() (s string) {
+	switch {
+	case r == nil:
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
+	case r.Val == nil:
+		r.SetStatus(er.NilBuf)
 	default:
-		r.SetStatus("unrecognised coding")
-		r.SetCoding("decimal")
-		return fmt.Sprint(*r.Val)
+		switch r.Coding {
+		case "bytes":
+			s = fmt.Sprint(*r.Val)
+		case "string":
+			s = string(r.Val.Buffer())
+		case "decimal":
+			bi := big.NewInt(0)
+			bi.SetBytes(r.Val.Buffer())
+			s = fmt.Sprint(bi)
+		case "hex":
+			s = hex.EncodeToString(r.Val.Buffer())
+		case "base32":
+			s = base32.StdEncoding.EncodeToString(r.Val.Buffer())
+		case "base58check":
+			b := r.Val.Buffer()
+			pre := hex.EncodeToString(b[0:0])
+			body := hex.EncodeToString(b[1:])
+			var err error
+			s, err = base58check.Encode(pre, body)
+			r.SetStatusIf(err)
+		case "base64":
+			dst := make([]byte, r.Val.Size()*4)
+			base64.StdEncoding.Encode(dst, r.Val.Buffer())
+			s = string(dst)
+		default:
+			r.SetStatus("unrecognised coding")
+			r.SetCoding("decimal")
+			s = fmt.Sprint(*r.Val)
+		}
 	}
+	return s
 }

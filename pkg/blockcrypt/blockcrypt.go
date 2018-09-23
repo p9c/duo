@@ -4,7 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"fmt"
 	"github.com/awnumar/memguard"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/kdf"
@@ -25,16 +24,17 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 	case r == nil:
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)
 		fallthrough
-	case p == nil:
-		r.SetStatus("no password given")
 	case r.Ciphertext != nil:
 		r.Ciphertext.Free()
+		fallthrough
 	case r.Password != nil:
 		r.Password.Free()
 		fallthrough
 	case r.Crypt != nil:
 		r.Crypt.Free()
 		fallthrough
+	case p == nil:
+		r.SetStatus("no password given")
 	default:
 		r.Password = p
 		var err error
@@ -111,6 +111,7 @@ func (r *BlockCrypt) LoadCrypt(crypt *[]byte, iv *[]byte, iterations int) *Block
 			fallthrough
 		case r.GCM != nil:
 			r.GCM = nil
+			fallthrough
 		default:
 			r.IV = buf.NewByte()
 			r.IV.Copy(iv)
@@ -127,9 +128,10 @@ func (r *BlockCrypt) LoadCrypt(crypt *[]byte, iv *[]byte, iterations int) *Block
 func (r *BlockCrypt) Unlock(pass *buf.Secure) *BlockCrypt {
 	switch {
 	case r == nil:
-		r = New().SetStatus(er.NilRec).(*BlockCrypt)
+		r = New()
+		r.SetStatus(er.NilRec)
 	case r.Password != nil:
-		r.Password.Free()
+		r.Password.Zero().Free()
 		fallthrough
 	default:
 		r.Password = pass
@@ -145,7 +147,7 @@ func (r *BlockCrypt) Lock() *BlockCrypt {
 	case r == nil:
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)
 	case r.Password != nil:
-		r.Password.Free()
+		r.Password.Zero().Free()
 		r.Password = nil
 		r.Unlocked = false
 		fallthrough
@@ -160,22 +162,19 @@ func (r *BlockCrypt) decryptCrypt() *BlockCrypt {
 		r.Ciphertext.Free()
 	}
 	passCiphertext, err := kdf.Gen(r.Password, r.IV, r.Iterations)
-	if r.SetStatusIf(err); err != nil {
-		return r
-	}
-	block, err := aes.NewCipher(*passCiphertext.Bytes())
 	if r.SetStatusIf(err); err == nil {
-		blockmode, err := cipher.NewGCM(block)
+		block, err := aes.NewCipher(*passCiphertext.Bytes())
 		if r.SetStatusIf(err); err == nil {
-			c, err := blockmode.Open(nil, *r.IV.Bytes(), *r.Crypt.Bytes(), nil)
+			blockmode, err := cipher.NewGCM(block)
 			if r.SetStatusIf(err); err == nil {
-				if r.Ciphertext != nil {
-					r.Ciphertext.Free()
-				}
-				r.Ciphertext = buf.NewSecure()
-				r.Ciphertext.Copy(&c)
-				for i := range c {
-					c[i] = 0
+				c, err := blockmode.Open(nil, *r.IV.Bytes(), *r.Crypt.Bytes(), nil)
+				if r.SetStatusIf(err); err == nil {
+					if r.Ciphertext != nil {
+						r.Ciphertext.Free()
+					}
+					r.Ciphertext = buf.NewSecure()
+					r.Ciphertext.Copy(&c)
+					proto.Zero(&c)
 				}
 			}
 		}
@@ -233,6 +232,7 @@ func (r *BlockCrypt) Encrypt(buf *[]byte) (out *[]byte) {
 	default:
 		o := (*r.GCM).Seal(nil, *r.IV.Bytes(), *buf, nil)
 		out = &o
+		r.UnsetStatus()
 	}
 	return
 }
@@ -254,6 +254,7 @@ func (r *BlockCrypt) Decrypt(buf *[]byte) (out *[]byte) {
 		if r.SetStatusIf(err); err == nil {
 			out = &o
 		}
+		r.UnsetStatus()
 	}
 	return
 }
@@ -262,9 +263,10 @@ func (r *BlockCrypt) Decrypt(buf *[]byte) (out *[]byte) {
 
 // SetStatus sets the status of the crypt
 func (r *BlockCrypt) SetStatus(s string) proto.Status {
-	if r == nil {
+	switch {
+	case r == nil:
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)
-	} else {
+	default:
 		r.Status = s
 	}
 	return r
@@ -277,17 +279,20 @@ func (r *BlockCrypt) SetStatusIf(err error) proto.Status {
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)
 		fallthrough
 	case err != nil:
-		fmt.Println(err)
 		r.Status = err.Error()
+	default:
+		r.UnsetStatus()
 	}
 	return r
 }
 
 // UnsetStatus clears the error state
 func (r *BlockCrypt) UnsetStatus() proto.Status {
-	if r == nil {
-		r = New().SetStatus(er.NilRec).(*BlockCrypt)
-	} else {
+	switch {
+	case r == nil:
+		r = New()
+		r.SetStatus(er.NilRec)
+	default:
 		r.Status = ""
 	}
 	return r
@@ -296,7 +301,8 @@ func (r *BlockCrypt) UnsetStatus() proto.Status {
 // OK returns true if the status text is empty
 func (r *BlockCrypt) OK() bool {
 	if r == nil {
-		r = New().SetStatus(er.NilRec).(*BlockCrypt)
+		r = New()
+		r.SetStatus(er.NilRec)
 		return false
 	}
 	return r.Status == ""
@@ -307,7 +313,8 @@ func (r *BlockCrypt) OK() bool {
 // Error implemennts the Error() interface
 func (r *BlockCrypt) Error() string {
 	if r == nil {
-		r = New().SetStatus(er.NilRec).(*BlockCrypt)
+		r = New()
+		r.SetStatus(er.NilRec)
 	}
 	return r.Status
 }

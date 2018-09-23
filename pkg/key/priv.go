@@ -40,10 +40,11 @@ func (r *Priv) IsValid() bool {
 
 // Invalidate zeroes the key and marks it invalid
 func (r *Priv) Invalidate() *Priv {
-	if r == nil {
+	switch {
+	case r == nil:
 		r = NewPriv()
 		r.SetStatus(er.NilRec)
-	} else {
+	default:
 		r.Zero().Free()
 	}
 	r.valid = false
@@ -74,29 +75,33 @@ func (r *Priv) Copy(in *[]byte) proto.Buffer {
 
 // Zero zeroes the key and marks it invalid
 func (r *Priv) Zero() proto.Buffer {
-	if r == nil {
+	switch {
+	case r == nil:
 		r = NewPriv()
 		r.SetStatus(er.NilRec)
-	} else {
+	case r.pub != nil:
+		r.pub.Zero()
+		fallthrough
+	case r.Crypt != nil:
 		r.Crypt.Free()
-		if r.pub != nil {
-			r.pub.Zero()
-		}
+		fallthrough
+	default:
+		r.valid = false
 	}
-	r.valid = false
 	return r
 }
 
 // Free frees the crypt inside the Priv and marks it invalid
 func (r *Priv) Free() proto.Buffer {
-	if r == nil {
+	switch {
+	case r == nil:
 		r = NewPriv()
 		r.SetStatus(er.NilRec)
-	} else {
+	case r != nil:
 		r.Crypt.Free()
-		if r.pub != nil {
-			r.pub.Free()
-		}
+		fallthrough
+	case r.pub != nil:
+		r.pub.Free()
 	}
 	r.valid = false
 	return r
@@ -104,16 +109,18 @@ func (r *Priv) Free() proto.Buffer {
 
 // SetKey loads a private key from raw bytes, and zeroes the input bytes of the private key
 func (r *Priv) SetKey(priv *[]byte, pub *[]byte) *Priv {
-	if r != nil {
+	switch {
+	case r != nil:
 		r.Zero().Free()
 		r.pub.Zero().Free()
+	default:
+		r.Copy(priv)
+		for i := range *priv {
+			(*priv)[i] = 0
+		}
+		r.pub.Copy(pub)
+		r.valid = true
 	}
-	r.Copy(priv)
-	for i := range *priv {
-		(*priv)[i] = 0
-	}
-	r.pub.Copy(pub)
-	r.valid = true
 	return r
 }
 
@@ -122,8 +129,7 @@ func (r *Priv) Make() *Priv {
 	if r == nil {
 		r = NewPriv()
 	}
-	priv, err := btcec.NewPrivateKey(btcec.S256())
-	if r.SetStatusIf(err); err == nil {
+	if priv, err := btcec.NewPrivateKey(btcec.S256()); r.SetStatusIf(err).OK() {
 		pr := priv.Serialize()
 		r.Crypt.Put(buf.NewByte().Copy(&pr))
 		pub := priv.PubKey().SerializeCompressed()

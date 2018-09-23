@@ -3,16 +3,27 @@ package blockcrypt
 import (
 	"bytes"
 	"errors"
+	// "errors"
 	"fmt"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"testing"
 )
 
+func TestGenerate(t *testing.T) {
+	p := []byte("testingpassword123!")
+	pass := buf.NewSecure().Copy(&p).(*buf.Secure)
+	nc := New()
+	nc.Ciphertext = nil
+	nc.Generate(pass)
+	// nc.Generate(pass)
+	nc.Generate(nil)
+}
+
 func TestBlockCrypt(t *testing.T) {
 	bc := New()
 	p := []byte("testingpassword123!")
 	pass := buf.NewSecure().Copy(&p).(*buf.Secure)
-	bc.Generate(pass)
+	fmt.Println(bc.Generate(pass))
 	bc.Arm()
 	fmt.Println(p)
 	pp := bc.Encrypt(&p)
@@ -55,14 +66,6 @@ func TestBlockCrypt(t *testing.T) {
 	ec.Arm()
 	ec.Encrypt(nil)
 	ec.Decrypt(nil)
-	p = []byte("testingpassword123!")
-	pass = buf.NewSecure().Copy(&p).(*buf.Secure)
-	nc.Ciphertext = nil
-	nc.Generate(pass)
-	nc.Generate(pass)
-	nc.Generate(nil)
-	nc.Iterations = 0
-	nc.Generate(pass)
 	IV = bc.IV
 	Crypt = bc.Crypt
 	Iterations = bc.Iterations
@@ -94,4 +97,6 @@ func TestBlockCrypt(t *testing.T) {
 	bc.GCM = nil
 	bc.Encrypt(&[]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	bc.Decrypt(&[]byte{1, 2, 3, 4, 5, 6, 7, 8})
+	sc.Iterations = 0
+	sc.Arm()
 }

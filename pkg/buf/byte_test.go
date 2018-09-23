@@ -41,9 +41,9 @@ func TestBytes(t *testing.T) {
 	fmt.Println(d, a.Error())
 	c.Zero()
 	fmt.Println(c.Error())
-	a.Free()
-	fmt.Println(a.Error())
 	a.Zero()
+	fmt.Println(a.Error())
+	a.Free()
 	fmt.Println(a.Error())
 	c.Free()
 	fmt.Println(c.Error())
@@ -100,4 +100,6 @@ func TestBytes(t *testing.T) {
 	fmt.Println(a.IsEqual(a.Bytes()))
 	ct := &[]byte{100, 112, 134, 234, 22, 51}
 	fmt.Println(a.IsEqual(ct))
+	ij := []byte("invalid [] {}")
+	fmt.Println(NewByte().Thaw(&ij).(*Byte).String())
 }

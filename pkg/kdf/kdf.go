@@ -11,86 +11,71 @@ import (
 
 // Gen takes a password and a random 12 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext that is used to encrypt and decrypt the ciphertext from the crypt
 func Gen(p *buf.Secure, iv *buf.Byte, iterations int) (C *buf.Secure, err error) {
-	if p == nil {
-		return nil, errors.New("nil password")
-	}
-	if iv == nil {
-		return nil, errors.New("nil IV")
-	}
-	if iterations < 1 {
-		return nil, errors.New("iterations less than 1")
-	}
-	b := make([]byte, p.Len()+iv.Len())
-	b1 := buf.NewSecure().Copy(&b).(*buf.Secure)
-	if b1.OK() {
-		defer b1.Free()
-	} else {
-		return nil, errors.New(b1.Error())
-	}
-	bb := b1.Bytes()
-	B := *bb
-	pp := p.Bytes()
-	P := *pp
-	for i := range *pp {
-		B[i] = P[i]
-	}
-	for i := 0; i < iv.Len(); i++ {
-		B[i+p.Len()] = (*iv.Bytes())[i]
-	}
-	var blake hash.Hash
-	blake, err = blake2b.New384(B)
-	if err != nil {
-		return nil, err
-	}
-	last := blake.Sum(nil)
-	for i := 1; i < iterations; i++ {
-		N := len(last)
-		n, err := blake.Write(last)
-		if err != nil {
-			return nil, err
+	C = buf.NewSecure()
+	switch {
+	case p == nil:
+		err = errors.New("nil password")
+	case iv == nil:
+		err = errors.New("nil IV")
+	case iterations < 1:
+		err = errors.New("iterations less than 1")
+	default:
+		b := make([]byte, p.Len()+iv.Len())
+		b1 := buf.NewSecure()
+		b1.Copy(&b)
+		if !b1.OK() {
+			err = errors.New(b1.Error())
+		} else {
+			defer b1.Free()
+			var blake hash.Hash
+			blake, err = blake2b.New384(nil)
+			if err != nil {
+				return nil, err
+			}
+			blake.Write(*p.Bytes())
+			blake.Write(*b1.Bytes())
+			last := blake.Sum(nil)
+			for i := 1; i < iterations; i++ {
+				N := len(last)
+				n, err := blake.Write(last)
+				if err != nil {
+					return nil, err
+				}
+				if N != n {
+					return nil, errors.New("did not get all bytes from hash")
+				}
+				last = blake.Sum(nil)
+			}
+			b = make([]byte, 32)
+			C = buf.NewSecure().Copy(&b).(*buf.Secure)
+			c := *C.Bytes()
+			for i := range c {
+				c[i] = last[i]
+				last[i] = 0
+			}
 		}
-		if N != n {
-			return nil, errors.New("did not get all bytes from hash")
-		}
-		last = blake.Sum(B)
-	}
-	b = make([]byte, 32)
-	C = buf.NewSecure().Copy(&b).(*buf.Secure)
-	c := *C.Bytes()
-	for i := range c {
-		c[i] = last[i]
-		last[i] = 0
 	}
 	return
 }
 
 // Bench returns the number of iterations performed in a given time on the current hardware
 func Bench(t time.Duration) (iter int) {
-	pp := make([]byte, 16)
-	rand.Read(pp)
-	P := buf.NewSecure().Copy(&pp).(*buf.Secure)
-	p := *P.Bytes()
-	ivv := make([]byte, 12)
-	iv := buf.NewByte().Copy(&ivv).(*buf.Byte)
-	Buf := make([]byte, P.Len()+iv.Len())
-	for i := range p {
-		Buf[i] = p[i]
-	}
-	for i := 0; i < iv.Len(); i++ {
-		Buf[i+P.Len()] = (*iv.Bytes())[i]
-	}
+	p := make([]byte, 16)
+	rand.Read(p)
+	iv := make([]byte, 12)
+	rand.Read(iv)
 	var blake hash.Hash
-	blake, _ = blake2b.New384(Buf)
+	blake, _ = blake2b.New384(nil)
+	blake.Write(p)
+	blake.Write(iv)
 	timerChan := time.NewTimer(t).C
 	last := blake.Sum(nil)
 	iter = 1
 	for {
-		blake.Write(last)
-		last = blake.Sum(Buf)
+		last = blake.Sum(last)
 		iter++
 		select {
 		case <-timerChan:
-			P.Free()
 			return
 		default:
 		}

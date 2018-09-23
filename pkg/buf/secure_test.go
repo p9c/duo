@@ -104,4 +104,6 @@ func TestSecure(t *testing.T) {
 	fmt.Println(c.Free().(*Secure).Rand(0))
 	fmt.Println(a.Rand(23))
 	fmt.Println(a.Rand(23))
+	ij := []byte("invalid [] {}")
+	fmt.Println(NewByte().Thaw(&ij).(*Byte).String())
 }
