@@ -42,7 +42,9 @@ func (r *Byte) Copy(in *[]byte) proto.Buffer {
 		fallthrough
 	case in == nil:
 		r.SetStatus(er.NilParam)
-	case len(*in) > 0:
+	case len(*in) < 1:
+		r.SetStatus(er.NilParam)
+	default:
 		v := make([]byte, len(*in))
 		copy(v, *in)
 		r.Val = &v

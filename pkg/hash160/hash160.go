@@ -8,6 +8,8 @@ import (
 // Sum returns the result of sha256 and then ripemd160 on a message
 func Sum(message *[]byte) *[]byte {
 	h := sha256.Sum256(*message)
-	o := ripemd160.New().Sum(h[:])
-	return &o
+	o := ripemd160.New()
+	o.Write(h[:])
+	O := o.Sum(nil)
+	return &O
 }

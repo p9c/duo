@@ -161,14 +161,17 @@ func (r *Priv) Sign(h *[]byte) (out *Sig) {
 		r.SetStatus(er.NilRec)
 		return &Sig{}
 	}
-	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), *r.Bytes())
+	priv, pub := btcec.PrivKeyFromBytes(btcec.S256(), *r.Bytes())
 	sig, err := priv.Sign(*h)
 	if r.SetStatusIf(err); err == nil {
 		if sig != nil {
 			s := sig.Serialize()
 			out = NewSig()
-			out.Byte = out.Copy(&s).(*buf.Byte)
+			out.Copy(&s)
 			out.mh = buf.NewByte().Copy(h).(*buf.Byte)
+			p := pub.SerializeCompressed()
+			pp := NewPub().Copy(&p).(*Pub)
+			out.addr = pp.GetID()
 		}
 	}
 	return
@@ -186,7 +189,7 @@ func (r *Priv) SignCompact(h *[]byte) (out *Sig) {
 	if r.SetStatusIf(err); err == nil {
 		if sig != nil {
 			out = NewSig()
-			out.Byte = out.Copy(&sig).(*buf.Byte)
+			out.Copy(&sig)
 			out.mh.Copy(h)
 		}
 	}

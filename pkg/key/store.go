@@ -41,7 +41,7 @@ func (r *Store) AddPub(pub *Pub) *Store {
 	}
 	id := NewID(pub.Bytes())
 	if _, ok := r.privs[id]; ok {
-		r.SetStatus("pub already in as priv")
+		r.SetStatus("pub already in with priv")
 	} else if _, ok := r.pubs[id]; ok {
 		r.SetStatus("pub already in store")
 	} else {

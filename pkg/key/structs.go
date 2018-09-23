@@ -23,9 +23,9 @@ type Pub struct {
 
 // Sig is a bitcoin EC signature
 type Sig struct {
-	*buf.Byte
+	buf.Byte
 	mh   *buf.Byte
-	addr *buf.Byte
+	addr proto.ID
 }
 
 // Store is a keychain for public and private keys

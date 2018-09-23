@@ -4,6 +4,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/hash160"
+	"github.com/parallelcointeam/duo/pkg/proto"
 )
 
 // NewSig creates a new signature
@@ -48,11 +49,14 @@ func (r *Sig) Recover(h *[]byte, addr *[]byte) (out *Pub) {
 		return
 	}
 	r.mh.Copy(h)
-	r.addr.Copy(addr)
-	pub, _, err := btcec.RecoverCompact(btcec.S256(), *r.Bytes(), *h)
+	r.addr = proto.ID(*addr)
+	pub, comp, err := btcec.RecoverCompact(btcec.S256(), *r.Bytes(), *h)
 	if pub != nil {
 		out = NewPub()
-		p := pub.SerializeCompressed()
+		var p []byte
+		if comp {
+			p = pub.SerializeCompressed()
+		}
 		out.Copy(&p)
 		return
 	}

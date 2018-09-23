@@ -32,12 +32,12 @@ func TestCryptPrivSig(t *testing.T) {
 	fmt.Println(emptypriv.Zero())
 	fmt.Println(emptypriv.Make())
 	fmt.Println(emptypriv.AsEC())
-	fmt.Println(priv.AsEC())
 	fmt.Println(emptypriv.PubKey())
-	fmt.Println(priv.PubKey())
+	fmt.Println("priv as EC", priv.AsEC())
+	fmt.Println(priv.PubKey().Bytes())
 	privB, pubB := priv.Bytes(), priv.pub.Bytes()
 	fmt.Println(privB, pubB)
-	fmt.Println(priv.Invalidate())
+	fmt.Println(priv.Invalidate().Bytes())
 	fmt.Println(priv.SetKey(privB, pubB))
 	out := priv.Bytes()
 	fmt.Println("key as plaintext", *out)
@@ -47,8 +47,10 @@ func TestCryptPrivSig(t *testing.T) {
 	priv.WithBC(BC)
 	var oldaddress *[]byte
 	for i := 0; i < 8; i++ {
-		priv.Make()
+		fmt.Print("\nROUND", i, "\n")
+		priv = priv.Make()
 		address = hash160.Sum(priv.pub.Bytes())
+		fmt.Println("address", address)
 		origPub = priv.PubKey().Bytes()
 		if i%2 == 0 {
 			priv.pub.Decompress()
@@ -56,7 +58,9 @@ func TestCryptPrivSig(t *testing.T) {
 			priv.pub.Compress()
 		}
 		message := []byte("Testing signatures")
+		fmt.Println("message", message)
 		messageHash := sha256.Sum256(message)
+		fmt.Println("hash   ", messageHash)
 		mh := messageHash[:]
 		full := priv.Sign(&mh)
 		compact := priv.SignCompact(&mh)
@@ -129,10 +133,10 @@ func TestPriv(t *testing.T) {
 	fmt.Println(priv.pub.AsCompressed().Bytes())
 	fmt.Println(priv.pub.AsUncompressed().Bytes())
 	fmt.Println(priv.pub.AsHybrid().Bytes())
-	fmt.Println(priv.pub.Zero())
-	fmt.Println(priv.pub.AsCompressed())
-	fmt.Println(priv.pub.AsUncompressed())
-	fmt.Println(priv.pub.AsHybrid())
+	fmt.Println(priv.pub.Zero().Bytes())
+	fmt.Println(priv.pub.AsCompressed().Bytes())
+	fmt.Println(priv.pub.AsUncompressed().Bytes())
+	fmt.Println(priv.pub.AsHybrid().Bytes())
 	fmt.Println(priv.pub.AsEC())
 	priv.pub.Byte = nil
 	fmt.Println(priv.pub.Free())
