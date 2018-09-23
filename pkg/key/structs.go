@@ -25,13 +25,13 @@ type Pub struct {
 type Sig struct {
 	buf.Byte
 	mh   *buf.Byte
-	addr proto.ID
+	addr proto.Address
 }
 
 // Store is a keychain for public and private keys
 type Store struct {
 	BC     *blockcrypt.BlockCrypt
-	privs  map[proto.ID]*Priv
-	pubs   map[proto.ID]*Pub
+	privs  map[proto.Address]*Priv
+	pubs   map[proto.Address]*Pub
 	Status string
 }

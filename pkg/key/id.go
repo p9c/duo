@@ -6,7 +6,7 @@ import (
 )
 
 // NewID creates an ID out of the bytes of an object, used for address (public key ID) and script ID
-func NewID(bytes *[]byte) (out proto.ID) {
-	out = proto.ID(*hash160.Sum(bytes))
+func NewID(bytes *[]byte) (out proto.Address) {
+	out = proto.Address(*hash160.Sum(bytes))
 	return
 }

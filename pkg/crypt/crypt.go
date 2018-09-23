@@ -37,13 +37,13 @@ func (r *Crypt) CopyBC() (R *Crypt) {
 
 // WithBC loads a crypter into the Crypt
 func (r *Crypt) WithBC(bc *blockcrypt.BlockCrypt) *Crypt {
-	if r == nil {
+	switch {
+	case r == nil:
 		r = New()
 		r.SetStatus(er.NilRec)
-	}
-	if bc == nil {
+	case bc == nil:
 		r.SetStatus(er.NilParam)
-	} else {
+	default:
 		r.BC = bc
 	}
 	return r
