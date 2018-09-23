@@ -43,13 +43,11 @@ func (r *Byte) Copy(in *[]byte) proto.Buffer {
 	case in == nil:
 		r.SetStatus(er.NilParam)
 	case len(*in) < 1:
-		r.SetStatus(er.NilParam)
+		r.SetStatus(er.ZeroLen)
 	default:
 		v := make([]byte, len(*in))
 		copy(v, *in)
 		r.Val = &v
-	case len(*in) == 0:
-		r.SetStatus(er.ZeroLen)
 	}
 	return r
 }
