@@ -6,3 +6,4 @@
 
 Work in progress...
 
+v0.0.0 is not a release but there is lots inside it, and lots more coming!
