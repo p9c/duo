@@ -39,8 +39,10 @@ type Array interface {
 
 // H160 is a 20 byte hash created with hash160.Sum that is used as a key for scripts and addresses
 type H160 interface {
-	GetID() ID
+	GetAddress() Address
 }
 
-// ID is used as the key for searching for public keys (addresses also), scripts, transactions and blocks, generated using the hash160 function, which is a sha256 followed by ripemd160.
-type ID string
+// H256 is a 32 byte hash created with SHA256 that is used for transactions, blocks, and message hashes
+type H256 interface {
+	GetHash() Hash
+}
