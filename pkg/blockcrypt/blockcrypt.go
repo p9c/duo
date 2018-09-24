@@ -80,7 +80,7 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 // LoadCrypt loads a crypt, IV and iterations as from the file where the encryption is used.
 //
 // The password still needs to be loaded to unlock the crypt and the crypt unlocked to arm the BlockCrypt. This function clears any existing data in the Blockcrypt.
-func (r *BlockCrypt) LoadCrypt(crypt *[]byte, iv *[]byte, iterations int) *BlockCrypt {
+func (r *BlockCrypt) LoadCrypt(crypt *[]byte, iv *[]byte, iterations int64) *BlockCrypt {
 	switch {
 	case r == nil:
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)

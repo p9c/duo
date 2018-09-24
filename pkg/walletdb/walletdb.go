@@ -1,108 +1,182 @@
 package walletdb
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/dgraph-io/badger"
 	"github.com/mitchellh/go-homedir"
+	"github.com/parallelcointeam/duo/pkg/blockcrypt"
+	"github.com/parallelcointeam/duo/pkg/buf"
+	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/walletdb/entries"
 )
 
-// NewWalletDB creates a new walletdb.DB
-func NewWalletDB() (db *DB) {
-	db = new(DB)
-	opts := badger.DefaultOptions
+// NewWalletDB creates a new walletdb.DB. Path, BaseDir, ValueDir the order of how the variadic options will be processed to override thte defaults
+func NewWalletDB(params ...string) (db *DB) {
 	var err error
-	db.Path, err = homedir.Dir()
-	if err != nil {
-		db.Status = err.Error()
-		return db
+	db = &DB{
+		BaseDir:  DefaultBaseDir,
+		ValueDir: DefaultValueDir,
 	}
-	db.DB, err = badger.Open(opts)
-	db.Status = err.Error()
-	if err != nil {
-		db.Status = err.Error()
-		return db
+	if db.Path, err = homedir.Dir(); err != nil {
+		db.SetStatus(err.Error())
+		return
 	}
-	return db
+	db.Options = &badger.DefaultOptions
+	l := len(params)
+	if l > 0 {
+		switch {
+		case l >= 1:
+			db.Path = params[0]
+		case l >= 2:
+			db.BaseDir = params[1]
+		case l >= 3:
+			db.ValueDir = params[3]
+		}
+	}
+	db.Options.Dir = db.Path + "/" + db.BaseDir
+	db.Options.ValueDir = db.Path + "/" + db.BaseDir + "/" + db.ValueDir
+	if db.DB, err = badger.Open(*db.Options); !db.SetStatusIf(err).OK() {
+		return
+	}
+	return
 }
 
-// WriteName is a
+// Close shuts down a wallet database
+func (r *DB) Close() {
+	r.DB.Close()
+}
+
+// WriteName writes a name entry to the database
 func (r *DB) WriteName() {}
 
+// EraseName removes a name entry from the database
 func (r *DB) EraseName() {}
 
-// ReadTx is a
+// ReadTx reads a transaction entry from the database
 func (r *DB) ReadTx() {}
 
-// WriteTx is a
+// WriteTx writes a transaction entry from the database
 func (r *DB) WriteTx() {}
 
-// EraseTx is a
+// EraseTx deletes a transaction entry from the database
 func (r *DB) EraseTx() {}
 
-// WriteKey is a
+// WriteKey writes a key entry to the database
 func (r *DB) WriteKey() {}
 
-// WriteMasterKey is a
-func (r *DB) WriteMasterKey() {}
+// ReadMasterKeys returns all of the masterkey entries in the database
+func (r *DB) ReadMasterKeys() (BC []*bc.BlockCrypt) {
+	if r == nil {
+		return nil
+	}
+	opt := badger.DefaultIteratorOptions
+	opt.PrefetchValues = false
+	err := r.DB.View(func(txn *badger.Txn) error {
+		iter := txn.NewIterator(opt)
+		defer iter.Close()
+		for iter.Rewind(); iter.Valid(); iter.Next() {
+			item := iter.Item()
+			key := item.Key()
+			fmt.Println("key", key)
+			value, _ := item.Value()
+			fmt.Println("value", value)
+			table := key[:8]
+			if bytes.Compare(table, rec.Tables["MasterKey"]) == 0 {
+				idx := key[8:16]
+				crypt := value[:48]
+				cryptHash := proto.Hash64(&crypt)
+				if bytes.Compare(idx, *cryptHash) != 0 {
+					r.SetStatus("index of crypt was incorrect")
+				}
+				iv := value[48:60]
+				iterations := value[60:68]
+				var it int64
+				proto.BytesToInt(&it, &iterations)
+				BC = append(BC,
+					&bc.BlockCrypt{
+						Crypt:      buf.NewByte().Copy(&crypt).(*buf.Byte),
+						IV:         buf.NewByte().Copy(&iv).(*buf.Byte),
+						Iterations: it,
+					})
+			}
+		}
+		return nil
+	})
+	r.SetStatusIf(err)
+	return
+}
 
-// WriteScript is a
+// WriteMasterKey adds a master key entry to the database
+func (r *DB) WriteMasterKey(BC *bc.BlockCrypt) *DB {
+	if BC.Crypt.Len() < 1 {
+		r.SetStatus("zero length crypt")
+		return r
+	}
+	out := proto.Hash64(BC.Crypt.Bytes())
+	key := append(rec.Tables["MasterKey"], *out...)
+	value := *BC.Crypt.Bytes()
+	value = append(value, *BC.IV.Bytes()...)
+	value = append(value, *proto.IntToBytes(BC.Iterations)...)
+	txn := r.DB.NewTransaction(true)
+	err := txn.Set(key, value)
+	r.SetStatusIf(err)
+	txn.Commit(nil)
+	return r
+}
+
+// EraseMasterKey deletes a masterkey entry from the database
+func (r *DB) EraseMasterKey() {
+
+}
+
+// WriteScript writes a script entry to the database
 func (r *DB) WriteScript() {}
 
-// WriteBestBlock is a
+// EraseScript deletes a script entry from the database
+func (r *DB) EraseScript() {}
+
+// WriteBestBlock updates the best block entry to the current head
 func (r *DB) WriteBestBlock() {}
 
-// WriteDefaultKey is a
+// WriteDefaultKey updates the default key used by interfaces when receiving payments
 func (r *DB) WriteDefaultKey() {}
 
-// ReadBestBlock is a
-func (r *DB) ReadBestBlock() {}
-
-// ReadDefaultKey is a
+// ReadDefaultKey returns the current set default key
 func (r *DB) ReadDefaultKey() {}
 
-// ReadPool is a
+// ReadBestBlock gets the current best block entry
+func (r *DB) ReadBestBlock() {}
+
+// ReadPool gets the oldest available pool entry and refreshes the pool after addresses are used
 func (r *DB) ReadPool() {}
 
-// WritePool is a
+// WritePool adds a new pool key to the wallet
 func (r *DB) WritePool() {}
 
-// ReadSetting is a
-func (r *DB) ReadSetting() {}
-
-// WriteSetting is a
-func (r *DB) WriteSetting() {}
-
-// EraseSetting is a
-func (r *DB) EraseSetting() {}
-
-// ReadMinVersion is a
+// ReadMinVersion returns the minimum version required to read this database
 func (r *DB) ReadMinVersion() {}
 
-// WriteMinVersion is a
+// WriteMinVersion updates the minimum version
 func (r *DB) WriteMinVersion() {}
 
-// ReadAccount is a
+// ReadAccount finds an account stored due to being a correspondent account
 func (r *DB) ReadAccount() {}
 
-// WriteAccount is a
+// WriteAccount writes a new account entry
 func (r *DB) WriteAccount() {}
 
-// EraseAccount is a
+// EraseAccount deletes an account from the wallet database
 func (r *DB) EraseAccount() {}
 
-// WriteAccountingEntry is a
+// WriteAccountingEntry writes an accounting entry based on a transaction
 func (r *DB) WriteAccountingEntry() {}
 
-// GetAccountCreditDebit is a
+// GetAccountCreditDebit finds entries in the credit/debit records written related to each input transaction from a list of indexes of accounts of interest
 func (r *DB) GetAccountCreditDebit() {}
 
-// ListAccCreditDebit is a
-func (r *DB) ListAccCreditDebit() {}
-
-// ReorderTransactions is a
-func (r *DB) ReorderTransactions() {}
-
-// LoadWallet is a
+// LoadWallet opens a wallet ready to use
 func (r *DB) LoadWallet() {}
 
-// Recover is a
+// Recover attempts to recover as much data as possible from the database files by parsing their key and value tables as raw data
 func (r *DB) Recover() {}

@@ -14,7 +14,7 @@ type BlockCrypt struct {
 	Password        *buf.Secure
 	Ciphertext      *buf.Secure
 	IV              *buf.Byte
-	Iterations      int
+	Iterations      int64
 	GCM             *cipher.AEAD
 	Unlocked, Armed bool
 	proto.State

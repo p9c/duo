@@ -203,6 +203,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/minio/highwayhash",
+			"repository": "https://github.com/minio/highwayhash",
+			"vcs": "git",
+			"revision": "85fc8a2dacad36a6beb2865793cd81363a496696",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/mitchellh/go-homedir",
 			"repository": "https://github.com/mitchellh/go-homedir",
 			"vcs": "git",

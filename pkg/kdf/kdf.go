@@ -10,7 +10,7 @@ import (
 )
 
 // Gen takes a password and a random 12 byte initialisation vector and hashes it using Blake2b-384, returning a 32 byte ciphertext that is used to encrypt and decrypt the ciphertext from the crypt
-func Gen(p *buf.Secure, iv *buf.Byte, iterations int) (C *buf.Secure, err error) {
+func Gen(p *buf.Secure, iv *buf.Byte, iterations int64) (C *buf.Secure, err error) {
 	C = buf.NewSecure()
 	switch {
 	case p == nil:
@@ -35,7 +35,7 @@ func Gen(p *buf.Secure, iv *buf.Byte, iterations int) (C *buf.Secure, err error)
 			blake.Write(*p.Bytes())
 			blake.Write(*b1.Bytes())
 			last := blake.Sum(nil)
-			for i := 1; i < iterations; i++ {
+			for i := int64(1); i < iterations; i++ {
 				N := len(last)
 				n, err := blake.Write(last)
 				if err != nil {
@@ -60,7 +60,7 @@ func Gen(p *buf.Secure, iv *buf.Byte, iterations int) (C *buf.Secure, err error)
 }
 
 // Bench returns the number of iterations performed in a given time on the current hardware
-func Bench(t time.Duration) (iter int) {
+func Bench(t time.Duration) (iter int64) {
 	p := make([]byte, 16)
 	rand.Read(p)
 	iv := make([]byte, 12)
