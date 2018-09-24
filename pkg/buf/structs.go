@@ -10,7 +10,7 @@ var er = proto.Errors
 // Byte is a simple byte slice
 type Byte struct {
 	Val *[]byte
-	*proto.State
+	proto.State
 	Coding string
 }
 

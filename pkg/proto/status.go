@@ -46,10 +46,7 @@ func (r *State) SetStatusIf(err error) Status {
 
 // UnsetStatus is a
 func (r *State) UnsetStatus() Status {
-	if r = r.NewIf(); r.err != nil {
-		r.Status = r.err.Error()
-		return r
-	}
+	r = r.NewIf()
 	r.Status, r.err = "", nil
 	return r
 }

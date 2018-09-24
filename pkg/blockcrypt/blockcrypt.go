@@ -1,4 +1,4 @@
-package blockcrypt
+package bc
 
 import (
 	"crypto/aes"

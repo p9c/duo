@@ -47,7 +47,8 @@ func Gen(p *buf.Secure, iv *buf.Byte, iterations int) (C *buf.Secure, err error)
 				last = blake.Sum(nil)
 			}
 			b = make([]byte, 32)
-			C = buf.NewSecure().Copy(&b).(*buf.Secure)
+			C = buf.NewSecure()
+			C.Copy(&b)
 			c := *C.Bytes()
 			for i := range c {
 				c[i] = last[i]

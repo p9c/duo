@@ -13,12 +13,13 @@ import (
 func TestCryptPrivSig(t *testing.T) {
 	fmt.Println()
 	pass := []byte("password")
-	BC := blockcrypt.New().Generate(buf.NewSecure().Copy(&pass).(*buf.Secure)).Arm()
+	var BC *bc.BlockCrypt
+	BC = bc.New().Generate(buf.NewSecure().Copy(&pass).(*buf.Secure)).Arm()
 	priv := NewPriv().WithBC(BC)
 	priv.Make()
 	priv.pub.Compress()
 	address := hash160.Sum(priv.pub.Bytes())
-	origPub := priv.PubKey().Bytes()
+	origPub := priv.pub.Bytes()
 	fmt.Println("public key compr", *priv.pub.Bytes())
 	priv.pub.Decompress()
 	fmt.Println("public key uncmp", *priv.pub.Bytes())
@@ -35,10 +36,14 @@ func TestCryptPrivSig(t *testing.T) {
 	fmt.Println(emptypriv.PubKey())
 	fmt.Println("priv as EC", priv.AsEC())
 	fmt.Println(priv.PubKey().Bytes())
-	privB, pubB := priv.Bytes(), priv.pub.Bytes()
+	privB := buf.NewByte().Copy(priv.Bytes()).Bytes()
+	pubB := buf.NewByte().Copy(priv.pub.Bytes()).Bytes()
 	fmt.Println(privB, pubB)
 	fmt.Println(priv.Invalidate().Bytes())
-	fmt.Println(priv.SetKey(privB, pubB))
+	priv = NewPriv().WithBC(BC)
+	priv.SetKey(privB, pubB)
+	fmt.Println(priv.Bytes())
+	fmt.Println(priv.Crypt.Get().Bytes())
 	out := priv.Bytes()
 	fmt.Println("key as plaintext", *out)
 	fmt.Println("content of buffer", *priv.Crypt.Bytes())
@@ -93,7 +98,9 @@ func TestCryptPrivSig(t *testing.T) {
 func TestPriv(t *testing.T) {
 	var emptypriv *Priv
 	var emptypub *Pub
+
 	fmt.Println(emptypub.Bytes())
+
 	priv := NewPriv()
 	priv.Make()
 	fmt.Println("priv", priv.Bytes())
@@ -121,9 +128,9 @@ func TestPriv(t *testing.T) {
 	fmt.Println(emptypub.GetID())
 	fmt.Println(emptypriv.GetID())
 	fmt.Println(priv.Make())
-	fmt.Println(priv.pub.AsCompressed())
-	fmt.Println(priv.pub.AsUncompressed())
-	fmt.Println(priv.pub.AsHybrid())
+	fmt.Println(priv.pub.AsCompressed().Bytes())
+	fmt.Println(priv.pub.AsUncompressed().Bytes())
+	fmt.Println(priv.pub.AsHybrid().Bytes())
 	priv.Make()
 	fmt.Println(priv.pub.GetID())
 	fmt.Println(priv.GetID())
@@ -137,14 +144,14 @@ func TestPriv(t *testing.T) {
 	fmt.Println(priv.pub.AsCompressed().Bytes())
 	fmt.Println(priv.pub.AsUncompressed().Bytes())
 	fmt.Println(priv.pub.AsHybrid().Bytes())
+	fmt.Println(priv.PubKey())
 	fmt.Println(priv.pub.AsEC())
-	priv.pub.Byte = nil
 	fmt.Println(priv.pub.Free())
 	fmt.Println(priv.pub.Zero())
 	priv.Zero()
 	S := []byte("this is a test of thingy")
 	mh := hash160.Sum(&S)
-	priv.Crypt.Byte = nil
+	priv.Crypt.Byte.Zero()
 	fmt.Println(priv.Sign(mh).Bytes())
 }
 
@@ -161,7 +168,7 @@ func TestPub(t *testing.T) {
 	fmt.Println(emptypub.AsUncompressed())
 	fmt.Println(emptypub.AsHybrid())
 	fmt.Println(emptypub.AsEC())
-	fmt.Println(emptypub.ID())
+	fmt.Println(emptypub.GetID())
 	fmt.Println(pub.IsCompressed())
 	fmt.Println(pub.Compress())
 	fmt.Println(pub.Decompress())
@@ -169,9 +176,9 @@ func TestPub(t *testing.T) {
 	fmt.Println(pub.AsUncompressed())
 	fmt.Println(pub.AsHybrid())
 	fmt.Println(pub.AsEC())
-	fmt.Println(pub.ID())
+	fmt.Println(pub.GetID())
 	fmt.Println(pub.Free())
-	fmt.Println(pub.ID())
+	fmt.Println(pub.GetID())
 }
 
 func TestStore(t *testing.T) {
@@ -193,7 +200,7 @@ func TestStore(t *testing.T) {
 	fmt.Println(emptystore.AddPub(nil))
 	fmt.Println(emptystore.Remove(""))
 	pass := []byte("arbitrary thingy")
-	BC := blockcrypt.New().Generate(buf.NewSecure().Copy(&pass).(*buf.Secure)).Arm()
+	BC := bc.New().Generate(buf.NewSecure().Copy(&pass).(*buf.Secure)).Arm()
 	fmt.Println(emptystore.Encrypt(BC))
 	fmt.Println(emptystore.Decrypt())
 	fmt.Println(emptystore.Find(""))
@@ -215,8 +222,8 @@ func TestStore(t *testing.T) {
 	fmt.Println(store.AddPub(priv2.pub))
 	fmt.Println(store.Decrypt())
 	fmt.Println(store.Encrypt(BC))
-	fmt.Println(store.Find(priv.GetID()))
-	fmt.Println(store.Find(priv2.GetID()))
+	fmt.Println(store.Find(priv.GetID()).Bytes())
+	fmt.Println(store.Find(priv2.GetID()).Bytes())
 	fmt.Println(store.Remove(priv.GetID()))
 	fmt.Println(store.Remove(priv.GetID()))
 	fmt.Println(store.Remove(priv2.GetID()))

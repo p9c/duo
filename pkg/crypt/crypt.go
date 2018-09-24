@@ -15,14 +15,13 @@ var er = proto.Errors
 
 // Crypt is a generic structure for storing bytes encrypted and reading them to a another buffer, using a BlockCrypt AES-GCM 256 cipher
 type Crypt struct {
-	*buf.Byte
-	BC *blockcrypt.BlockCrypt
+	buf.Byte
+	BC *bc.BlockCrypt
 }
 
 // New returns a new, empty Crypt
 func New() *Crypt {
 	r := new(Crypt)
-	r.Byte = buf.NewByte()
 	return r
 }
 
@@ -36,7 +35,7 @@ func (r *Crypt) CopyBC() (R *Crypt) {
 }
 
 // WithBC loads a crypter into the Crypt
-func (r *Crypt) WithBC(bc *blockcrypt.BlockCrypt) *Crypt {
+func (r *Crypt) WithBC(bc *bc.BlockCrypt) *Crypt {
 	switch {
 	case r == nil:
 		r = New()

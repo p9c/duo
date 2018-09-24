@@ -70,13 +70,13 @@ func (r *Store) Remove(id proto.Address) *Store {
 }
 
 // Encrypt sets the store to encrypt private keys
-func (r *Store) Encrypt(bc *blockcrypt.BlockCrypt) *Store {
+func (r *Store) Encrypt(blockCrypt *bc.BlockCrypt) *Store {
 	if r == nil {
 		r = NewStore()
 		r.SetStatus(er.NilRec)
 	} else {
 		for i := range r.privs {
-			r.privs[i].BC = bc
+			r.privs[i].BC = blockCrypt
 			r.privs[i].Copy(r.privs[i].Bytes())
 		}
 	}

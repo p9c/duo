@@ -1,9 +1,8 @@
-package blockcrypt
+package bc
 
 import (
 	"bytes"
 	"errors"
-	// "errors"
 	"fmt"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"testing"

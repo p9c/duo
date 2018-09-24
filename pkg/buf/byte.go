@@ -52,7 +52,8 @@ func (r *Byte) Copy(in *[]byte) proto.Buffer {
 		r.SetStatus(er.ZeroLen)
 	default:
 		v := make([]byte, len(*in))
-		copy(v, *in)
+		I := *in
+		copy(v, I)
 		r.Val = &v
 	}
 	return r
@@ -195,9 +196,8 @@ func (r *Byte) UnsetStatus() proto.Status {
 func (r *Byte) OK() bool {
 	if r == nil {
 		r = r.NewIf()
-		return false
 	}
-	return r.State.Error() == ""
+	return r.State.OK()
 }
 
 // SetElem is a
