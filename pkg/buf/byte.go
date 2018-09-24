@@ -15,6 +15,7 @@ import (
 // NewByte creates a new Byte
 func NewByte() *Byte {
 	r := new(Byte)
+	r.State = proto.NewStatus()
 	r.Coding = "hex"
 	return r
 }
@@ -58,9 +59,11 @@ func (r *Byte) Copy(in *[]byte) proto.Buffer {
 func (r *Byte) Zero() proto.Buffer {
 	switch {
 	case r == nil:
-		r = NewByte().SetStatus(er.NilRec).(*Byte)
+		r = NewByte()
+		r.SetStatus(er.NilRec)
 	case r.Val == nil:
-		r = NewByte().SetStatus(er.NilBuf).(*Byte)
+		r = NewByte()
+		r.SetStatus(er.NilBuf)
 	default:
 		proto.Zero(r.Val)
 	}
@@ -146,15 +149,19 @@ func (r *Byte) ListCodings() (out *[]string) {
 
 // Freeze returns a json format struct of the data
 func (r *Byte) Freeze() (out *[]byte) {
-	if r == nil {
+	var status string
+	switch {
+	case r == nil:
 		r = NewByte()
 		r.SetStatus(er.NilRec)
+	case r.OK():
+		status = ""
 	}
 	s := []string{
 		`{"Val":`,
 		`"` + r.String() + `",`,
 		`"Status":`,
-		`"` + r.Status + `",`,
+		`"` + status + `",`,
 		`"Coding":`,
 		`"` + r.Coding + `"}`,
 	}
@@ -181,9 +188,12 @@ func (r *Byte) SetStatus(s string) proto.Status {
 	switch {
 	case r == nil:
 		r = NewByte()
-		r.SetStatus(er.NilRec)
+		r.State.SetStatus(er.NilRec)
+		fallthrough
+	case s == "":
+		r.State.SetStatus("empty status string given")
 	default:
-		r.Status = s
+		r.State.SetStatus(s)
 	}
 	return r
 }
@@ -193,9 +203,11 @@ func (r *Byte) SetStatusIf(err error) proto.Status {
 	switch {
 	case r == nil:
 		r = NewByte()
-		r.SetStatus(er.NilRec)
+		r.State.SetStatus(er.NilRec)
 	case err != nil:
-		r.Status = err.Error()
+		r.State.SetStatus(err.Error())
+	default:
+		r.State.UnsetStatus()
 	}
 	return r
 }
@@ -204,9 +216,10 @@ func (r *Byte) SetStatusIf(err error) proto.Status {
 func (r *Byte) UnsetStatus() proto.Status {
 	switch {
 	case r == nil:
-		r = NewByte().SetStatus(er.NilRec).(*Byte)
+		r = NewByte()
+		r.State.SetStatus(er.NilRec)
 	default:
-		r.Status = ""
+		r.State.UnsetStatus()
 	}
 	return r
 }
@@ -214,10 +227,11 @@ func (r *Byte) UnsetStatus() proto.Status {
 // OK returns true if there is no error
 func (r *Byte) OK() bool {
 	if r == nil {
-		r = NewByte().SetStatus(er.NilRec).(*Byte)
+		r = NewByte()
+		r.State.SetStatus(er.NilRec)
 		return false
 	}
-	return r.Status == ""
+	return r.State.Error() == ""
 }
 
 // SetElem is a
@@ -273,15 +287,6 @@ func (r *Byte) Len() int {
 		return -1
 	}
 	return len(*r.Val)
-}
-
-// Error implements the Error interface
-func (r *Byte) Error() string {
-	if r == nil {
-		r = NewByte()
-		r.SetStatus(er.NilRec)
-	}
-	return r.Status
 }
 
 // String implements the stringer, uses coding to determine how the string is contstructed

@@ -1,12 +1,32 @@
 package walletdb
 
+import (
+	"github.com/dgraph-io/badger"
+	"github.com/mitchellh/go-homedir"
+)
+
 // NewWalletDB creates a new walletdb.DB
-func NewWalletDB() {}
+func NewWalletDB() (db *DB) {
+	db = new(DB)
+	opts := badger.DefaultOptions
+	var err error
+	db.Path, err = homedir.Dir()
+	if err != nil {
+		db.Status = err.Error()
+		return db
+	}
+	db.DB, err = badger.Open(opts)
+	db.Status = err.Error()
+	if err != nil {
+		db.Status = err.Error()
+		return db
+	}
+	return db
+}
 
 // WriteName is a
 func (r *DB) WriteName() {}
 
-// EraseName is a
 func (r *DB) EraseName() {}
 
 // ReadTx is a

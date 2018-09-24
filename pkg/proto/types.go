@@ -1,5 +1,11 @@
 package proto
 
+// State is a base status/error object, that can be embedded in any other type to proide status notifications
+type State struct {
+	Status string
+	err    error
+}
+
 // Address is used as the key for searching for public keys (addresses also), scripts, transactions and blocks, generated using the hash160 function, which is a sha256 followed by ripemd160.
 type Address string
 
