@@ -85,8 +85,25 @@ func TestSecure(t *testing.T) {
 	_ = f.GetElem(24)
 	f.SetElem(24, byt)
 	_ = f.GetElem(1)
-	f.SetElem(1, byt)
+	f.Copy(&[]byte{1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21})
+	f.SetElem(1, byte(8))
+	f.SetElem(f.Len()+5, byte(0))
 	f.SetElem(1, &[]byte{})
+	many := []interface{}{
+		byte(100),
+		int8(100),
+		int(100),
+		uint(100),
+		uint16(100),
+		int16(100),
+		uint32(100),
+		int32(100),
+		uint64(100),
+		int64(100),
+	}
+	for i := range many {
+		f.SetElem(3, many[i])
+	}
 	fmt.Println(f.Free())
 	fmt.Println(f.Bytes())
 	fmt.Println(f.IsEqual(f.Bytes()))

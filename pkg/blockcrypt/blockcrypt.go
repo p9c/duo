@@ -13,7 +13,8 @@ import (
 
 // New creates a new, empty BlockCrypt
 func New() *BlockCrypt {
-	return new(BlockCrypt)
+	r := new(BlockCrypt)
+	return r
 }
 
 // Generate creates a new crypt based on a password and a newly generated random ciphertext.

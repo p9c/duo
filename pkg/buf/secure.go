@@ -20,12 +20,19 @@ func NewSecure() *Secure {
 	return r
 }
 
+// NewIf creates a new Byte
+func (r *Secure) NewIf() *Secure {
+	if r == nil {
+		r = NewSecure()
+		r.SetStatus(er.NilRec)
+	}
+	return r
+}
+
 // Bytes returns a pointer to the buffer
 func (r *Secure) Bytes() (out *[]byte) {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-		fallthrough
 	case r.Val == nil:
 		r = NewSecure().SetStatus(er.NilBuf).(*Secure)
 		out = &[]byte{}
@@ -39,10 +46,8 @@ func (r *Secure) Bytes() (out *[]byte) {
 
 // Copy is a
 func (r *Secure) Copy(in *[]byte) proto.Buffer {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
-		fallthrough
 	case in == nil:
 		r.SetStatus(er.NilParam)
 	case len(*in) == 0:
@@ -51,7 +56,7 @@ func (r *Secure) Copy(in *[]byte) proto.Buffer {
 		b := make([]byte, len(*in))
 		copy(b, *in)
 		B, err := memguard.NewMutableFromBytes(b)
-		if r.SetStatusIf(err).OK() {
+		if r.SetStatusIf(err); B != nil {
 			r.Val = B
 		}
 	}
@@ -61,9 +66,8 @@ func (r *Secure) Copy(in *[]byte) proto.Buffer {
 
 // Zero is a
 func (r *Secure) Zero() proto.Buffer {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
 	case r.Val == nil:
 		r = NewSecure().SetStatus(er.NilBuf).(*Secure)
 	default:
@@ -76,9 +80,8 @@ func (r *Secure) Zero() proto.Buffer {
 
 // Free is a
 func (r *Secure) Free() proto.Buffer {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
 	case r.Val != nil:
 		r.Val.Destroy()
 		fallthrough
@@ -91,10 +94,8 @@ func (r *Secure) Free() proto.Buffer {
 
 // IsEqual returns true if a serialized public key matches this one, also in format (compressed is preferred in a distributed ledger due to size).
 func (r *Secure) IsEqual(p *[]byte) (is bool) {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
 	case p == nil:
 		r.SetStatus(er.NilParam)
 	case len(*p) < 1:
@@ -115,10 +116,8 @@ func (r *Secure) IsEqual(p *[]byte) (is bool) {
 
 // Rand creates a secure buffer containing cryptographically secure random bytes
 func (r *Secure) Rand(length int) *Secure {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
 	case r.Val != nil:
 		r.Val.Destroy()
 	default:
@@ -131,50 +130,34 @@ func (r *Secure) Rand(length int) *Secure {
 
 // GetCoding is a
 func (r *Secure) GetCoding() (out *string) {
-	if r == nil {
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
-	}
+	r = r.NewIf()
 	out = &r.Coding
 	return
 }
 
 // SetCoding sets the encoding for the stringer
 func (r *Secure) SetCoding(in string) proto.Coder {
-	if r == nil {
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
-	}
+	r = r.NewIf()
 	r.Coding = "hex"
-	found := false
 	for i := range proto.StringCodings {
 		if in == proto.StringCodings[i] {
-			found = true
+			r.Coding = in
 			break
 		}
-	}
-	if found {
-		r.Coding = in
 	}
 	return r
 }
 
 // ListCodings returns the set of codings available
 func (r *Secure) ListCodings() (out *[]string) {
-	if r == nil {
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
-	}
+	r = r.NewIf()
 	out = &proto.StringCodings
 	return
 }
 
 // Freeze returns a json format struct of the data
 func (r *Secure) Freeze() (out *[]byte) {
-	if r == nil {
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
-	}
+	r = r.NewIf()
 	s := []string{
 		`{"Val":`,
 		`"` + r.String() + `",`,
@@ -191,10 +174,7 @@ func (r *Secure) Freeze() (out *[]byte) {
 
 // Thaw turns a json representation back into a variable
 func (r *Secure) Thaw(in *[]byte) proto.Streamer {
-	if r == nil {
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
-	}
+	r = r.NewIf()
 	out := NewSecure()
 	if err := json.Unmarshal(*in, out); !out.SetStatusIf(err).OK() {
 		r.Zero()
@@ -205,24 +185,17 @@ func (r *Secure) Thaw(in *[]byte) proto.Streamer {
 
 // SetStatus sets the status of an object after an operation
 func (r *Secure) SetStatus(s string) proto.Status {
-	switch {
-	case r == nil:
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
-	default:
-		r.Status = s
-	}
+	r = r.NewIf()
+	r.State.SetStatus(s)
 	return r
 }
 
 // SetStatusIf is a
 func (r *Secure) SetStatusIf(err error) proto.Status {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
 	case err != nil:
-		r.Status = err.Error()
+		r.State.SetStatus(err.Error())
 	default:
 		r.UnsetStatus()
 	}
@@ -231,53 +204,63 @@ func (r *Secure) SetStatusIf(err error) proto.Status {
 
 // UnsetStatus is a
 func (r *Secure) UnsetStatus() proto.Status {
-	switch {
-	case r == nil:
-		r = NewSecure()
-		r.Status = er.NilRec
-	default:
-		r.Status = ""
-	}
+	r = r.NewIf()
+	r.State.SetStatus("")
 	return r
 }
 
 // OK returns true if there is no error
 func (r *Secure) OK() bool {
-	if r == nil {
-		r = NewSecure()
-		return r.SetStatus(er.NilRec).OK()
-	}
+	r = r.NewIf()
 	return r.Status == ""
 }
 
-// SetElem is a
+// SetElem sets a byte in the buffer to a given value if it is in bounds
 func (r *Secure) SetElem(index int, in interface{}) proto.Array {
+	r = r.NewIf()
+	var elem byte
 	switch {
-	case r == nil:
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
 	case r.Val == nil:
 		r.SetStatus(er.NilBuf)
 	case index > r.Len():
 		r.SetStatus(er.OutOfBounds)
 	default:
 		switch in.(type) {
-		case *byte:
-			b := r.Val.Buffer()
-			b[index] = *in.(*byte)
+		case byte:
+			elem = in.(byte)
+		case int8:
+			elem = byte(in.(int8))
+		case int:
+			elem = byte(in.(int))
+		case uint:
+			elem = byte(in.(uint))
+		case uint16:
+			elem = byte(in.(uint16))
+		case int16:
+			elem = byte(in.(int16))
+		case uint32:
+			elem = byte(in.(uint32))
+		case int32:
+			elem = byte(in.(int32))
+		case uint64:
+			elem = byte(in.(uint64))
+		case int64:
+			elem = byte(in.(int64))
 		default:
 			r.SetStatus(er.InvalidType)
 		}
+		b := r.Val.Buffer()
+		b[index] = elem
 	}
 	return r
 }
 
-// GetElem is a
+// GetElem returns the byte at a given position if it is in bounds
 func (r *Secure) GetElem(index int) (out interface{}) {
+	r = r.NewIf()
 	o := byte(0)
 	out = &o
 	switch {
-	case r == nil:
-		r = NewSecure().SetStatus(er.NilRec).(*Secure)
 	case r.Val == nil:
 		r.SetStatus(er.NilBuf)
 	case index > r.Len():
@@ -288,15 +271,12 @@ func (r *Secure) GetElem(index int) (out interface{}) {
 	return
 }
 
-// Len is a
+// Len returns the length of the buffer or -1 if it is not allocated
 func (r *Secure) Len() (length int) {
 	switch {
 	case r == nil:
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
 		return -1
 	case r.Val == nil:
-		r.SetStatus(er.NilBuf)
 		return -1
 	default:
 		return r.Val.Size()
@@ -305,21 +285,15 @@ func (r *Secure) Len() (length int) {
 
 // Error implements the Error interface
 func (r *Secure) Error() string {
-	if r == nil {
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
-	}
+	r = r.NewIf()
 	return r.Status
 }
 
 // String implements the stringer, uses coding to determine how the string is contstructed
 func (r *Secure) String() (s string) {
 	switch {
-	case r == nil:
-		r = NewSecure()
-		r.SetStatus(er.NilRec)
-	case r.Val == nil:
-		r.SetStatus(er.NilBuf)
+	case r == nil || r.Val == nil:
+		s = "<nil>"
 	default:
 		switch r.Coding {
 		case "bytes":

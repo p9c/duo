@@ -17,5 +17,5 @@ type BlockCrypt struct {
 	Iterations      int
 	GCM             *cipher.AEAD
 	Unlocked, Armed bool
-	Status          string
+	proto.State
 }

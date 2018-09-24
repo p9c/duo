@@ -15,18 +15,24 @@ import (
 // NewByte creates a new Byte
 func NewByte() *Byte {
 	r := new(Byte)
-	r.State = proto.NewStatus()
 	r.Coding = "hex"
+	return r
+}
+
+// NewIf creates a new Byte
+func (r *Byte) NewIf() *Byte {
+	if r == nil {
+		r = NewByte()
+		r.SetStatus(er.NilRec)
+	}
 	return r
 }
 
 // Bytes returns a pointer to the buffer
 func (r *Byte) Bytes() (out *[]byte) {
+	r = r.NewIf()
 	out = &[]byte{}
 	switch {
-	case r == nil:
-		r = NewByte()
-		r.SetStatus(er.NilRec)
 	case r.Val == nil:
 		r = NewByte()
 		r.SetStatus(er.NilBuf)
@@ -38,11 +44,8 @@ func (r *Byte) Bytes() (out *[]byte) {
 
 // Copy copies the byte from a provided byte slice to a new buffer
 func (r *Byte) Copy(in *[]byte) proto.Buffer {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewByte()
-		r.SetStatus(er.NilRec)
-		fallthrough
 	case in == nil:
 		r.SetStatus(er.NilParam)
 	case len(*in) < 1:
@@ -57,10 +60,8 @@ func (r *Byte) Copy(in *[]byte) proto.Buffer {
 
 // Zero writes zeroes to the byte slice
 func (r *Byte) Zero() proto.Buffer {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewByte()
-		r.SetStatus(er.NilRec)
 	case r.Val == nil:
 		r = NewByte()
 		r.SetStatus(er.NilBuf)
@@ -72,10 +73,8 @@ func (r *Byte) Zero() proto.Buffer {
 
 // Free is a
 func (r *Byte) Free() proto.Buffer {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewByte()
-		r.SetStatus(er.NilRec)
 	default:
 		r.UnsetStatus()
 		r.Val = nil
@@ -85,10 +84,8 @@ func (r *Byte) Free() proto.Buffer {
 
 // IsEqual returns true if a serialized public key matches this one, also in format (compressed is preferred in a distributed ledger due to size)
 func (r *Byte) IsEqual(p *[]byte) (is bool) {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewByte()
-		r.SetStatus(er.NilRec)
 	case p == nil:
 		r.SetStatus(er.NilParam)
 	case len(*p) < 1:
@@ -109,33 +106,18 @@ func (r *Byte) IsEqual(p *[]byte) (is bool) {
 
 // GetCoding is a
 func (r *Byte) GetCoding() (out *string) {
-	if r == nil {
-		r = NewByte()
-		r.SetStatus(er.NilRec)
-	}
+	r = r.NewIf()
 	out = &r.Coding
 	return
 }
 
 // SetCoding is a
 func (r *Byte) SetCoding(in string) proto.Coder {
-	switch {
-	case r == nil:
-		r = NewByte()
-		r.SetStatus(er.NilRec)
-	default:
-		found := false
-		for i := range proto.StringCodings {
-			if in == proto.StringCodings[i] {
-				found = true
-				break
-			}
-		}
-		switch {
-		case found != true:
-			r.Coding = "hex"
-		default:
+	r = r.NewIf()
+	for i := range proto.StringCodings {
+		if in == proto.StringCodings[i] {
 			r.Coding = in
+			break
 		}
 	}
 	return r
@@ -143,18 +125,17 @@ func (r *Byte) SetCoding(in string) proto.Coder {
 
 // ListCodings is a
 func (r *Byte) ListCodings() (out *[]string) {
+	r = r.NewIf()
 	out = &proto.StringCodings
 	return
 }
 
 // Freeze returns a json format struct of the data
 func (r *Byte) Freeze() (out *[]byte) {
+	r = r.NewIf()
 	var status string
 	switch {
-	case r == nil:
-		r = NewByte()
-		r.SetStatus(er.NilRec)
-	case r.OK():
+	case !r.OK():
 		status = ""
 	}
 	s := []string{
@@ -172,10 +153,7 @@ func (r *Byte) Freeze() (out *[]byte) {
 
 // Thaw is a
 func (r *Byte) Thaw(in *[]byte) proto.Streamer {
-	if r == nil {
-		r = NewByte()
-		r.SetStatus(er.NilRec)
-	}
+	r = r.NewIf()
 	out := NewByte()
 	if err := json.Unmarshal(*in, out); !out.SetStatusIf(err).OK() {
 		r.Zero().Copy(out.Bytes())
@@ -185,11 +163,8 @@ func (r *Byte) Thaw(in *[]byte) proto.Streamer {
 
 // SetStatus is a
 func (r *Byte) SetStatus(s string) proto.Status {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewByte()
-		r.State.SetStatus(er.NilRec)
-		fallthrough
 	case s == "":
 		r.State.SetStatus("empty status string given")
 	default:
@@ -200,13 +175,10 @@ func (r *Byte) SetStatus(s string) proto.Status {
 
 // SetStatusIf is a
 func (r *Byte) SetStatusIf(err error) proto.Status {
-	switch {
-	case r == nil:
-		r = NewByte()
-		r.State.SetStatus(er.NilRec)
-	case err != nil:
+	r = r.NewIf()
+	if err != nil {
 		r.State.SetStatus(err.Error())
-	default:
+	} else {
 		r.State.UnsetStatus()
 	}
 	return r
@@ -214,21 +186,15 @@ func (r *Byte) SetStatusIf(err error) proto.Status {
 
 // UnsetStatus is a
 func (r *Byte) UnsetStatus() proto.Status {
-	switch {
-	case r == nil:
-		r = NewByte()
-		r.State.SetStatus(er.NilRec)
-	default:
-		r.State.UnsetStatus()
-	}
+	r = r.NewIf()
+	r.State.UnsetStatus()
 	return r
 }
 
 // OK returns true if there is no error
 func (r *Byte) OK() bool {
 	if r == nil {
-		r = NewByte()
-		r.State.SetStatus(er.NilRec)
+		r = r.NewIf()
 		return false
 	}
 	return r.State.Error() == ""
@@ -236,10 +202,8 @@ func (r *Byte) OK() bool {
 
 // SetElem is a
 func (r *Byte) SetElem(index int, in interface{}) proto.Array {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewByte()
-		r.SetStatus(er.NilRec)
 	case r.Val == nil:
 		r.SetStatus(er.NilBuf)
 	case index > r.Len():
@@ -260,8 +224,7 @@ func (r *Byte) GetElem(index int) (out interface{}) {
 	var byt byte
 	switch {
 	case r == nil:
-		r = NewByte()
-		r.SetStatus(er.NilRec)
+		r = r.NewIf()
 		out = &byt
 	case r.Val == nil:
 		r.SetStatus(er.NilBuf)
@@ -277,13 +240,7 @@ func (r *Byte) GetElem(index int) (out interface{}) {
 
 // Len is a
 func (r *Byte) Len() int {
-	switch {
-	case r == nil:
-		r = NewByte()
-		r.SetStatus(er.NilRec)
-		return -1
-	case r.Val == nil:
-		r.SetStatus(er.NilBuf)
+	if r == nil || r.Val == nil {
 		return -1
 	}
 	return len(*r.Val)
@@ -291,9 +248,8 @@ func (r *Byte) Len() int {
 
 // String implements the stringer, uses coding to determine how the string is contstructed
 func (r *Byte) String() (s string) {
+	r = r.NewIf()
 	switch {
-	case r == nil:
-		r = NewByte().SetStatus(er.NilRec).(*Byte)
 	case r.Val == nil:
 		return ""
 	default:

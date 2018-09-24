@@ -12,49 +12,52 @@ func NewStatus() *State {
 	return r
 }
 
-// SetStatus is a
-func (r *State) SetStatus(s string) Status {
+// NewIf creates a new Status object
+func (r *State) NewIf() *State {
 	if r == nil {
 		r = NewStatus()
-		r.err = errors.New(er.NilRec)
-	} else {
+		r.SetStatus(er.NilRec)
+	}
+	return r
+}
+
+// SetStatus is a
+func (r *State) SetStatus(s string) Status {
+	r = r.NewIf()
+	if r != nil {
 		r.err = errors.New(s)
 	}
-	r.Status = r.err.Error()
+	if s != "" {
+		r.err = errors.New(s)
+		r.Status = s
+	}
 	return r
 }
 
 // SetStatusIf is a
 func (r *State) SetStatusIf(err error) Status {
-	switch {
-	case r == nil:
-		r = NewStatus()
-		r.err = errors.New(er.NilRec)
-	case err != nil:
+	r = r.NewIf()
+	if err != nil {
 		r.err = err
+		r.Status = r.err.Error()
 	}
-	r.Status = r.err.Error()
 	return r
 }
 
 // UnsetStatus is a
 func (r *State) UnsetStatus() Status {
-	if r == nil {
-		r = NewStatus()
-		r.err = errors.New(er.NilRec)
-		r.Status = ""
-	} else {
-		r.err = nil
-		r.Status = ""
+	if r = r.NewIf(); r.err != nil {
+		r.Status = r.err.Error()
+		return r
 	}
+	r.Status, r.err = "", nil
 	return r
 }
 
 // OK returns true if there is no error
 func (r *State) OK() bool {
 	if r == nil {
-		r = NewStatus()
-		r.SetStatus(er.NilRec)
+		r = r.NewIf()
 		return false
 	}
 	return r.err == nil
@@ -62,11 +65,8 @@ func (r *State) OK() bool {
 
 // Error implements the error interface
 func (r *State) Error() string {
-	switch {
-	case r == nil:
-		r = NewStatus()
-		r.SetStatus(er.NilRec)
-	case r.err != nil:
+	r = r.NewIf()
+	if r.err != nil {
 		return r.err.Error()
 	}
 	return ""

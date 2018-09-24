@@ -16,7 +16,7 @@ type Byte struct {
 
 // Secure is a memguard LockedBuffer
 type Secure struct {
-	Val    *memguard.LockedBuffer
-	Status string
+	Val *memguard.LockedBuffer
+	proto.State
 	Coding string
 }

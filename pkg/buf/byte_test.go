@@ -55,10 +55,11 @@ func TestBytes(t *testing.T) {
 	fmt.Println(*code)
 	var err error
 	a.SetStatusIf(err)
-	fmt.Println(a.Status, a.OK())
+	fmt.Println(a.State)
+	fmt.Println(a.OK())
 	err = errors.New("testing status")
 	a.SetStatusIf(err)
-	fmt.Println(a.Status, a.OK())
+	fmt.Println(a.State, a.OK())
 	fmt.Println(a.String())
 	fmt.Println(b.String())
 	fmt.Println(c.String())
