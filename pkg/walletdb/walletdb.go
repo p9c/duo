@@ -42,6 +42,15 @@ func NewWalletDB(params ...string) (db *DB) {
 	return
 }
 
+// NewIf creates a new WalletDB
+func (r *DB) NewIf() *DB {
+	if r == nil {
+		r = NewWalletDB()
+		r.SetStatus(er.NilRec)
+	}
+	return r
+}
+
 // Close shuts down a wallet database
 func (r *DB) Close() {
 	r.DB.Close()
@@ -67,7 +76,8 @@ func (r *DB) WriteKey() {}
 
 // ReadMasterKeys returns all of the masterkey entries in the database
 func (r *DB) ReadMasterKeys() (BC []*bc.BlockCrypt) {
-	if r == nil {
+	r = r.NewIf()
+	if !r.OK() {
 		return nil
 	}
 	opt := badger.DefaultIteratorOptions
@@ -109,6 +119,10 @@ func (r *DB) ReadMasterKeys() (BC []*bc.BlockCrypt) {
 
 // WriteMasterKey adds a master key entry to the database
 func (r *DB) WriteMasterKey(BC *bc.BlockCrypt) *DB {
+	r = r.NewIf()
+	if !r.OK() {
+		return nil
+	}
 	if BC.Crypt.Len() < 1 {
 		r.SetStatus("zero length crypt")
 		return r

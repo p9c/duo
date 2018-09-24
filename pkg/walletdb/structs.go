@@ -5,6 +5,8 @@ import (
 	"github.com/parallelcointeam/duo/pkg/proto"
 )
 
+var er = proto.Errors
+
 // DB is the central data repository for the wallet database
 type DB struct {
 	Path     string
