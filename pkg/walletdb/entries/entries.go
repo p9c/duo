@@ -68,10 +68,10 @@ type Seed struct {
 
 // Key is a key pair controlled by the user. The 64 bit highwayhash of the (encrypted) address and the encrypted address both live in the key so this and Account keys act as an index for all keys in the wallet in other fields, such as the Accounting, which has all of its addresses HWhashes
 type Key struct {
-	Idx     Idx      // in key
-	Address [20]byte // encrypt      // in key
-	Priv    [32]byte // encrypt
-	Pub     [33]byte // encrypt
+	Idx     Idx    // in key
+	Address []byte // encrypt      // in key
+	Priv    []byte // encrypt
+	Pub     []byte // encrypt
 }
 
 // Script is a script stored in the wallet database. The hwh64 index and key are in the key so it is quick to find and if necessary, copy back the address after decryption.

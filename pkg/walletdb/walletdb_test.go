@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/buf"
+	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/proto"
 	"testing"
 )
@@ -40,4 +41,20 @@ func TestReadMasterKey(t *testing.T) {
 		idx := proto.Hash64(BC[i].Crypt.Bytes())
 		wdb.EraseMasterKey(idx)
 	}
+}
+
+func TestEncryptDecrypt(t *testing.T) {
+	p := []byte("testing password")
+	pass := buf.NewSecure().Copy(&p).(*buf.Secure)
+	BC := bc.New().Generate(pass)
+	wdb := NewWalletDB()
+	if wdb.OK() {
+		defer wdb.Close()
+	}
+	wdb.WriteMasterKey(BC)
+	k := key.NewPriv()
+	k.WithBC(BC)
+	k.Make()
+	fmt.Println("secret", k.Error())
+	// wdb.WriteKey(k)
 }

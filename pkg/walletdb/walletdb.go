@@ -7,6 +7,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/buf"
+	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/proto"
 	"github.com/parallelcointeam/duo/pkg/walletdb/entries"
 )
@@ -51,16 +52,57 @@ func (r *DB) NewIf() *DB {
 	return r
 }
 
+// WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet
+func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
+	r = r.NewIf()
+	if BC != nil {
+		r.BC = BC
+	}
+	return r
+}
+
 // Close shuts down a wallet database
 func (r *DB) Close() {
 	r.DB.Close()
 }
 
+// Encrypt transparently uses a BlockCrypt if available to encrypt the data before it is written to the database, or it writes plaintext
+func (r *DB) Encrypt(in *buf.Secure) (out *buf.Byte) {
+	r = r.NewIf()
+	switch {
+	case !r.OK():
+		return &buf.Byte{}
+	case r.BC != nil:
+		out = out.Copy(r.BC.Encrypt(in.Bytes())).(*buf.Byte)
+	default:
+		out = out.Copy(in.Bytes()).(*buf.Byte)
+	}
+	return
+}
+
+// Decrypt transparently uses a BlockCrypt if available to deecrypt the data before it is returned to the caller, or it writes plaintext
+func (r *DB) Decrypt(in *buf.Byte) (out *buf.Secure) {
+	r = r.NewIf()
+	switch {
+	case !r.OK():
+		return &buf.Secure{}
+	case r.BC.GCM != nil:
+		out = out.Copy(r.BC.Decrypt(in.Bytes())).(*buf.Secure)
+	default:
+		out = out.Copy(in.Bytes()).(*buf.Secure)
+	}
+	return
+}
+
 // WriteName writes a name entry to the database
-func (r *DB) WriteName() {}
+func (r *DB) WriteName() {
+
+}
 
 // EraseName removes a name entry from the database
-func (r *DB) EraseName() {}
+func (r *DB) EraseName() {
+
+}
 
 // ReadTx reads a transaction entry from the database
 func (r *DB) ReadTx() {}
@@ -71,8 +113,50 @@ func (r *DB) WriteTx() {}
 // EraseTx deletes a transaction entry from the database
 func (r *DB) EraseTx() {}
 
+// ReadKey writes a key entry to the database
+func (r *DB) ReadKey() {
+
+}
+
 // WriteKey writes a key entry to the database
-func (r *DB) WriteKey() {}
+func (r *DB) WriteKey(priv *key.Priv) *DB {
+	r = r.NewIf()
+	if !r.OK() {
+		return nil
+	}
+	if priv.Crypt.Len() < 1 {
+		r.SetStatus("zero length crypt")
+		return r
+	}
+	id := []byte(priv.GetID())
+	idx := proto.Hash64(&id)
+	fmt.Println(idx)
+	ID := buf.NewSecure().Copy(&id).(*buf.Secure)
+	encid := r.Encrypt(ID)
+	fmt.Println(encid.Bytes())
+	k := append([]byte(rec.Tables["Key"]), *idx...)
+	k = append(k, *encid.Bytes()...)
+	value := *priv.Crypt.Val
+	fmt.Println(value)
+	P := buf.NewSecure()
+	pk := priv.PubKey().Bytes()
+	P.Copy(pk)
+	Pp := *r.Encrypt(P).Bytes()
+	fmt.Println(Pp)
+	value = append(value, Pp...)
+	txn := r.DB.NewTransaction(true)
+	err := txn.Set(k, value)
+	if r.SetStatusIf(err).OK() {
+		r.SetStatusIf(txn.Commit(nil))
+	}
+	P.Free()
+	return r
+}
+
+// EraseKey writes a key entry to the database
+func (r *DB) EraseKey() {
+
+}
 
 // ReadMasterKeys returns all of the masterkey entries in the database
 func (r *DB) ReadMasterKeys() (BC []*bc.BlockCrypt) {
@@ -129,7 +213,7 @@ func (r *DB) WriteMasterKey(BC *bc.BlockCrypt) *DB {
 	}
 	out := proto.Hash64(BC.Crypt.Bytes())
 	key := append(rec.Tables["MasterKey"], *out...)
-	value := *BC.Crypt.Bytes()
+	value := *BC.Crypt.Val
 	value = append(value, *BC.IV.Bytes()...)
 	value = append(value, *proto.IntToBytes(BC.Iterations)...)
 	txn := r.DB.NewTransaction(true)
@@ -158,47 +242,78 @@ func (r *DB) WriteScript() {}
 // EraseScript deletes a script entry from the database
 func (r *DB) EraseScript() {}
 
-// WriteBestBlock updates the best block entry to the current head
-func (r *DB) WriteBestBlock() {}
-
 // WriteDefaultKey updates the default key used by interfaces when receiving payments
-func (r *DB) WriteDefaultKey() {}
+func (r *DB) WriteDefaultKey() {
+
+}
 
 // ReadDefaultKey returns the current set default key
-func (r *DB) ReadDefaultKey() {}
+func (r *DB) ReadDefaultKey() {
+
+}
+
+// WriteBestBlock gets the current best block entry
+func (r *DB) WriteBestBlock() {}
 
 // ReadBestBlock gets the current best block entry
 func (r *DB) ReadBestBlock() {}
 
 // ReadPool gets the oldest available pool entry and refreshes the pool after addresses are used
-func (r *DB) ReadPool() {}
+func (r *DB) ReadPool() {
+
+}
 
 // WritePool adds a new pool key to the wallet
-func (r *DB) WritePool() {}
+func (r *DB) WritePool() {
+
+}
+
+// ErasePool removes a pool key
+func (r *DB) ErasePool() {
+
+}
 
 // ReadMinVersion returns the minimum version required to read this database
-func (r *DB) ReadMinVersion() {}
+func (r *DB) ReadMinVersion() {
+
+}
 
 // WriteMinVersion updates the minimum version
-func (r *DB) WriteMinVersion() {}
+func (r *DB) WriteMinVersion() {
+
+}
 
 // ReadAccount finds an account stored due to being a correspondent account
-func (r *DB) ReadAccount() {}
+func (r *DB) ReadAccount() {
+
+}
 
 // WriteAccount writes a new account entry
-func (r *DB) WriteAccount() {}
+func (r *DB) WriteAccount() {
+
+}
 
 // EraseAccount deletes an account from the wallet database
-func (r *DB) EraseAccount() {}
+func (r *DB) EraseAccount() {
+
+}
+
+// ReadAccountingEntry writes an accounting entry based on a transaction
+func (r *DB) ReadAccountingEntry() {}
 
 // WriteAccountingEntry writes an accounting entry based on a transaction
 func (r *DB) WriteAccountingEntry() {}
+
+// EraseAccountingEntry writes an accounting entry based on a transaction
+func (r *DB) EraseAccountingEntry() {}
 
 // GetAccountCreditDebit finds entries in the credit/debit records written related to each input transaction from a list of indexes of accounts of interest
 func (r *DB) GetAccountCreditDebit() {}
 
 // LoadWallet opens a wallet ready to use
-func (r *DB) LoadWallet() {}
+func (r *DB) LoadWallet() {
+
+}
 
 // Recover attempts to recover as much data as possible from the database files by parsing their key and value tables as raw data
 func (r *DB) Recover() {}

@@ -2,6 +2,7 @@ package walletdb
 
 import (
 	"github.com/dgraph-io/badger"
+	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/proto"
 )
 
@@ -14,5 +15,6 @@ type DB struct {
 	ValueDir string
 	Options  *badger.Options
 	DB       *badger.DB
+	BC       *bc.BlockCrypt
 	proto.State
 }
