@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/buf"
+	"github.com/parallelcointeam/duo/pkg/proto"
 	"testing"
 )
 
@@ -36,5 +37,7 @@ func TestReadMasterKey(t *testing.T) {
 		fmt.Println("crypt", BC[i].Crypt.Bytes())
 		fmt.Println("iv", BC[i].IV.Bytes())
 		fmt.Println("iterations", BC[i].Iterations)
+		idx := proto.Hash64(BC[i].Crypt.Bytes())
+		wdb.EraseMasterKey(idx)
 	}
 }

@@ -140,8 +140,16 @@ func (r *DB) WriteMasterKey(BC *bc.BlockCrypt) *DB {
 }
 
 // EraseMasterKey deletes a masterkey entry from the database
-func (r *DB) EraseMasterKey() {
-
+func (r *DB) EraseMasterKey(idx *[]byte) *DB {
+	opt := badger.DefaultIteratorOptions
+	opt.PrefetchValues = false
+	search := append(rec.Tables["MasterKey"], *idx...)
+	txn := r.DB.NewTransaction(true)
+	if !r.SetStatusIf(txn.Delete(search)).OK() {
+		fmt.Println(r.Error())
+	}
+	txn.Commit(nil)
+	return r
 }
 
 // WriteScript writes a script entry to the database
