@@ -10,13 +10,17 @@ var (
 	TableNames = []string{"MasterKey", "Name", "Tx", "Seed", "Key", "Script", "Pool", "Setting", "Account", "Accounting", "CreditDebit", "BestBlock", "MinVersion", "DefaultKey"}
 	// Tables are a map of 64 bit hashes formed from the exact variable names used here, this is used as a translation table
 	Tables map[string]KeyPrefix
+	// TS is thte same as Tables except as strings
+	TS map[string]string
 )
 
 func init() {
 	Tables = make(map[string]KeyPrefix)
+	TS = make(map[string]string)
 	for i := range TableNames {
 		t := []byte(TableNames[i])
 		Tables[TableNames[i]] = KeyPrefix(*proto.Hash64(&t))
+		TS[TableNames[i]] = string(Tables[TableNames[i]])
 	}
 }
 
@@ -84,9 +88,10 @@ type Script struct {
 
 // Pool is a wallet key pair that has not yet been put to use in a transaction. The Idx is the HWH of the encrypted key ID (address)
 type Pool struct {
-	Idx     Idx   // in key
-	Seq     int64 // in key
-	Key           // encrypt
+	Idx     Idx    // in key
+	Address []byte // in key // encrypt
+	Seq     int64  // in key
+	Key            // encrypt
 	Created int64
 	Expires int64
 }

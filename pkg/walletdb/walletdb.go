@@ -2,6 +2,8 @@ package walletdb
 
 import (
 	"bytes"
+	"encoding/hex"
+	"fmt"
 	"github.com/dgraph-io/badger"
 	"github.com/mitchellh/go-homedir"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
@@ -51,7 +53,7 @@ func (r *DB) NewIf() *DB {
 	return r
 }
 
-// WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet
+// WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet. Changes the encryption if already encrypted or enables it.
 func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 	r = r.NewIf()
 	if BC != nil {
@@ -61,9 +63,58 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 	return r
 }
 
-// RemoveBC removes the BlockCrypt and decrypts all the records in the database
+// RemoveBC removes the BlockCrypt and decrypts all the records in the database.
 func (r *DB) RemoveBC() *DB {
-	// TODO: ...
+	opt := badger.DefaultIteratorOptions
+	opt.PrefetchValues = false
+	err := r.DB.View(func(txn *badger.Txn) error {
+		iter := txn.NewIterator(opt)
+		defer iter.Close()
+		for iter.Rewind(); iter.Valid(); iter.Next() {
+			item := iter.Item()
+			k := item.Key()
+			v, err := item.Value()
+			if !r.SetStatusIf(err).OK() {
+				return r
+			}
+			table := string(k[:8])
+			t := rec.TS
+			switch table {
+			case t["MasterKey"]:
+				fmt.Println("MasterKey", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["Name"]:
+				fmt.Println("Name", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["Tx"]:
+				fmt.Println("Tx", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["Seed"]:
+				fmt.Println("Seed", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["Key"]:
+				fmt.Println("Key", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["Script"]:
+				fmt.Println("Script", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["Pool"]:
+				fmt.Println("Pool", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["Setting"]:
+				fmt.Println("Setting", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["Account"]:
+				fmt.Println("Account", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["Accounting"]:
+				fmt.Println("Accounting", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["CreditDebit"]:
+				fmt.Println("CreditDebit", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["BestBlock"]:
+				fmt.Println("BestBlock", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["MinVersion"]:
+				fmt.Println("MinVersion", hex.EncodeToString(k), hex.EncodeToString(v))
+			case t["DefaultKey"]:
+				fmt.Println("DefaultKey", hex.EncodeToString(k), hex.EncodeToString(v))
+			}
+		}
+		return nil
+	})
+	if r.SetStatusIf(err).OK() {
+
+	}
 	return r
 }
 
@@ -110,6 +161,7 @@ func (r *DB) ReadName(id *[]byte) (out *rec.Name) {
 		id = r.BC.Encrypt(id)
 	}
 	k = append(k, *id...)
+	fmt.Println("search", hex.EncodeToString(k))
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
 	var V []byte
@@ -126,12 +178,12 @@ func (r *DB) ReadName(id *[]byte) (out *rec.Name) {
 	})
 	if r.SetStatusIf(err).OK() {
 		if r.BC != nil {
-			id = r.BC.Decrypt(id)
+			out.Address = *r.BC.Decrypt(id)
 			out.Label = string(*r.BC.Decrypt(&V))
 		} else {
+			out.Address = *id
 			out.Label = string(V)
 		}
-		out.Address = *id
 		out.Idx = *idx
 	}
 	return
@@ -154,6 +206,7 @@ func (r *DB) WriteName(address, label *[]byte) *DB {
 	k := []byte(rec.Tables["Name"])
 	k = append(k, *idx...)
 	k = append(k, *address...)
+	fmt.Println("write  ", hex.EncodeToString(k))
 	v := *label
 	txn := r.DB.NewTransaction(true)
 	err := txn.Set(k, v)
@@ -164,19 +217,22 @@ func (r *DB) WriteName(address, label *[]byte) *DB {
 }
 
 // EraseName removes a name entry from the database
-func (r *DB) EraseName(id *[]byte) *DB {
+func (r *DB) EraseName(address *[]byte) *DB {
+	r = r.NewIf()
+	if !r.OK() {
+		return nil
+	}
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
-	idx := proto.Hash64(id)
-	search := append(rec.Tables["Name"], *idx...)
-	encid := r.BC.Encrypt(id)
+	idx := proto.Hash64(address)
 	if r.BC != nil {
-		search = append(search, *encid...)
-	} else {
-		search = append(search, *id...)
+		address = r.BC.Encrypt(address)
 	}
+	k := []byte(rec.Tables["Name"])
+	k = append(k, *idx...)
+	k = append(k, *address...)
 	txn := r.DB.NewTransaction(true)
-	if r.SetStatusIf(txn.Delete(search)).OK() {
+	if r.SetStatusIf(txn.Delete(k)).OK() {
 		txn.Commit(nil)
 	}
 	return r
