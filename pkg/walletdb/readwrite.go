@@ -5,151 +5,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/dgraph-io/badger"
-	"github.com/mitchellh/go-homedir"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/proto"
 	"github.com/parallelcointeam/duo/pkg/walletdb/entries"
 )
-
-// NewWalletDB creates a new walletdb.DB. Path, BaseDir, ValueDir the order of how the variadic options will be processed to override thte defaults
-func NewWalletDB(params ...string) (db *DB) {
-	var err error
-	db = &DB{
-		BaseDir:  DefaultBaseDir,
-		ValueDir: DefaultValueDir,
-	}
-	if db.Path, err = homedir.Dir(); err != nil {
-		db.SetStatus(err.Error())
-		return
-	}
-	db.Options = &badger.DefaultOptions
-	l := len(params)
-	if l > 0 {
-		switch {
-		case l >= 1:
-			db.Path = params[0]
-		case l >= 2:
-			db.BaseDir = params[1]
-		case l >= 3:
-			db.ValueDir = params[3]
-		}
-	}
-	db.Options.Dir = db.Path + "/" + db.BaseDir
-	db.Options.ValueDir = db.Path + "/" + db.BaseDir + "/" + db.ValueDir
-	if db.DB, err = badger.Open(*db.Options); !db.SetStatusIf(err).OK() {
-		return
-	}
-	return
-}
-
-// NewIf creates a new WalletDB
-func (r *DB) NewIf() *DB {
-	if r == nil {
-		r = NewWalletDB()
-		r.SetStatus(er.NilRec)
-	}
-	return r
-}
-
-// WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet. Changes the encryption if already encrypted or enables it.
-func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
-	r = r.NewIf()
-	if BC != nil {
-		r.BC = BC
-	}
-	// TODO: have it read all entries and rewrite them encrypted and flush all old data
-	return r
-}
-
-// RemoveBC removes the BlockCrypt and decrypts all the records in the database.
-func (r *DB) RemoveBC() *DB {
-	opt := badger.DefaultIteratorOptions
-	opt.PrefetchValues = false
-	err := r.DB.View(func(txn *badger.Txn) error {
-		iter := txn.NewIterator(opt)
-		defer iter.Close()
-		for iter.Rewind(); iter.Valid(); iter.Next() {
-			item := iter.Item()
-			k := item.Key()
-			v, err := item.Value()
-			if !r.SetStatusIf(err).OK() {
-				return r
-			}
-			table := string(k[:8])
-			t := rec.TS
-			switch table {
-			case t["MasterKey"]:
-				fmt.Println("MasterKey", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["Name"]:
-				fmt.Println("Name", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["Tx"]:
-				fmt.Println("Tx", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["Seed"]:
-				fmt.Println("Seed", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["Key"]:
-				fmt.Println("Key", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["Script"]:
-				fmt.Println("Script", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["Pool"]:
-				fmt.Println("Pool", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["Setting"]:
-				fmt.Println("Setting", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["Account"]:
-				fmt.Println("Account", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["Accounting"]:
-				fmt.Println("Accounting", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["CreditDebit"]:
-				fmt.Println("CreditDebit", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["BestBlock"]:
-				fmt.Println("BestBlock", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["MinVersion"]:
-				fmt.Println("MinVersion", hex.EncodeToString(k), hex.EncodeToString(v))
-			case t["DefaultKey"]:
-				fmt.Println("DefaultKey", hex.EncodeToString(k), hex.EncodeToString(v))
-			}
-		}
-		return nil
-	})
-	if r.SetStatusIf(err).OK() {
-
-	}
-	return r
-}
-
-// Close shuts down a wallet database
-func (r *DB) Close() {
-	r.DB.Close()
-}
-
-// Encrypt transparently uses a BlockCrypt if available to encrypt the data before it is written to the database, or it writes plaintext
-func (r *DB) Encrypt(in *buf.Secure) (out *buf.Byte) {
-	r = r.NewIf()
-	switch {
-	case !r.OK():
-		return &buf.Byte{}
-	case r.BC != nil:
-		out = out.Copy(r.BC.Encrypt(in.Bytes())).(*buf.Byte)
-	default:
-		out = out.Copy(in.Bytes()).(*buf.Byte)
-	}
-	return
-}
-
-// Decrypt transparently uses a BlockCrypt if available to deecrypt the data before it is returned to the caller, or it writes plaintext
-func (r *DB) Decrypt(in *buf.Byte) (out *buf.Secure) {
-	r = r.NewIf()
-	switch {
-	case !r.OK():
-		return &buf.Secure{}
-	case r.BC.GCM != nil:
-		out = out.Copy(r.BC.Decrypt(in.Bytes())).(*buf.Secure)
-	default:
-		out = out.Copy(in.Bytes()).(*buf.Secure)
-	}
-	return
-}
 
 // ReadName reads a name entry out of the database
 func (r *DB) ReadName(id *[]byte) (out *rec.Name) {
@@ -563,11 +424,3 @@ func (r *DB) EraseAccountingEntry() {}
 
 // GetAccountCreditDebit finds entries in the credit/debit records written related to each input transaction from a list of indexes of accounts of interest
 func (r *DB) GetAccountCreditDebit() {}
-
-// LoadWallet opens a wallet ready to use
-func (r *DB) LoadWallet() {
-
-}
-
-// Recover attempts to recover as much data as possible from the database files by parsing their key and value tables as raw data
-func (r *DB) Recover() {}

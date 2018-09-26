@@ -10,14 +10,6 @@ import (
 	"testing"
 )
 
-func TestOpenClose(t *testing.T) {
-	db := NewWalletDB()
-	if db.OK() {
-		defer db.Close()
-	}
-	fmt.Println(db)
-}
-
 func TestMasterKey(t *testing.T) {
 	p := []byte("testing password")
 	pass := buf.NewSecure().Copy(&p).(*buf.Secure)
