@@ -57,6 +57,13 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 	if BC != nil {
 		r.BC = BC
 	}
+	// TODO: have it read all entries and rewrite them encrypted and flush all old data
+	return r
+}
+
+// RemoveBC removes the BlockCrypt and decrypts all the records in the database
+func (r *DB) RemoveBC() *DB {
+	// TODO: ...
 	return r
 }
 
@@ -93,14 +100,86 @@ func (r *DB) Decrypt(in *buf.Byte) (out *buf.Secure) {
 	return
 }
 
-// WriteName writes a name entry to the database
-func (r *DB) WriteName() {
+// ReadName reads a name entry out of the database
+func (r *DB) ReadName(id *[]byte) (out *rec.Name) {
+	out = new(rec.Name)
+	k := []byte(rec.Tables["Name"])
+	idx := proto.Hash64(id)
+	k = append(k, *idx...)
+	if r.BC != nil {
+		id = r.BC.Encrypt(id)
+	}
+	k = append(k, *id...)
+	opt := badger.DefaultIteratorOptions
+	opt.PrefetchValues = false
+	var V []byte
+	err := r.DB.View(func(txn *badger.Txn) error {
+		item, er := txn.Get(k)
+		if er != nil {
+			return er
+		}
+		V, er = item.Value()
+		if er != nil {
+			return er
+		}
+		return nil
+	})
+	if r.SetStatusIf(err).OK() {
+		if r.BC != nil {
+			id = r.BC.Decrypt(id)
+			out.Label = string(*r.BC.Decrypt(&V))
+		} else {
+			out.Label = string(V)
+		}
+		out.Address = *id
+		out.Idx = *idx
+	}
+	return
+}
 
+// WriteName writes a name entry to the database
+func (r *DB) WriteName(address, label *[]byte) *DB {
+	r = r.NewIf()
+	if !r.OK() {
+		return nil
+	}
+	if address == nil || label == nil {
+		r.SetStatus(er.NilParam)
+	}
+	idx := proto.Hash64(address)
+	if r.BC != nil {
+		address = r.BC.Encrypt(address)
+		label = r.BC.Encrypt(label)
+	}
+	k := []byte(rec.Tables["Name"])
+	k = append(k, *idx...)
+	k = append(k, *address...)
+	v := *label
+	txn := r.DB.NewTransaction(true)
+	err := txn.Set(k, v)
+	if r.SetStatusIf(err).OK() {
+		r.SetStatusIf(txn.Commit(nil))
+	}
+	return r
 }
 
 // EraseName removes a name entry from the database
-func (r *DB) EraseName() {
-
+func (r *DB) EraseName(id *[]byte) *DB {
+	opt := badger.DefaultIteratorOptions
+	opt.PrefetchValues = false
+	idx := proto.Hash64(id)
+	search := append(rec.Tables["Name"], *idx...)
+	encid := r.BC.Encrypt(id)
+	if r.BC != nil {
+		search = append(search, *encid...)
+	} else {
+		search = append(search, *id...)
+	}
+	txn := r.DB.NewTransaction(true)
+	if r.SetStatusIf(txn.Delete(search)).OK() {
+		txn.Commit(nil)
+	}
+	return r
 }
 
 // ReadTx reads a transaction entry from the database
@@ -112,7 +191,7 @@ func (r *DB) WriteTx() {}
 // EraseTx deletes a transaction entry from the database
 func (r *DB) EraseTx() {}
 
-// ReadKey writes a key entry to the database
+// ReadKey reads a key entry from the database
 func (r *DB) ReadKey(id *[]byte) (out *key.Priv) {
 	k := []byte(rec.Tables["Key"])
 	idx := proto.Hash64(id)
@@ -198,9 +277,9 @@ func (r *DB) EraseKey(id *[]byte) *DB {
 	encid := r.Encrypt(ID)
 	search = append(search, *encid.Bytes()...)
 	txn := r.DB.NewTransaction(true)
-	if !r.SetStatusIf(txn.Delete(search)).OK() {
+	if r.SetStatusIf(txn.Delete(search)).OK() {
+		txn.Commit(nil)
 	}
-	txn.Commit(nil)
 	return r
 }
 

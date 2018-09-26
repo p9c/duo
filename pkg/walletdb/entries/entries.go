@@ -1,3 +1,4 @@
+// Package rec is a maybe unnecessary collection of specifications of the data formats used in the walletdb.
 package rec
 
 import (
@@ -35,9 +36,9 @@ type MasterKey struct {
 
 // Name is a human readable string label for an address. Idx is the Highwayhash 64 of the encrypted address, used in the accounts and keys for quick matching
 type Name struct {
-	Idx     Idx      // in key
-	Address [20]byte // encrypt // in key
-	Label   string   // encrypt
+	Idx     Idx    // in key
+	Address []byte // encrypt // in key
+	Label   string // encrypt
 }
 
 // Tx is a transaction connected to an address in the wallet

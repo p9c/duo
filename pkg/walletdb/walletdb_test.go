@@ -71,21 +71,20 @@ func TestMasterKey(t *testing.T) {
 		pk := wdb.ReadKey(&kh)
 		fmt.Println("prvkey", len(*pk.Bytes()), hex.EncodeToString(*pk.Bytes()))
 		fmt.Println("pubkey", pk.PubKey().(*buf.Byte).Len(), hex.EncodeToString(*pk.PubKey().Bytes()))
-	}
-}
 
-func TestEncryptDecrypt(t *testing.T) {
-	p := []byte("testing password")
-	pass := buf.NewSecure().Copy(&p).(*buf.Secure)
-	BC := bc.New().Generate(pass)
-	wdb := NewWalletDB()
-	if wdb.OK() {
-		defer wdb.Close()
+		fmt.Println("\nWRITE NAME")
+		k.WithBC(BCs[i])
+		k.Make()
+		address := []byte(k.GetID())
+		label := []byte("some random thing")
+		wdb.WriteName(&address, &label)
+		defer wdb.EraseName(&address)
+		fmt.Println("addr  ", hex.EncodeToString(address))
+		fmt.Println("label ", string(label))
+
+		fmt.Println("\nREAD NAME")
+		rName := wdb.ReadName(&address)
+		fmt.Println("addr  ", hex.EncodeToString(rName.Address))
+		fmt.Println("label ", rName.Label)
 	}
-	wdb.WriteMasterKey(BC)
-	k := key.NewPriv()
-	k.WithBC(BC)
-	k.Make()
-	fmt.Println("secret", k.Error())
-	// wdb.WriteKey(k)
 }

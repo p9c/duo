@@ -1,3 +1,4 @@
+// Package kdf is a Key Derivation Function that uses Blake2b hashes repeatedly to slow down brute force password search attacks, and used to symmetrically encrypt master keys and the like that secure  data with a full 32 bit random ciphertext
 package kdf
 
 import (
