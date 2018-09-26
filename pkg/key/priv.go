@@ -103,7 +103,6 @@ func (r *Priv) SetKey(priv *[]byte, pub *[]byte) *Priv {
 	r = r.NewIf()
 	r.UnsetStatus()
 	r.Copy(priv)
-	// proto.Zero(priv)
 	r.pub.Copy(pub)
 	r.valid = true
 	return r

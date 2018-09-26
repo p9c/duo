@@ -2,7 +2,6 @@ package walletdb
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/dgraph-io/badger"
 	"github.com/mitchellh/go-homedir"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
@@ -115,27 +114,21 @@ func (r *DB) EraseTx() {}
 
 // ReadKey writes a key entry to the database
 func (r *DB) ReadKey(id *[]byte) (out *key.Priv) {
-	fmt.Println("id    ", *id)
-	idx := proto.Hash64(id)
 	k := []byte(rec.Tables["Key"])
-	fmt.Println("tableh", k)
+	idx := proto.Hash64(id)
 	k = append(k, *idx...)
-	fmt.Println("idx   ", *idx)
-	encid := r.BC.Encrypt(id)
-	fmt.Println(r.BC.Error())
-	fmt.Println("encid ", *encid)
-	k = append(k, *encid...)
-	fmt.Println("searchk", k)
+	if r.BC != nil {
+		id = r.BC.Encrypt(id)
+	}
+	k = append(k, *id...)
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
-	var K []byte
 	var V []byte
 	err := r.DB.View(func(txn *badger.Txn) error {
 		item, er := txn.Get(k)
 		if er != nil {
 			return er
 		}
-		K = item.Key()
 		V, er = item.Value()
 		if er != nil {
 			return er
@@ -143,24 +136,18 @@ func (r *DB) ReadKey(id *[]byte) (out *key.Priv) {
 		return nil
 	})
 	if r.SetStatusIf(err).OK() {
-		table := K[:8]
-		idx := K[8:16]
-		encid := K[16:]
-		encpriv := V[:48]
-		encpub := V[48:]
-		fmt.Println("table", len(table), table)
-		fmt.Println("idx  ", len(idx), idx)
-		fmt.Println("encid", len(encid), encid)
-		fmt.Println("encpr", len(encpriv), encpriv)
-		fmt.Println("encpu", len(encpub), encpub)
-		out = key.NewPriv().WithBC(r.BC)
-		fmt.Println("BC", r.BC)
-		id := r.BC.Decrypt(&encid)
-		fmt.Println("  plaintext id  ", len(*id), *id)
-		priv := r.BC.Decrypt(&encpriv)
-		fmt.Println("  plaintext priv", len(*priv), *priv)
-		pub := r.BC.Decrypt(&encpub)
-		fmt.Println("  plaintext pub ", len(*pub), *pub)
+		var priv, pub *[]byte
+		if r.BC != nil {
+			encpriv := V[:48]
+			encpub := V[48:]
+			out = key.NewPriv()
+			out.WithBC(r.BC)
+			priv = r.BC.Decrypt(&encpriv)
+			pub = r.BC.Decrypt(&encpub)
+		} else {
+			pr, pu := V[:32], V[32:]
+			priv, pub = &pr, &pu
+		}
 		out.SetKey(priv, pub)
 	}
 	return
@@ -176,29 +163,25 @@ func (r *DB) WriteKey(priv *key.Priv) *DB {
 		r.SetStatus("zero length crypt")
 		return r
 	}
+	I := []byte(priv.GetID())
+	id := &I
+	idx := proto.Hash64(id)
+	var pk, pp *[]byte
+	if r.BC != nil {
+		id = priv.BC.Encrypt(id)
+		pk = priv.BC.Encrypt(priv.Bytes())
+		pp = priv.BC.Encrypt(priv.PubKey().Bytes())
+	} else {
+		pk = priv.Bytes()
+		pp = priv.PubKey().Bytes()
+	}
 	k := []byte(rec.Tables["Key"])
-	fmt.Println("tableh", k)
-	id := []byte(priv.GetID())
-	idx := proto.Hash64(&id)
-	fmt.Println("idx   ", len(*idx), *idx)
-	ID := buf.NewSecure().Copy(&id).(*buf.Secure)
-	encid := priv.BC.Encrypt(ID.Bytes())
-	fmt.Println("  plaintext id    ", len(id), id)
-	fmt.Println("encid ", len(*encid), *encid)
 	k = append(k, *idx...)
-	k = append(k, *encid...)
-	value := *priv.Crypt.Val
-	fmt.Println("  plaintext prvkey", len(*priv.Crypt.Get().Bytes()), *priv.Crypt.Get().Bytes())
-	fmt.Println("prvkey ", len(value), value)
-	// *r.Decrypt(buf.NewByte().Copy(&value).(*buf.Byte)).Bytes())
-	pk := priv.BC.Encrypt(priv.PubKey().Bytes())
-	pp := *priv.PubKey().Bytes()
-	fmt.Println("  plaintext pubkey", len(pp), pp)
-	fmt.Println("pubkey", len(*pk), *pk)
-	value = append(value, *pk...)
-	fmt.Println("value", value)
+	k = append(k, *id...)
+	v := *pk
+	v = append(v, *pp...)
 	txn := r.DB.NewTransaction(true)
-	err := txn.Set(k, value)
+	err := txn.Set(k, v)
 	if r.SetStatusIf(err).OK() {
 		r.SetStatusIf(txn.Commit(nil))
 	}
@@ -216,7 +199,6 @@ func (r *DB) EraseKey(id *[]byte) *DB {
 	search = append(search, *encid.Bytes()...)
 	txn := r.DB.NewTransaction(true)
 	if !r.SetStatusIf(txn.Delete(search)).OK() {
-		fmt.Println(r.Error())
 	}
 	txn.Commit(nil)
 	return r
@@ -292,7 +274,6 @@ func (r *DB) EraseMasterKey(idx *[]byte) *DB {
 	search := append(rec.Tables["MasterKey"], *idx...)
 	txn := r.DB.NewTransaction(true)
 	if !r.SetStatusIf(txn.Delete(search)).OK() {
-		fmt.Println(r.Error())
 	}
 	txn.Commit(nil)
 	return r
