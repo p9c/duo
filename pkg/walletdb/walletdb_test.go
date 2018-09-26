@@ -86,5 +86,20 @@ func TestMasterKey(t *testing.T) {
 		rName := wdb.ReadName(&address)
 		fmt.Println("addr  ", hex.EncodeToString(rName.Address))
 		fmt.Println("label ", rName.Label)
+
+		fmt.Println("\nWRITE ACCOUNT")
+		k.WithBC(BCs[i])
+		k.Make()
+		address = []byte(k.GetID())
+		pub := k.PubKey().Bytes()
+		wdb.WriteAccount(&address, pub)
+		defer wdb.EraseAccount(&address)
+		fmt.Println("addr  ", hex.EncodeToString(address))
+		fmt.Println("pub   ", hex.EncodeToString(*pub))
+
+		fmt.Println("\nREAD ACCOUNT")
+		rAccount := wdb.ReadAccount(&address)
+		fmt.Println("addr  ", hex.EncodeToString(rAccount.Address))
+		fmt.Println("pub   ", hex.EncodeToString(rAccount.Pub))
 	}
 }
