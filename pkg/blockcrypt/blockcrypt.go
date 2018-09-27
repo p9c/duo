@@ -48,7 +48,7 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 				if err == nil {
 					r.IV = buf.NewByte()
 					r.IV.Copy(&bb)
-					r.Iterations = kdf.Bench(time.Second)
+					r.Iterations = kdf.Bench(time.Second / 100)
 					var C *buf.Secure
 					C, err = kdf.Gen(r.Password, r.IV, r.Iterations)
 					if r.SetStatusIf(err); err == nil {

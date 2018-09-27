@@ -63,8 +63,8 @@ func (r *State) OK() bool {
 // Error implements the error interface
 func (r *State) Error() string {
 	r = r.NewIf()
-	if r.err != nil {
-		return r.err.Error()
+	if !r.OK() {
+		return r.Status
 	}
 	return ""
 }

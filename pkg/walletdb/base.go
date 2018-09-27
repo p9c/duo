@@ -6,6 +6,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/mitchellh/go-homedir"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
+	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/walletdb/entries"
 )
 
@@ -66,6 +67,7 @@ func (r *DB) RemoveBC() *DB {
 		return r
 	}
 	BC := r.BC
+	var masterkeyIdx []byte
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
 	err := r.DB.View(func(txn *badger.Txn) error {
@@ -75,6 +77,7 @@ func (r *DB) RemoveBC() *DB {
 			item := iter.Item()
 			k := item.Key()
 			v, err := item.Value()
+			meta := item.UserMeta()
 			if !r.SetStatusIf(err).OK() {
 				return r
 			}
@@ -85,35 +88,68 @@ func (r *DB) RemoveBC() *DB {
 			case t["MasterKey"]:
 				fmt.Println("\nMasterKey  ", K, "\n           ", V)
 				fmt.Println(">>> deleting...")
+				masterkeyIdx = k[8:16]
 			case t["Name"]:
 				fmt.Println("\nName       ", K, "\n           ", V)
-				table := k[:8]
-				idx := k[8:16]
-				address := k[16:]
-				label := v
-				fmt.Println("\nENCRYPTED")
-				fmt.Println("table  ", hex.EncodeToString(table))
-				fmt.Println("idx    ", hex.EncodeToString(idx))
-				fmt.Println("address", hex.EncodeToString(address))
-				fmt.Println("label  ", hex.EncodeToString(label))
-				address = *r.BC.Decrypt(&address)
-				label = *r.BC.Decrypt(&label)
-				r.EraseName(&address)
+				if meta&1 == 1 {
+					table := k[:8]
+					idx := k[8:16]
+					address := k[16:]
+					label := v
 
-				fmt.Println("\nDECRYPTED")
-				fmt.Println("address", hex.EncodeToString(address))
-				fmt.Println("label  ", string(label))
+					fmt.Println("\nENCRYPTED")
+					fmt.Println("table  ", hex.EncodeToString(table))
+					fmt.Println("idx    ", hex.EncodeToString(idx))
+					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("label  ", hex.EncodeToString(label))
 
-				r.BC = nil
-				r.WriteName(&address, &label)
-				r.BC = BC
+					address = *r.BC.Decrypt(&address)
+					label = *r.BC.Decrypt(&label)
+					r.EraseName(&address)
 
+					fmt.Println("\nDECRYPTED")
+					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("label  ", string(label))
+
+					r.BC = nil
+					r.WriteName(&address, &label)
+					r.BC = BC
+				}
 			case t["Tx"]:
 				fmt.Println("\nTx         ", K, "\n           ", V)
 			case t["Seed"]:
 				fmt.Println("\nSeed       ", K, "\n           ", V)
 			case t["Key"]:
 				fmt.Println("\nKey        ", K, "\n           ", V)
+				if meta&1 == 1 {
+					table := k[:8]
+					idx := k[8:16]
+					address := k[16:]
+					priv := v[:48]
+					pub := v[48:]
+
+					fmt.Println("\nENCRYPTED")
+					fmt.Println("table  ", hex.EncodeToString(table))
+					fmt.Println("idx    ", hex.EncodeToString(idx))
+					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("priv   ", hex.EncodeToString(priv))
+					fmt.Println("pub    ", hex.EncodeToString(pub))
+
+					address = *r.BC.Decrypt(&address)
+					priv = *r.BC.Decrypt(&priv)
+					pub = *r.BC.Decrypt(&pub)
+					r.EraseKey(&address)
+
+					fmt.Println("\nDECRYPTED")
+					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("priv   ", hex.EncodeToString(priv))
+					fmt.Println("pub    ", hex.EncodeToString(pub))
+
+					r.BC = nil
+					pk := key.NewPriv().SetKey(&priv, &pub)
+					r.WriteKey(pk)
+					r.BC = BC
+				}
 			case t["Script"]:
 				fmt.Println("\nScript     ", K, "\n           ", V)
 			case t["Pool"]:
@@ -122,6 +158,30 @@ func (r *DB) RemoveBC() *DB {
 				fmt.Println("\nSetting    ", K, "\n           ", V)
 			case t["Account"]:
 				fmt.Println("\nAccount    ", K, "\n           ", V)
+				if meta&1 == 1 {
+					table := k[:8]
+					idx := k[8:16]
+					address := k[16:]
+					pub := v
+
+					fmt.Println("\nENCRYPTED")
+					fmt.Println("table  ", hex.EncodeToString(table))
+					fmt.Println("idx    ", hex.EncodeToString(idx))
+					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("pub    ", hex.EncodeToString(pub))
+
+					address = *r.BC.Decrypt(&address)
+					r.EraseAccount(&address)
+					pub = *r.BC.Decrypt(&pub)
+
+					fmt.Println("\nDECRYPTED")
+					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("pub    ", hex.EncodeToString(pub))
+
+					r.BC = nil
+					r.WriteAccount(&address, &pub)
+					r.BC = BC
+				}
 			case t["Accounting"]:
 				fmt.Println("\nAccounting ", K, "\n           ", V)
 			case t["CreditDebit"]:
@@ -137,8 +197,11 @@ func (r *DB) RemoveBC() *DB {
 		return nil
 	})
 	if r.SetStatusIf(err).OK() {
-
+		if masterkeyIdx != nil {
+			r.EraseMasterKey(&masterkeyIdx)
+		}
 	}
+	r.BC = nil
 	return r
 }
 
