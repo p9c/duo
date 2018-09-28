@@ -28,12 +28,15 @@ func TestMasterKey(t *testing.T) {
 		defer wdb.Close()
 	}
 	wdb.WriteMasterKey(BC)
+	crypt := BC.Crypt.Bytes()
+	idx := proto.Hash64(crypt)
+	defer wdb.EraseMasterKey(idx)
 	BCs := wdb.ReadMasterKeys()
 	for i := range BCs {
-		crypt := BCs[i].Crypt.Bytes()
+		crypt = BCs[i].Crypt.Bytes()
 		iv := BCs[i].IV.Bytes()
 		iterations := BCs[i].Iterations
-		idx := proto.Hash64(crypt)
+		idx = proto.Hash64(crypt)
 
 		fmt.Println("\nMASTER KEY")
 		fmt.Println("idx  ", len(*idx), hex.EncodeToString(*idx))
@@ -61,6 +64,7 @@ func TestMasterKey(t *testing.T) {
 		fmt.Println("pubkey", len(*k.PubKey().Bytes()), hex.EncodeToString(*k.PubKey().Bytes()))
 		wdb.WithBC(BCs[i])
 		wdb.WriteKey(k)
+		defer wdb.EraseKey(&kh)
 
 		fmt.Println("\nRECOVERED KEY")
 		pk := wdb.ReadKey(&kh)
@@ -75,6 +79,7 @@ func TestMasterKey(t *testing.T) {
 		wdb.WriteName(&id, &label)
 		fmt.Println("addr  ", hex.EncodeToString(id))
 		fmt.Println("label ", string(label))
+		defer wdb.EraseName(&id)
 
 		fmt.Println("\nREAD NAME")
 		rName := wdb.ReadName(&id)
@@ -89,6 +94,7 @@ func TestMasterKey(t *testing.T) {
 		wdb.WriteAccount(&address, pub)
 		fmt.Println("addr  ", hex.EncodeToString(address))
 		fmt.Println("pub   ", hex.EncodeToString(*pub))
+		defer wdb.EraseAccount(&address)
 
 		fmt.Println("\nREAD ACCOUNT")
 		rAccount := wdb.ReadAccount(&address)
@@ -98,9 +104,25 @@ func TestMasterKey(t *testing.T) {
 		fmt.Println("\nREMOVE BLOCKCRYPT")
 		wdb.RemoveBC()
 
-		wdb.EraseName(&id)
-		wdb.EraseAccount(&address)
-		wdb.EraseKey(&kh)
-		wdb.EraseMasterKey(idx)
+		fmt.Println("\nRECOVERED KEY")
+		pk = wdb.ReadKey(&kh)
+		fmt.Println("prvkey", len(*pk.Bytes()), hex.EncodeToString(*pk.Bytes()))
+		fmt.Println("pubkey", pk.PubKey().(*buf.Byte).Len(), hex.EncodeToString(*pk.PubKey().Bytes()))
+
+		fmt.Println("\nREAD NAME")
+		rName = wdb.ReadName(&id)
+		fmt.Println("addr  ", hex.EncodeToString(rName.Address))
+		fmt.Println("label ", rName.Label)
+
+		fmt.Println("\nREAD ACCOUNT")
+		rAccount = wdb.ReadAccount(&address)
+		fmt.Println("addr  ", hex.EncodeToString(rAccount.Address))
+		fmt.Println("pub   ", hex.EncodeToString(rAccount.Pub))
+
+		fmt.Println("\nRECOVERED KEY")
+		pk = wdb.ReadKey(&kh)
+		fmt.Println("prvkey", len(*pk.Bytes()), hex.EncodeToString(*pk.Bytes()))
+		fmt.Println("pubkey", pk.PubKey().(*buf.Byte).Len(), hex.EncodeToString(*pk.PubKey().Bytes()))
+
 	}
 }

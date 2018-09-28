@@ -74,9 +74,9 @@ func (r *DB) WriteKey(priv *key.Priv) *DB {
 	var meta byte
 	if r.BC != nil {
 		meta = 1
-		address = priv.BC.Encrypt(address)
-		pk = priv.BC.Encrypt(priv.Bytes())
-		pp = priv.BC.Encrypt(priv.PubKey().Bytes())
+		address = r.BC.Encrypt(address)
+		pk = r.BC.Encrypt(priv.Bytes())
+		pp = r.BC.Encrypt(priv.PubKey().Bytes())
 	} else {
 		pk = priv.Bytes()
 		pp = priv.PubKey().Bytes()

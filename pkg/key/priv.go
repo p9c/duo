@@ -99,12 +99,15 @@ func (r *Priv) Free() proto.Buffer {
 }
 
 // SetKey loads a private key from raw bytes, and zeroes the input bytes of the private key
-func (r *Priv) SetKey(priv *[]byte, pub *[]byte) *Priv {
+func (r *Priv) SetKey(priv *[]byte, pub *[]byte) (out *Priv) {
+	out = new(Priv)
 	r = r.NewIf()
 	r.UnsetStatus()
-	r.Copy(priv)
-	r.pub.Copy(pub)
-	r.valid = true
+	if r.Copy(priv).(*Priv).OK() {
+		if r.pub.Copy(pub).(*Pub).OK() {
+			r.valid = true
+		}
+	}
 	return r
 }
 

@@ -94,25 +94,25 @@ func (r *DB) RemoveBC() *DB {
 				if meta&1 == 1 {
 					table := k[:8]
 					idx := k[8:16]
-					address := k[16:]
+					Naddress := k[16:]
 					label := v
 
-					fmt.Println("\nENCRYPTED")
+					fmt.Println("\nNAME ENCRYPTED")
 					fmt.Println("table  ", hex.EncodeToString(table))
 					fmt.Println("idx    ", hex.EncodeToString(idx))
-					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("address", hex.EncodeToString(Naddress))
 					fmt.Println("label  ", hex.EncodeToString(label))
 
-					address = *r.BC.Decrypt(&address)
+					Naddress = *r.BC.Decrypt(&Naddress)
 					label = *r.BC.Decrypt(&label)
-					r.EraseName(&address)
+					r.EraseName(&Naddress)
 
-					fmt.Println("\nDECRYPTED")
-					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("\nNAME DECRYPTED")
+					fmt.Println("address", hex.EncodeToString(Naddress))
 					fmt.Println("label  ", string(label))
 
 					r.BC = nil
-					r.WriteName(&address, &label)
+					r.WriteName(&Naddress, &label)
 					r.BC = BC
 				}
 			case t["Tx"]:
@@ -124,29 +124,30 @@ func (r *DB) RemoveBC() *DB {
 				if meta&1 == 1 {
 					table := k[:8]
 					idx := k[8:16]
-					address := k[16:]
+					Kaddress := k[16:]
 					priv := v[:48]
 					pub := v[48:]
 
-					fmt.Println("\nENCRYPTED")
+					fmt.Println("\nKEY ENCRYPTED")
 					fmt.Println("table  ", hex.EncodeToString(table))
 					fmt.Println("idx    ", hex.EncodeToString(idx))
-					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("Kaddress", hex.EncodeToString(Kaddress))
 					fmt.Println("priv   ", hex.EncodeToString(priv))
 					fmt.Println("pub    ", hex.EncodeToString(pub))
 
-					address = *r.BC.Decrypt(&address)
+					Kaddress = *r.BC.Decrypt(&Kaddress)
 					priv = *r.BC.Decrypt(&priv)
 					pub = *r.BC.Decrypt(&pub)
-					r.EraseKey(&address)
+					r.EraseKey(&Kaddress)
 
-					fmt.Println("\nDECRYPTED")
-					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("\nKEY DECRYPTED")
+					fmt.Println("address", hex.EncodeToString(Kaddress))
 					fmt.Println("priv   ", hex.EncodeToString(priv))
 					fmt.Println("pub    ", hex.EncodeToString(pub))
 
 					r.BC = nil
-					pk := key.NewPriv().SetKey(&priv, &pub)
+					pk := key.NewPriv()
+					pk.SetKey(&priv, &pub)
 					r.WriteKey(pk)
 					r.BC = BC
 				}
@@ -161,25 +162,25 @@ func (r *DB) RemoveBC() *DB {
 				if meta&1 == 1 {
 					table := k[:8]
 					idx := k[8:16]
-					address := k[16:]
+					Aaddress := k[16:]
 					pub := v
 
-					fmt.Println("\nENCRYPTED")
+					fmt.Println("\nACCOUNT ENCRYPTED")
 					fmt.Println("table  ", hex.EncodeToString(table))
 					fmt.Println("idx    ", hex.EncodeToString(idx))
-					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("address", hex.EncodeToString(Aaddress))
 					fmt.Println("pub    ", hex.EncodeToString(pub))
 
-					address = *r.BC.Decrypt(&address)
-					r.EraseAccount(&address)
+					Aaddress = *r.BC.Decrypt(&Aaddress)
+					r.EraseAccount(&Aaddress)
 					pub = *r.BC.Decrypt(&pub)
 
-					fmt.Println("\nDECRYPTED")
-					fmt.Println("address", hex.EncodeToString(address))
+					fmt.Println("\nACCOUNT DECRYPTED")
+					fmt.Println("address", hex.EncodeToString(Aaddress))
 					fmt.Println("pub    ", hex.EncodeToString(pub))
 
 					r.BC = nil
-					r.WriteAccount(&address, &pub)
+					r.WriteAccount(&Aaddress, &pub)
 					r.BC = BC
 				}
 			case t["Accounting"]:
