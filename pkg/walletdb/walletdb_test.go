@@ -118,11 +118,5 @@ func TestMasterKey(t *testing.T) {
 		rAccount = wdb.ReadAccount(&address)
 		fmt.Println("addr  ", hex.EncodeToString(rAccount.Address))
 		fmt.Println("pub   ", hex.EncodeToString(rAccount.Pub))
-
-		fmt.Println("\nRECOVERED KEY")
-		pk = wdb.ReadKey(&kh)
-		fmt.Println("prvkey", len(*pk.Bytes()), hex.EncodeToString(*pk.Bytes()))
-		fmt.Println("pubkey", pk.PubKey().(*buf.Byte).Len(), hex.EncodeToString(*pk.PubKey().Bytes()))
-
 	}
 }

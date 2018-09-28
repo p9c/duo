@@ -71,9 +71,9 @@ func (r *Crypt) Put(in proto.Buffer) *Crypt {
 		r.SetStatus(er.NilRec)
 		fallthrough
 	case r.BC == nil:
-		r.Byte.Copy(in.Bytes())
+		r.Copy(in.Bytes())
 	default:
-		r.Byte.Copy(r.BC.Encrypt(in.Bytes()))
+		r.Copy(r.BC.Encrypt(in.Bytes()))
 	}
 	return r
 }
