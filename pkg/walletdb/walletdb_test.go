@@ -27,6 +27,7 @@ func TestMasterKey(t *testing.T) {
 	if wdb.OK() {
 		defer wdb.Close()
 	}
+	defer wdb.dump()
 	wdb.WriteMasterKey(BC)
 	crypt := BC.Crypt.Bytes()
 	idx := proto.Hash64(crypt)
@@ -119,6 +120,5 @@ func TestMasterKey(t *testing.T) {
 		fmt.Println("addr  ", hex.EncodeToString(rAccount.Address))
 		fmt.Println("pub   ", hex.EncodeToString(rAccount.Pub))
 
-		wdb.dump()
 	}
 }
