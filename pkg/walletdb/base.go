@@ -1,6 +1,7 @@
 package walletdb
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"github.com/dgraph-io/badger"
@@ -48,6 +49,35 @@ func (r *DB) NewIf() *DB {
 		r.SetStatus(er.NilRec)
 	}
 	return r
+}
+
+func (r *DB) dump() {
+	fmt.Println("\nDUMP")
+	opt := badger.DefaultIteratorOptions
+	opt.PrefetchValues = false
+	err := r.DB.View(func(txn *badger.Txn) error {
+		iter := txn.NewIterator(opt)
+		defer iter.Close()
+		for iter.Rewind(); iter.Valid(); iter.Next() {
+			item := iter.Item()
+			k := item.Key()
+			v, err := item.Value()
+			meta := item.UserMeta()
+			t := rec.TS
+			for i := range t {
+				if bytes.Compare(k[:8], []byte(t[i])) == 0 {
+					fmt.Println("table ", i)
+				}
+			}
+			fmt.Println("key   ", hex.EncodeToString(k))
+			fmt.Println("value ", hex.EncodeToString(v))
+			fmt.Println("err", err, "meta", meta)
+		}
+		return nil
+	})
+	if err != nil {
+		fmt.Println("ERROR:", err.Error())
+	}
 }
 
 // WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet. Changes the encryption if already encrypted or enables it.

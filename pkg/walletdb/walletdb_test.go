@@ -118,5 +118,7 @@ func TestMasterKey(t *testing.T) {
 		rAccount = wdb.ReadAccount(&address)
 		fmt.Println("addr  ", hex.EncodeToString(rAccount.Address))
 		fmt.Println("pub   ", hex.EncodeToString(rAccount.Pub))
+
+		wdb.dump()
 	}
 }
