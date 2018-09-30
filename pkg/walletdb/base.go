@@ -102,9 +102,7 @@ func (r *DB) deleteAll() {
 			t := rec.TS
 			for i := range t {
 				if bytes.Compare(k[:8], []byte(t[i])) == 0 {
-					fmt.Print("deleted item type", i)
-				} else {
-					fmt.Print("deleted key", k)
+					fmt.Print("\ndeleted item type ", i, " index ", hex.EncodeToString(k[8:16]))
 				}
 				err := txn.Delete(k)
 				if err != nil {
@@ -127,7 +125,7 @@ func (r *DB) deleteAll() {
 	if err != nil {
 		fmt.Println("\nERROR:", err.Error())
 	}
-	fmt.Println(counter, "items found")
+	fmt.Println("\n", counter, "items deleted")
 }
 
 // WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet. Changes the encryption if already encrypted or enables it.
@@ -139,7 +137,6 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 		r.SetStatus(er.NilParam)
 		return r
 	}
-	fmt.Println("\n\tWithBC()")
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
 	err := r.DB.Update(func(txn *badger.Txn) error {

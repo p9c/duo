@@ -2,6 +2,7 @@ package walletdb
 
 import (
 	"bytes"
+	"crypto/rand"
 
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
@@ -27,12 +28,7 @@ func (r *DB) ReadMasterKeys() (BC []*bc.BlockCrypt) {
 			value, _ := item.Value()
 			table := key[:8]
 			if bytes.Compare(table, rec.Tables["MasterKey"]) == 0 {
-				idx := key[8:16]
 				crypt := value[:48]
-				cryptHash := proto.Hash64(&crypt)
-				if bytes.Compare(idx, *cryptHash) != 0 {
-					r.SetStatus("index of crypt was incorrect")
-				}
 				iv := value[48:60]
 				iterations := value[60:68]
 				var it int64
@@ -61,7 +57,9 @@ func (r *DB) WriteMasterKey(BC *bc.BlockCrypt) *DB {
 		r.SetStatus("zero length crypt")
 		return r
 	}
-	out := proto.Hash64(BC.Crypt.Bytes())
+	o := make([]byte, 8)
+	rand.Read(o)
+	out := &o
 	key := append(rec.Tables["MasterKey"], *out...)
 	value := *BC.Crypt.Val
 	value = append(value, *BC.IV.Bytes()...)
@@ -90,5 +88,11 @@ func (r *DB) EraseMasterKey(idx *[]byte) *DB {
 	if !r.SetStatusIf(txn.Commit(nil)).OK() {
 		return r
 	}
+	return r
+}
+
+// AddPassword generates a new masterkey record based on the ciphertext of an existing one
+func (r *DB) AddPassword(password *buf.Secure) *DB {
+
 	return r
 }

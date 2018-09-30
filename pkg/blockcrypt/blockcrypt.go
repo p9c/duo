@@ -4,11 +4,12 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"time"
+
 	"github.com/awnumar/memguard"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/kdf"
 	"github.com/parallelcointeam/duo/pkg/proto"
-	"time"
 )
 
 // New creates a new, empty BlockCrypt
@@ -69,6 +70,53 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 								}
 							}
 						}
+					}
+				}
+			}
+		}
+	}
+	return r
+}
+
+// LoadCiphertext takes a password and a ciphertext and loads them into a BlockCrypt
+func (r *BlockCrypt) LoadCiphertext(ciphertext, password *buf.Secure, IV *buf.Byte, iterations int64) *BlockCrypt {
+	switch {
+	case r == nil:
+		r = New().SetStatus(er.NilRec).(*BlockCrypt)
+		fallthrough
+	case r.Ciphertext != nil:
+		r.Ciphertext.Free()
+		fallthrough
+	case r.Password != nil:
+		r.Password.Free()
+		fallthrough
+	case r.Crypt != nil:
+		r.Crypt.Free()
+		fallthrough
+	case password == nil:
+		r.SetStatus("no password given")
+	default:
+		r.Password = password
+		var err error
+		r.Ciphertext = ciphertext
+		var C *buf.Secure
+		r.IV = IV
+		r.Iterations = iterations
+		C, err = kdf.Gen(r.Password, r.IV, r.Iterations)
+		if r.SetStatusIf(err); err == nil {
+			var block cipher.Block
+			block, err = aes.NewCipher(C.Val.Buffer())
+			if r.SetStatusIf(err); err == nil {
+				var blockmode cipher.AEAD
+				blockmode, err = cipher.NewGCM(block)
+				if r.SetStatusIf(err); err == nil {
+					c := blockmode.Seal(nil, *r.IV.Bytes(), *r.Ciphertext.Bytes(), nil)
+					if r.SetStatusIf(err); err == nil {
+						r.Crypt = buf.NewByte()
+						r.Crypt.Copy(&c)
+						r.Unlocked = true
+						r.Armed = true
+						r.UnsetStatus()
 					}
 				}
 			}
