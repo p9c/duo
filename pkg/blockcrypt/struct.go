@@ -2,6 +2,7 @@ package bc
 
 import (
 	"crypto/cipher"
+
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/proto"
 )
@@ -16,6 +17,7 @@ type BlockCrypt struct {
 	IV              *buf.Byte
 	Iterations      int64
 	GCM             *cipher.AEAD
+	Idx             *[]byte
 	Unlocked, Armed bool
 	proto.State
 }

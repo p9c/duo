@@ -1,9 +1,6 @@
 package walletdb
 
 import (
-	"encoding/hex"
-	"fmt"
-
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/key"
@@ -25,7 +22,7 @@ func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 	k := []byte(rec.Tables["Key"])
 	k = append(k, *idx...)
 	k = append(k, *address...)
-	fmt.Println("    ReadKey", hex.EncodeToString(k))
+	// fmt.Println("    ReadKey", hex.EncodeToString(k))
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
 	var V []byte
@@ -37,7 +34,7 @@ func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 		}
 		meta = item.UserMeta()
 		V, er = item.Value()
-		fmt.Println("       value", hex.EncodeToString(V))
+		// fmt.Println("       value", hex.EncodeToString(V))
 		if er != nil {
 			return er
 		}
@@ -58,7 +55,7 @@ func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 			priv, pub = &pr, &pu
 		default:
 			r.SetStatus("record marked encrypted but no BC to decrypt with")
-			fmt.Println(r.Error())
+			// fmt.Println(r.Error())
 			out = new(key.Priv)
 		}
 		out.SetKey(priv, pub)
@@ -68,7 +65,6 @@ func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 
 // WriteKey writes a key entry to the database
 func (r *DB) WriteKey(priv *key.Priv) *DB {
-	fmt.Println("\nWriteKey()")
 	r = r.NewIf()
 	if !r.OK() {
 		return nil
@@ -94,10 +90,10 @@ func (r *DB) WriteKey(priv *key.Priv) *DB {
 	k := []byte(rec.Tables["Key"])
 	k = append(k, *idx...)
 	k = append(k, *address...)
-	fmt.Println("    WriteKey", hex.EncodeToString(k))
+	// fmt.Println("    WriteKey", hex.EncodeToString(k))
 	v := *pk
 	v = append(v, *pp...)
-	fmt.Println("       value", hex.EncodeToString(v))
+	// fmt.Println("       value", hex.EncodeToString(v))
 	txn := r.DB.NewTransaction(true)
 	err := txn.SetWithMeta(k, v, meta)
 	if r.SetStatusIf(err).OK() {

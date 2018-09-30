@@ -28,6 +28,7 @@ func (r *DB) ReadMasterKeys() (BC []*bc.BlockCrypt) {
 			value, _ := item.Value()
 			table := key[:8]
 			if bytes.Compare(table, rec.Tables["MasterKey"]) == 0 {
+				idx := key[8:16]
 				crypt := value[:48]
 				iv := value[48:60]
 				iterations := value[60:68]
@@ -35,6 +36,7 @@ func (r *DB) ReadMasterKeys() (BC []*bc.BlockCrypt) {
 				proto.BytesToInt(&it, &iterations)
 				BC = append(BC,
 					&bc.BlockCrypt{
+						Idx:        &idx,
 						Crypt:      buf.NewByte().Copy(&crypt).(*buf.Byte),
 						IV:         buf.NewByte().Copy(&iv).(*buf.Byte),
 						Iterations: it,
@@ -60,6 +62,7 @@ func (r *DB) WriteMasterKey(BC *bc.BlockCrypt) *DB {
 	o := make([]byte, 8)
 	rand.Read(o)
 	out := &o
+	BC.Idx = out
 	key := append(rec.Tables["MasterKey"], *out...)
 	value := *BC.Crypt.Val
 	value = append(value, *BC.IV.Bytes()...)
