@@ -3,6 +3,7 @@ package walletdb
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/proto"
 	"github.com/parallelcointeam/duo/pkg/walletdb/entries"
@@ -72,7 +73,7 @@ func (r *DB) WriteName(address, label *[]byte) *DB {
 	k := []byte(rec.Tables["Name"])
 	k = append(k, *idx...)
 	k = append(k, *address...)
-	fmt.Println("write  ", hex.EncodeToString(k))
+	fmt.Println("\t\twrite  ", hex.EncodeToString(k))
 	v := *label
 	txn := r.DB.NewTransaction(true)
 	err := txn.SetWithMeta(k, v, meta)
@@ -101,5 +102,6 @@ func (r *DB) EraseName(address *[]byte) *DB {
 	if r.SetStatusIf(txn.Delete(k)).OK() {
 		txn.Commit(nil)
 	}
+	fmt.Println("\tErased Name\n\t\t", hex.EncodeToString(k))
 	return r
 }

@@ -3,6 +3,7 @@ package walletdb
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/key"
@@ -67,6 +68,7 @@ func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 
 // WriteKey writes a key entry to the database
 func (r *DB) WriteKey(priv *key.Priv) *DB {
+	fmt.Println("\nWriteKey()")
 	r = r.NewIf()
 	if !r.OK() {
 		return nil

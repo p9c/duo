@@ -2,7 +2,7 @@ package walletdb
 
 import (
 	"bytes"
-	"fmt"
+
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/buf"
@@ -81,19 +81,14 @@ func (r *DB) EraseMasterKey(idx *[]byte) *DB {
 	search := append(rec.Tables["MasterKey"], *idx...)
 	txn := r.DB.NewTransaction(true)
 	_, err := txn.Get(search)
-	if r.SetStatusIf(err).OK() {
-		fmt.Println("\nDELETING MASTER KEY")
-	} else {
+	if !r.SetStatusIf(err).OK() {
 		return r
 	}
 	if !r.SetStatusIf(txn.Delete(search)).OK() {
-		fmt.Println("...failed")
 		return r
 	}
 	if !r.SetStatusIf(txn.Commit(nil)).OK() {
-		fmt.Println("...failed")
 		return r
 	}
-	fmt.Println("...deleted")
 	return r
 }

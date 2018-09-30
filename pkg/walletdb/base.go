@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+
 	"github.com/dgraph-io/badger"
 	"github.com/mitchellh/go-homedir"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
@@ -47,15 +48,101 @@ func (r *DB) NewIf() *DB {
 	if r == nil {
 		r = NewWalletDB()
 		r.SetStatus(er.NilRec)
+	} else {
+		r.UnsetStatus()
 	}
 	return r
 }
 
 func (r *DB) dump() {
-	fmt.Println("\nDUMP")
+	fmt.Println("\n\tDUMP")
+	counter := 0
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
 	err := r.DB.View(func(txn *badger.Txn) error {
+		iter := txn.NewIterator(opt)
+		defer iter.Close()
+		for iter.Rewind(); iter.Valid(); iter.Next() {
+			counter++
+			item := iter.Item()
+			k := item.Key()
+			v, err := item.Value()
+			meta := item.UserMeta()
+			t := rec.TS
+			for i := range t {
+				if bytes.Compare(k[:8], []byte(t[i])) == 0 {
+					fmt.Printf("\t\t%s\n", i)
+				}
+			}
+			fmt.Println("\t\t\tkey   ", hex.EncodeToString(k))
+			fmt.Println("\t\t\tvalue ", hex.EncodeToString(v))
+			fmt.Println("\t\t\terr   ", err, "\tmeta\t", meta)
+		}
+		return nil
+	})
+	if err != nil {
+		fmt.Println("\tERROR:", err.Error())
+	}
+	fmt.Println("\t", counter, "items found")
+}
+
+func (r *DB) deleteAll() {
+	fmt.Print("\nDELETE ALL\t")
+	counter := 0
+	opt := badger.DefaultIteratorOptions
+	opt.PrefetchValues = false
+	err := r.DB.Update(func(txn *badger.Txn) error {
+		iter := txn.NewIterator(opt)
+		defer iter.Close()
+		found := false
+		for iter.Rewind(); iter.Valid(); iter.Next() {
+			counter++
+			item := iter.Item()
+			k := item.Key()
+			t := rec.TS
+			for i := range t {
+				if bytes.Compare(k[:8], []byte(t[i])) == 0 {
+					fmt.Print("deleted item type", i)
+				} else {
+					fmt.Print("deleted key", k)
+				}
+				err := txn.Delete(k)
+				if err != nil {
+					fmt.Println("\nERROR", err.Error())
+				} else {
+					err := txn.Delete(k)
+					if err != nil {
+						fmt.Println("\nERROR", err.Error())
+					}
+				}
+			}
+			if !found {
+				if !r.SetStatusIf(txn.Delete(k)).OK() {
+					fmt.Println("\nERROR:", r.Status)
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		fmt.Println("\nERROR:", err.Error())
+	}
+	fmt.Println(counter, "items found")
+}
+
+// WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet. Changes the encryption if already encrypted or enables it.
+func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
+	r = r.NewIf()
+	if BC != nil {
+		r.BC = BC
+	} else {
+		r.SetStatus(er.NilParam)
+		return r
+	}
+	fmt.Println("\n\tWithBC()")
+	opt := badger.DefaultIteratorOptions
+	opt.PrefetchValues = false
+	err := r.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
@@ -64,29 +151,90 @@ func (r *DB) dump() {
 			v, err := item.Value()
 			meta := item.UserMeta()
 			t := rec.TS
-			for i := range t {
-				if bytes.Compare(k[:8], []byte(t[i])) == 0 {
-					fmt.Println("table ", i)
+			if meta&1 != 1 {
+				switch string(k[:8]) {
+				case t["Account"]:
+					fmt.Println("\n\tAccount")
+					if r.SetStatusIf(txn.Delete(k)).OK() {
+						addr := k[16:]
+						r.WriteAccount(&addr, &v)
+					}
+				case t["Name"]:
+					fmt.Println("\n\tName")
+					if r.SetStatusIf(txn.Delete(k)).OK() {
+						addr := k[16:]
+						r.WriteName(&addr, &v)
+					}
+				case t["Key"]:
+					fmt.Println("\n\tKey")
+					if r.SetStatusIf(txn.Delete(k)).OK() {
+						priv := v[:32]
+						pub := v[32:]
+						pk := key.NewPriv()
+						pk.SetKey(&priv, &pub)
+						r.WriteKey(pk)
+					}
+
+				case t["MasterKey"]:
+					fmt.Println("\n\tMasterKey")
+					K := k[8:16]
+					r.EraseMasterKey(&K)
+				case t["Tx"]:
+					fmt.Println("\n\tTx")
+					//aoeu
+
+				case t["Seed"]:
+					fmt.Println("\n\tSeed")
+					//aoeu
+
+				case t["Script"]:
+					fmt.Println("\n\tScript")
+					//aoeu
+
+				case t["Pool"]:
+					fmt.Println("\n\tPool")
+					//aoeu
+
+				case t["Setting"]:
+					fmt.Println("\n\tSetting")
+					//aoeu
+
+				case t["Accounting"]:
+					fmt.Println("\n\tAccounting")
+					//aoeu
+
+				case t["CreditDebit"]:
+					fmt.Println("\n\tCreditDebit")
+					//aoeu
+
+				case t["BestBlock"]:
+					fmt.Println("\n\tBestBlock")
+					//aoeu
+
+				case t["MinVersion"]:
+					fmt.Println("\n\tMinVersion")
+					//aoeu
+
+				case t["DefaultKey"]:
+					fmt.Println("\n\tDefaultKey")
+					//aoeu
+
 				}
+			} else {
+				r.SetStatus("encrypted key found but no blockcrypt, deleting")
+				fmt.Println("JUNK:", r.Error())
+				txn.Delete(k)
 			}
-			fmt.Println("key   ", hex.EncodeToString(k))
-			fmt.Println("value ", hex.EncodeToString(v))
-			fmt.Println("err", err, "meta", meta)
+			fmt.Println("\tkey   ", hex.EncodeToString(k))
+			fmt.Println("\tvalue ", hex.EncodeToString(v))
+			fmt.Println("\terr", err, "meta", meta)
 		}
 		return nil
 	})
 	if err != nil {
 		fmt.Println("ERROR:", err.Error())
 	}
-}
 
-// WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet. Changes the encryption if already encrypted or enables it.
-func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
-	r = r.NewIf()
-	if BC != nil {
-		r.BC = BC
-	}
-	// TODO: have it read all entries and rewrite them encrypted and flush all old data
 	return r
 }
 
@@ -100,7 +248,7 @@ func (r *DB) RemoveBC() *DB {
 	var masterkeyIdx []byte
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
-	err := r.DB.View(func(txn *badger.Txn) error {
+	err := r.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
@@ -145,10 +293,6 @@ func (r *DB) RemoveBC() *DB {
 					r.WriteName(&Naddress, &label)
 					r.BC = BC
 				}
-			case t["Tx"]:
-				fmt.Println("\nTx         ", K, "\n           ", V)
-			case t["Seed"]:
-				fmt.Println("\nSeed       ", K, "\n           ", V)
 			case t["Key"]:
 				fmt.Println("\nKey        ", K, "\n           ", V)
 				if meta&1 == 1 {
@@ -181,12 +325,6 @@ func (r *DB) RemoveBC() *DB {
 					r.WriteKey(pk)
 					r.BC = BC
 				}
-			case t["Script"]:
-				fmt.Println("\nScript     ", K, "\n           ", V)
-			case t["Pool"]:
-				fmt.Println("\nPool       ", K, "\n           ", V)
-			case t["Setting"]:
-				fmt.Println("\nSetting    ", K, "\n           ", V)
 			case t["Account"]:
 				fmt.Println("\nAccount    ", K, "\n           ", V)
 				if meta&1 == 1 {
@@ -213,6 +351,16 @@ func (r *DB) RemoveBC() *DB {
 					r.WriteAccount(&Aaddress, &pub)
 					r.BC = BC
 				}
+			case t["Tx"]:
+				fmt.Println("\nTx         ", K, "\n           ", V)
+			case t["Seed"]:
+				fmt.Println("\nSeed       ", K, "\n           ", V)
+			case t["Script"]:
+				fmt.Println("\nScript     ", K, "\n           ", V)
+			case t["Pool"]:
+				fmt.Println("\nPool       ", K, "\n           ", V)
+			case t["Setting"]:
+				fmt.Println("\nSetting    ", K, "\n           ", V)
 			case t["Accounting"]:
 				fmt.Println("\nAccounting ", K, "\n           ", V)
 			case t["CreditDebit"]:
