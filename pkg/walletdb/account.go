@@ -2,6 +2,7 @@ package walletdb
 
 import (
 	"fmt"
+
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/proto"
 	"github.com/parallelcointeam/duo/pkg/walletdb/entries"
@@ -9,6 +10,10 @@ import (
 
 // ReadAccount finds an account stored due to being a correspondent account
 func (r *DB) ReadAccount(address *[]byte) (out *rec.Account) {
+	r = r.NewIf()
+	if !r.OK() {
+		return nil
+	}
 	out = new(rec.Account)
 	k := []byte(rec.Tables["Account"])
 	idx := proto.Hash64(address)
@@ -63,15 +68,16 @@ func (r *DB) WriteAccount(address, pub *[]byte) *DB {
 		r.SetStatus(er.NilParam)
 		return r
 	}
+	if pub == nil {
+		pub = &[]byte{}
+	}
 	idx := proto.Hash64(address)
 	var k, v []byte
 	var meta byte
 	if r.BC != nil {
 		meta = 1
 		address = r.BC.Encrypt(address)
-		if pub != nil {
-			pub = r.BC.Encrypt(pub)
-		}
+		pub = r.BC.Encrypt(pub)
 	}
 	k = []byte(rec.Tables["Account"])
 	k = append(k, *idx...)
@@ -91,6 +97,10 @@ func (r *DB) WriteAccount(address, pub *[]byte) *DB {
 
 // EraseAccount deletes an account from the wallet database
 func (r *DB) EraseAccount(address *[]byte) *DB {
+	r = r.NewIf()
+	if !r.OK() {
+		return nil
+	}
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
 	idx := proto.Hash64(address)
@@ -101,7 +111,7 @@ func (r *DB) EraseAccount(address *[]byte) *DB {
 	search = append(search, *address...)
 	txn := r.DB.NewTransaction(true)
 	if r.SetStatusIf(txn.Delete(search)).OK() {
-		txn.Commit(nil)
+		r.SetStatusIf(txn.Commit(nil))
 	}
 	return r
 }

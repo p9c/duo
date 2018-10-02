@@ -11,6 +11,10 @@ import (
 
 // ReadName reads a name entry out of the database
 func (r *DB) ReadName(id *[]byte) (out *rec.Name) {
+	r = r.NewIf()
+	if !r.OK() {
+		return nil
+	}
 	out = new(rec.Name)
 	k := []byte(rec.Tables["Name"])
 	idx := proto.Hash64(id)
@@ -73,7 +77,6 @@ func (r *DB) WriteName(address, label *[]byte) *DB {
 	k := []byte(rec.Tables["Name"])
 	k = append(k, *idx...)
 	k = append(k, *address...)
-	fmt.Println("\t\twrite  ", hex.EncodeToString(k))
 	v := *label
 	txn := r.DB.NewTransaction(true)
 	err := txn.SetWithMeta(k, v, meta)
@@ -100,8 +103,7 @@ func (r *DB) EraseName(address *[]byte) *DB {
 	k = append(k, *address...)
 	txn := r.DB.NewTransaction(true)
 	if r.SetStatusIf(txn.Delete(k)).OK() {
-		txn.Commit(nil)
+		r.SetStatusIf(txn.Commit(nil))
 	}
-	fmt.Println("\tErased Name\n\t\t", hex.EncodeToString(k))
 	return r
 }

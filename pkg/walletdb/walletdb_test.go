@@ -2,6 +2,7 @@ package walletdb
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
@@ -23,7 +24,6 @@ func TestMasterKey(t *testing.T) {
 	}
 	wdb.WithBC(BC)
 
-	defer wdb.deleteAll()
 	wdb.WriteMasterKey(BC)
 	BCs := wdb.ReadMasterKeys()
 	for i := range BCs {
@@ -51,6 +51,7 @@ func TestMasterKey(t *testing.T) {
 			t.Error("encryption/decryption did not work properly")
 		}
 	}
+	wdb.EraseMasterKey(BC.Idx)
 }
 
 func TestMultiMasterKey(t *testing.T) {
@@ -63,8 +64,7 @@ func TestMultiMasterKey(t *testing.T) {
 	if wdb.OK() {
 		wdb.WithBC(BC)
 		wdb.WriteMasterKey(BC)
-		BC2 := bc.New()
-		BC2.LoadCiphertext(BC.Ciphertext, pass2, BC.IV, BC.Iterations)
+		BC2 := bc.New().CopyCipher(pass2, BC)
 		wdb.WriteMasterKey(BC2)
 		BCs := wdb.ReadMasterKeys()
 		BCs[0].Unlock(pass).Arm()
@@ -81,7 +81,8 @@ func TestMultiMasterKey(t *testing.T) {
 		wdb.Close()
 	}
 }
-func TestReadWriteEraseKey(t *testing.T) {
+
+func TestReadWriteEraseKeyEncryptDecrypt(t *testing.T) {
 	p := []byte("testing password")
 	pass := buf.NewSecure().Copy(&p).(*buf.Secure)
 	BC := bc.New().Generate(pass).Arm()
@@ -90,7 +91,7 @@ func TestReadWriteEraseKey(t *testing.T) {
 		defer wdb.Close()
 	}
 	wdb.WithBC(BC)
-	wdb.WriteMasterKey(BC)
+	wdb.dump()
 	BCs := wdb.ReadMasterKeys()
 	bc := BCs[0]
 	bc.Unlock(pass).Arm()
@@ -99,6 +100,7 @@ func TestReadWriteEraseKey(t *testing.T) {
 	pk.WithBC(bc)
 	pk.Make()
 	wdb.WriteKey(pk)
+	wdb.dump()
 	addr := pk.GetID()
 	address := []byte(addr)
 	rpk := wdb.ReadKey(&address)
@@ -106,6 +108,7 @@ func TestReadWriteEraseKey(t *testing.T) {
 		t.Error("failed to write and read back")
 	}
 	wdb.RemoveBC()
+	wdb.dump()
 	addr = pk.GetID()
 	address = []byte(addr)
 	rpk = wdb.ReadKey(&address)
@@ -113,6 +116,7 @@ func TestReadWriteEraseKey(t *testing.T) {
 		t.Error("failed to remove masterkey encryption and read back")
 	}
 	wdb.WithBC(bc)
+	wdb.dump()
 	addr = rpk.GetID()
 	address = []byte(addr)
 	rrpk := wdb.ReadKey(&address)
@@ -126,6 +130,50 @@ func TestReadWriteEraseKey(t *testing.T) {
 		t.Error("failed delete key")
 	}
 	wdb.deleteAll()
+}
+
+func TestEncryptDecrypt(t *testing.T) {
+	p := []byte("testing password")
+	pass := buf.NewSecure().Copy(&p).(*buf.Secure)
+	BC := bc.New().Generate(pass).Arm()
+	wdb := NewWalletDB()
+	if wdb.OK() {
+		defer wdb.Close()
+	}
+	wdb.dump()
+	wdb.WithBC(BC)
+	wdb.dump()
+	BCs := wdb.ReadMasterKeys()
+	wdb.RemoveBC()
+	bc := BCs[0]
+	bc.Unlock(pass).Arm()
+	wdb.WithBC(bc)
+	wdb.dump()
+
+	pk := key.NewPriv().WithBC(bc).Make()
+	wdb.WriteKey(pk)
+	a := key.NewPriv().WithBC(bc).Make()
+	aa := []byte(a.GetID())
+	label := []byte("random label for random address")
+	wdb.WriteName(&aa, &label)
+	b := key.NewPriv().WithBC(bc).Make()
+	bb := []byte(b.GetID())
+	wdb.WriteAccount(&bb, b.PubKey().Bytes())
+	wdb.dump()
+
+	wdb.RemoveBC()
+	wdb.dump()
+
+	wdb.WithBC(bc)
+	wdb.dump()
+
+	wdb.EraseMasterKey(BC.Idx)
+	wdb.EraseKey(pk.PubKey().Bytes())
+	wdb.EraseName(&aa)
+	wdb.EraseAccount(&bb)
+
+	wdb.deleteAll()
+	fmt.Println()
 }
 
 func TestJustDump(t *testing.T) {

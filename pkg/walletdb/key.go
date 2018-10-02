@@ -11,6 +11,9 @@ import (
 // ReadKey reads a key entry from the database
 func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 	r = r.NewIf()
+	if !r.OK() {
+		return nil
+	}
 	out = key.NewPriv()
 	if !r.OK() {
 		return
@@ -104,6 +107,10 @@ func (r *DB) WriteKey(priv *key.Priv) *DB {
 
 // EraseKey deletes a key entry
 func (r *DB) EraseKey(address *[]byte) *DB {
+	r = r.NewIf()
+	if !r.OK() {
+		return nil
+	}
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
 	idx := proto.Hash64(address)

@@ -68,7 +68,7 @@ func (r *DB) WriteMasterKey(BC *bc.BlockCrypt) *DB {
 	value = append(value, *BC.IV.Bytes()...)
 	value = append(value, *proto.IntToBytes(BC.Iterations)...)
 	txn := r.DB.NewTransaction(true)
-	err := txn.Set(key, value)
+	err := txn.SetWithMeta(key, value, 0)
 	if r.SetStatusIf(err).OK() {
 		txn.Commit(nil)
 	}
@@ -91,11 +91,5 @@ func (r *DB) EraseMasterKey(idx *[]byte) *DB {
 	if !r.SetStatusIf(txn.Commit(nil)).OK() {
 		return r
 	}
-	return r
-}
-
-// AddPassword generates a new masterkey record based on the ciphertext of an existing one
-func (r *DB) AddPassword(password *buf.Secure) *DB {
-
 	return r
 }

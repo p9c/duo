@@ -78,6 +78,13 @@ func (r *BlockCrypt) Generate(p *buf.Secure) *BlockCrypt {
 	return r
 }
 
+// CopyCipher creates a new blockcrypt based on an old one with a new password
+func (r *BlockCrypt) CopyCipher(password *buf.Secure, BC *BlockCrypt) *BlockCrypt {
+	r = New()
+	r.LoadCiphertext(BC.Ciphertext, password, BC.IV, BC.Iterations)
+	return r
+}
+
 // LoadCiphertext takes a password and a ciphertext and loads them into a BlockCrypt
 func (r *BlockCrypt) LoadCiphertext(ciphertext, password *buf.Secure, IV *buf.Byte, iterations int64) *BlockCrypt {
 	switch {
