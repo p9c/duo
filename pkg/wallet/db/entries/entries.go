@@ -65,6 +65,10 @@ type Tx struct {
 	ChangeCached          bool
 }
 
+type TxDestination interface{}
+
+type NoDestination struct{}
+
 // Seed is a 'hierarchic deterministic' wallet seed that can spawn many subkeys
 type Seed struct {
 	Idx    Idx

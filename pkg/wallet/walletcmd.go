@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"github.com/parallelcointeam/duo/pkg/Uint"
 	"github.com/parallelcointeam/duo/pkg/block"
 	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/tx"
@@ -152,7 +151,9 @@ func (w *Wallet) LoadCryptedKey(*key.Pub, []byte) (success bool) { return }
 func (w *Wallet) LoadKey(*key.Priv, *key.Pub) (success bool) { return }
 
 // LoadKeyMetadata -
-func (w *Wallet) LoadKeyMetadata(*key.Pub, *KeyMetadata) (success bool) { return }
+func (w *Wallet) LoadKeyMetadata(*key.Pub, *KeyMetadata) (success bool) {
+	return
+}
 
 // LoadMinVersion -
 func (w *Wallet) LoadMinVersion(int) (success bool) { return }
