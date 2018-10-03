@@ -5,7 +5,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/proto"
-	"github.com/parallelcointeam/duo/pkg/wallet/db/entries"
+	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
 // ReadAccount finds an account stored due to being a correspondent account

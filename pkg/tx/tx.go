@@ -4,7 +4,8 @@ import (
 	"sync"
 
 	"github.com/parallelcointeam/duo/pkg/proto"
-	"github.com/parallelcointeam/duo/pkg/wallet/db/entries"
+	"github.com/parallelcointeam/duo/pkg/tx"
+	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
 // Transaction -
@@ -15,6 +16,12 @@ type Transaction struct {
 	Vin                     []In
 	Vout                    []Out
 	LockTime                uint
+}
+
+// Output is a transaction output
+type Output struct {
+	Tx       *rec.Tx
+	I, Depth int
 }
 
 // OutPoint is one element in the collection of outputs of a transaction
@@ -77,3 +84,9 @@ type Orphan struct {
 	DependsOn          []*proto.Hash
 	Priority, FeePerKB float64
 }
+
+// Pair is
+type Pair map[*tx.Transaction]*rec.Accounting
+
+// Items are
+type Items map[int64]TxPair

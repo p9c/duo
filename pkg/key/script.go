@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/parallelcointeam/duo/pkg/proto"
-	"github.com/parallelcointeam/duo/pkg/wallet/db/entries"
+	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
 // Various script flags

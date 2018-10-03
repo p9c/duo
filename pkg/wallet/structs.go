@@ -1,63 +1,66 @@
 package wallet
 
 import (
-	// 	"github.com/parallelcointeam/duo/pkg/Uint"
-	"github.com/parallelcointeam/duo/pkg/wallet/db/entries"
+	"github.com/parallelcointeam/duo/pkg/key"
+	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/tx"
+	"github.com/parallelcointeam/duo/pkg/wallet/db"
+	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
-// type MasterKeyMap map[uint]*KeyMetadata
-// type KeyPool struct {
-// 	Time   int64
-// 	PubKey key.Pub
-// }
-// type ReserveKey struct {
-// 	wallet *Wallet
-// 	Index  int64
-// 	PubKey key.Pub
-// }
-// type ValueMap map[string]string
+// KeyPool is a collection of available addresses for constructing transactions
+type KeyPool map[proto.Address]*rec.Pool
 
-// // Orders are a key value pair
-// type Orders struct {
-// 	Key, Value string
-// }
+// KeyMetadata is
+type KeyMetadata map[proto.Address]*KeyMetadata
 
-// type Transaction struct {
-// 	block.MerkleTx
-// 	wallet                                        *Wallet
-// 	Prev                                          []block.MerkleTx
-// 	OrderForm                                     []Orders
-// 	TimeReceivedIsTxTime, TimeReceived, TimeSmart uint
-// 	FromMe                                        byte
-// 	FromAccount                                   string
-// 	Spent                                         []byte
-// 	OrderPos                                      int64
-// 	CachedFlags                                   struct {
-// 		Debit, Credit, ImmatureCredit, AvailableCredit, Change bool
-// 	}
-// 	CachedValues struct {
-// 		Debit, Credit, ImmatureCredit, AvailableCredit, Change int64
-// 	}
-// }
+// Transactions is a map of transactions in the wallet
+type Transactions map[proto.Hash]*rec.Tx
 
-type TxOutput struct {
-	Tx       *rec.Tx
-	I, Depth int
+// AddressBook is a collection of correspondent addresses
+type AddressBook map[proto.Address]key.Account
+
+// Wallet controls access to a wallet.db file containing keys and data relating to accounts and addresses
+type Wallet struct {
+	key.Store
+	DB                  *walletdb.DB
+	version, maxVersion int
+	FileBacked          bool
+	File                string
+	KeyPool             KeyPool
+	KeyMetadat          KeyMetadata
+	MasterKeys          key.MasterKeys
+	Transactions        Transactions
+	OrderPosNext        int64
+	RequestCountMap     map[proto.Hash]int
+	AddressBook         AddressBook
+	DefaultKey          *key.Pub
+	LockedCoinsSet      []*tx.OutPoint
+	TimeFirstKey        int64
 }
 
-// type AccountingEntry struct {
-// 	Account               string
-// 	CreditDebit, Time     int64
-// 	OtherAccount, Comment string
-// 	ValueMap              ValueMap
-// 	OrderPos              int64
-// 	EntryNo               uint64
-// }
-// type ScanState struct {
-// 	Keys, CKeys, KeyMeta      uint
-// 	IsEncrypted, AnyUnordered bool
-// 	FileVersion               int
-// 	WalletUpgrade             []*Uint.U256
-// }
-// type TxPair map[*Tx]*AccountingEntry
-// type TxItems map[int64]TxPair
+// ReserveKey is
+type ReserveKey struct {
+	wallet *Wallet
+	Index  int64
+	PubKey key.Pub
+}
+
+// MasterKeyMap is the collection of masterkeys in the wallet
+type MasterKeyMap map[uint64]*KeyMetadata
+
+// ValueMap is
+type ValueMap map[string]string
+
+// Orders are a key value pair
+type Orders struct {
+	Key, Value string
+}
+
+// ScanState is
+type ScanState struct {
+	Keys, CKeys, KeyMeta      uint
+	IsEncrypted, AnyUnordered bool
+	FileVersion               int
+	WalletUpgrade             []*proto.Hash
+}

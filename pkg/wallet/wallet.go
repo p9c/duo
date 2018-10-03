@@ -1,11 +1,5 @@
 package wallet
 
-import (
-	"github.com/parallelcointeam/duo/pkg/key"
-	"github.com/parallelcointeam/duo/pkg/proto"
-	"github.com/parallelcointeam/duo/pkg/wallet/db/entries"
-)
-
 // import (
 // 	"github.com/parallelcointeam/duo/pkg/Uint"
 // 	"github.com/parallelcointeam/duo/pkg/block"
@@ -13,36 +7,7 @@ import (
 // 	"github.com/parallelcointeam/duo/pkg/tx"
 // )
 
-const (
-	// FeatureBase is the base version number for a wallet
-	FeatureBase = 10500
-	// FeatureWalletCrypt indicates if the wallet enables encrypted keys
-	FeatureWalletCrypt = 40000
-	// FeatureCompressedPubKey indicates if the wallet enables compressed public keys
-	FeatureCompressedPubKey = 60000
-	// FeatureLatest is the newest version of the wallet
-	FeatureLatest = 60000
-)
-
-// Wallet controls access to a wallet.db file containing keys and data relating to accounts and addresses
-type Wallet struct {
-	key.Store
-	DB                  *DB
-	version, maxVersion int
-	FileBacked          bool
-	File                string
-	KeyPoolSet          []int64
-	KeyMetadataMap      map[proto.Address]*KeyMetadata
-	MasterKeysMap       key.MasterKeys
-	MasterKeyMaxID      uint
-	WalletMap           map[proto.Hash]*rec.Tx
-	OrderPosNext        int64
-	RequestCountMap     map[proto.Hash]int
-	AddressBookMap      map[*key.TxDestination]string
-	DefaultKey          *key.Pub
-	LockedCoinsSet      []*tx.OutPoint
-	TimeFirstKey        int64
-}
+const ()
 
 // type wallet interface {
 // 	AddCryptedKey(*key.Pub, *KeyMetadata) bool
