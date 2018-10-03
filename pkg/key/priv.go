@@ -2,10 +2,11 @@ package key
 
 import (
 	"crypto/ecdsa"
+
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/buf"
-	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/core"
 )
 
 // NewPriv creates a new Priv
@@ -63,7 +64,7 @@ func (r *Priv) Bytes() (out *[]byte) {
 }
 
 // Copy stores the input buffer using the Put function of the Crypt
-func (r *Priv) Copy(in *[]byte) proto.Buffer {
+func (r *Priv) Copy(in *[]byte) core.Buffer {
 	r = r.NewIf()
 	b := buf.NewByte().Copy(in)
 	r.Crypt.Put(b)
@@ -71,7 +72,7 @@ func (r *Priv) Copy(in *[]byte) proto.Buffer {
 }
 
 // Zero zeroes the key and marks it invalid
-func (r *Priv) Zero() proto.Buffer {
+func (r *Priv) Zero() core.Buffer {
 	r = r.NewIf()
 	switch {
 	case r.pub != nil:
@@ -85,7 +86,7 @@ func (r *Priv) Zero() proto.Buffer {
 }
 
 // Free frees the crypt inside the Priv and marks it invalid
-func (r *Priv) Free() proto.Buffer {
+func (r *Priv) Free() core.Buffer {
 	r = r.NewIf()
 	switch {
 	case r != nil:
@@ -137,7 +138,7 @@ func (r *Priv) AsEC() (ecpriv *ecdsa.PrivateKey) {
 }
 
 // PubKey returns a copy of the public key
-func (r *Priv) PubKey() proto.Buffer {
+func (r *Priv) PubKey() core.Buffer {
 	if r == nil {
 		r = r.NewIf()
 		return buf.NewByte()
@@ -186,7 +187,7 @@ func (r *Priv) SignCompact(h *[]byte) (out *Sig) {
 }
 
 // GetID returns the hash160 ID of the public key
-func (r *Priv) GetID() proto.Address {
+func (r *Priv) GetID() core.Address {
 	if r == nil {
 		r = r.NewIf()
 		return ""

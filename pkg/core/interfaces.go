@@ -1,4 +1,4 @@
-package proto
+package core
 
 // Buffer is a generic interface for []byte buffers
 type Buffer interface {

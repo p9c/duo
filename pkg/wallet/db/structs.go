@@ -3,10 +3,10 @@ package walletdb
 import (
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
-	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/core"
 )
 
-var er = proto.Errors
+var er = core.Errors
 
 // DB is the central data repository for the wallet database
 type DB struct {
@@ -16,5 +16,5 @@ type DB struct {
 	Options  *badger.Options
 	DB       *badger.DB
 	BC       *bc.BlockCrypt
-	proto.State
+	core.State
 }

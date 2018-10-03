@@ -7,7 +7,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/buf"
-	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
@@ -33,7 +33,7 @@ func (r *DB) ReadMasterKeys() (BC []*bc.BlockCrypt) {
 				iv := value[48:60]
 				iterations := value[60:68]
 				var it int64
-				proto.BytesToInt(&it, &iterations)
+				core.BytesToInt(&it, &iterations)
 				BC = append(BC,
 					&bc.BlockCrypt{
 						Idx:        &idx,
@@ -66,7 +66,7 @@ func (r *DB) WriteMasterKey(BC *bc.BlockCrypt) *DB {
 	key := append(rec.Tables["MasterKey"], *out...)
 	value := *BC.Crypt.Val
 	value = append(value, *BC.IV.Bytes()...)
-	value = append(value, *proto.IntToBytes(BC.Iterations)...)
+	value = append(value, *core.IntToBytes(BC.Iterations)...)
 	txn := r.DB.NewTransaction(true)
 	err := txn.SetWithMeta(key, value, 0)
 	if r.SetStatusIf(err).OK() {

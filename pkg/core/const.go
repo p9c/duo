@@ -1,4 +1,4 @@
-package proto
+package core
 
 // StringCodings is a list of the names of encoding types for the stringer
 var StringCodings = []string{

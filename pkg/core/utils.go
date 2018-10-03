@@ -1,8 +1,9 @@
-package proto
+package core
 
 import (
-	"github.com/minio/highwayhash"
 	"unsafe"
+
+	"github.com/minio/highwayhash"
 )
 
 var (

@@ -3,8 +3,8 @@ package walletdb
 import (
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/buf"
+	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/key"
-	"github.com/parallelcointeam/duo/pkg/proto"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
@@ -18,7 +18,7 @@ func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 	if !r.OK() {
 		return
 	}
-	idx := proto.Hash64(address)
+	idx := core.Hash64(address)
 	if r.BC != nil {
 		address = r.BC.Encrypt(address)
 	}
@@ -78,7 +78,7 @@ func (r *DB) WriteKey(priv *key.Priv) *DB {
 	}
 	I := []byte(priv.GetID())
 	address := &I
-	idx := proto.Hash64(address)
+	idx := core.Hash64(address)
 	var pk, pp *[]byte
 	var meta byte
 	if r.BC != nil {
@@ -113,7 +113,7 @@ func (r *DB) EraseKey(address *[]byte) *DB {
 	}
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
-	idx := proto.Hash64(address)
+	idx := core.Hash64(address)
 	search := append(rec.Tables["Key"], *idx...)
 	if r.BC != nil {
 		ID := buf.NewSecure().Copy(address).(*buf.Secure)

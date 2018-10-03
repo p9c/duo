@@ -2,7 +2,7 @@
 package block
 
 import (
-	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/tx"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
@@ -24,34 +24,34 @@ var (
 // Contents is a
 type Contents struct {
 	Txs        []tx.Transaction
-	MerkleTree []proto.Hash
+	MerkleTree []core.Hash
 }
 
 // Header is the data contained in a block header
 type Header struct {
 	CurrentVersion, Version       int
-	HashPrevBlock, HashMerkleRoot proto.Hash
+	HashPrevBlock, HashMerkleRoot core.Hash
 	Time, Bits, Nonce             uint
 	Contents
 }
 
 // Index is an index of blocks
 type Index struct {
-	HashBlock                     proto.Hash
+	HashBlock                     core.Hash
 	Prev                          *Index
 	Height, File                  int
 	DataPos, UndoPos              uint
-	ChainWork                     proto.Hash
+	ChainWork                     core.Hash
 	TxCount, TxCumulative, Status uint
 	Version                       int
-	HashMerkleRoot                proto.Hash
+	HashMerkleRoot                core.Hash
 	Time, Bits, Nonce             uint
 }
 
 // DiskIndex is the on-disk index
 type DiskIndex struct {
 	Index
-	HashPrev proto.Hash
+	HashPrev core.Hash
 }
 
 // ValidationState stores the state of validation of a block
@@ -62,15 +62,15 @@ type ValidationState struct {
 
 // Locator allows you to quickly find a block
 type Locator struct {
-	Have []proto.Hash
+	Have []core.Hash
 }
 
 // CoinStats stores the current state of the currency
 type CoinStats struct {
 	Height                         int
-	HashBlock                      proto.Hash
+	HashBlock                      core.Hash
 	Txs, TxOutputs, SerializedSize uint64
-	HashSerialized                 proto.Hash
+	HashSerialized                 core.Hash
 	TotalAmount                    uint64
 }
 
@@ -85,7 +85,7 @@ type CoinsViewBacked struct {
 // CoinsViewCache is
 type CoinsViewCache struct {
 	IndexTip   Index
-	CacheCoins map[*proto.Hash]tx.Coins
+	CacheCoins map[*core.Hash]tx.Coins
 }
 
 // CoinsViewMemPool is
@@ -96,7 +96,7 @@ type CoinsViewMemPool struct {
 // Block is the data of a block
 type Block struct {
 	Transactions []tx.Transaction
-	MerkleTree   []*proto.Hash
+	MerkleTree   []*core.Hash
 }
 
 // Template is a block template
@@ -120,8 +120,8 @@ type ScriptCheck struct {
 // MerkleTx is
 type MerkleTx struct {
 	tx.Transaction
-	HashBlock    proto.Hash
-	MerkleBranch []*proto.Hash
+	HashBlock    core.Hash
+	MerkleBranch []*core.Hash
 	Index        int
 	Verified     bool
 }
@@ -130,7 +130,7 @@ type MerkleTx struct {
 type PartialMerkleTree struct {
 	Transactions uint
 	Bits         []bool
-	Hash         []proto.Hash
+	Hash         []core.Hash
 	Bad          bool
 }
 

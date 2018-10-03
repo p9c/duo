@@ -2,14 +2,14 @@ package key
 
 import (
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
-	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/core"
 )
 
 // NewStore creates a new Store
 func NewStore() *Store {
 	r := new(Store)
-	r.privs = make(map[proto.Address]*Priv)
-	r.pubs = make(map[proto.Address]*Pub)
+	r.privs = make(map[core.Address]*Priv)
+	r.pubs = make(map[core.Address]*Pub)
 	return r
 }
 
@@ -52,7 +52,7 @@ func (r *Store) AddPub(pub *Pub) *Store {
 }
 
 // Remove a key from the store by ID (address)
-func (r *Store) Remove(id proto.Address) *Store {
+func (r *Store) Remove(id core.Address) *Store {
 	if r == nil {
 		r = NewStore()
 		r.SetStatus(er.NilRec)
@@ -100,14 +100,14 @@ func (r *Store) Decrypt() *Store {
 }
 
 // Find returns the key with matching ID as requested. The return type is Priv but if there is no private key the field is empty
-func (r *Store) Find(id proto.Address) (out *Priv) {
+func (r *Store) Find(id core.Address) (out *Priv) {
 	if r == nil {
 		r = NewStore()
 		r.SetStatus(er.NilRec)
 		return &Priv{}
 	}
 	out = new(Priv)
-	I := proto.Address(id)
+	I := core.Address(id)
 	if _, ok := r.privs[I]; ok {
 		return r.privs[I]
 	}
@@ -119,7 +119,7 @@ func (r *Store) Find(id proto.Address) (out *Priv) {
 }
 
 // SetStatus is a
-func (r *Store) SetStatus(s string) proto.Status {
+func (r *Store) SetStatus(s string) core.Status {
 	if r == nil {
 		r = NewStore()
 		r.SetStatus(er.NilRec)
@@ -130,7 +130,7 @@ func (r *Store) SetStatus(s string) proto.Status {
 }
 
 // SetStatusIf is a
-func (r *Store) SetStatusIf(err error) proto.Status {
+func (r *Store) SetStatusIf(err error) core.Status {
 	if r == nil {
 		r = NewStore()
 		r.SetStatus(er.NilRec)
@@ -143,7 +143,7 @@ func (r *Store) SetStatusIf(err error) proto.Status {
 }
 
 // UnsetStatus is a
-func (r *Store) UnsetStatus() proto.Status {
+func (r *Store) UnsetStatus() core.Status {
 	if r == nil {
 		r = NewStore()
 		r.SetStatus(er.NilRec)

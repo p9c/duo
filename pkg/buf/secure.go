@@ -6,11 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/anaskhan96/base58check"
-	"github.com/awnumar/memguard"
-	"github.com/parallelcointeam/duo/pkg/proto"
 	"math/big"
 	"strings"
+
+	"github.com/anaskhan96/base58check"
+	"github.com/awnumar/memguard"
+	"github.com/parallelcointeam/duo/pkg/core"
 )
 
 // NewSecure creates a new Secure
@@ -45,7 +46,7 @@ func (r *Secure) Bytes() (out *[]byte) {
 }
 
 // Copy is a
-func (r *Secure) Copy(in *[]byte) proto.Buffer {
+func (r *Secure) Copy(in *[]byte) core.Buffer {
 	r = r.NewIf()
 	switch {
 	case in == nil:
@@ -65,7 +66,7 @@ func (r *Secure) Copy(in *[]byte) proto.Buffer {
 }
 
 // Zero is a
-func (r *Secure) Zero() proto.Buffer {
+func (r *Secure) Zero() core.Buffer {
 	r = r.NewIf()
 	switch {
 	case r.Val == nil:
@@ -79,7 +80,7 @@ func (r *Secure) Zero() proto.Buffer {
 }
 
 // Free is a
-func (r *Secure) Free() proto.Buffer {
+func (r *Secure) Free() core.Buffer {
 	r = r.NewIf()
 	switch {
 	case r.Val != nil:
@@ -136,11 +137,11 @@ func (r *Secure) GetCoding() (out *string) {
 }
 
 // SetCoding sets the encoding for the stringer
-func (r *Secure) SetCoding(in string) proto.Coder {
+func (r *Secure) SetCoding(in string) core.Coder {
 	r = r.NewIf()
 	r.Coding = "hex"
-	for i := range proto.StringCodings {
-		if in == proto.StringCodings[i] {
+	for i := range core.StringCodings {
+		if in == core.StringCodings[i] {
 			r.Coding = in
 			break
 		}
@@ -151,7 +152,7 @@ func (r *Secure) SetCoding(in string) proto.Coder {
 // ListCodings returns the set of codings available
 func (r *Secure) ListCodings() (out *[]string) {
 	r = r.NewIf()
-	out = &proto.StringCodings
+	out = &core.StringCodings
 	return
 }
 
@@ -173,7 +174,7 @@ func (r *Secure) Freeze() (out *[]byte) {
 }
 
 // Thaw turns a json representation back into a variable
-func (r *Secure) Thaw(in *[]byte) proto.Streamer {
+func (r *Secure) Thaw(in *[]byte) core.Streamer {
 	r = r.NewIf()
 	out := NewSecure()
 	if err := json.Unmarshal(*in, out); !out.SetStatusIf(err).OK() {
@@ -184,14 +185,14 @@ func (r *Secure) Thaw(in *[]byte) proto.Streamer {
 }
 
 // SetStatus sets the status of an object after an operation
-func (r *Secure) SetStatus(s string) proto.Status {
+func (r *Secure) SetStatus(s string) core.Status {
 	r = r.NewIf()
 	r.State.SetStatus(s)
 	return r
 }
 
 // SetStatusIf is a
-func (r *Secure) SetStatusIf(err error) proto.Status {
+func (r *Secure) SetStatusIf(err error) core.Status {
 	r = r.NewIf()
 	switch {
 	case err != nil:
@@ -203,7 +204,7 @@ func (r *Secure) SetStatusIf(err error) proto.Status {
 }
 
 // UnsetStatus is a
-func (r *Secure) UnsetStatus() proto.Status {
+func (r *Secure) UnsetStatus() core.Status {
 	r = r.NewIf()
 	r.State.SetStatus("")
 	return r
@@ -216,7 +217,7 @@ func (r *Secure) OK() bool {
 }
 
 // SetElem sets a byte in the buffer to a given value if it is in bounds
-func (r *Secure) SetElem(index int, in interface{}) proto.Array {
+func (r *Secure) SetElem(index int, in interface{}) core.Array {
 	r = r.NewIf()
 	var elem byte
 	switch {

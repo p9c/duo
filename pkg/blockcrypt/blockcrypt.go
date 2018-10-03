@@ -8,8 +8,8 @@ import (
 
 	"github.com/awnumar/memguard"
 	"github.com/parallelcointeam/duo/pkg/buf"
+	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/kdf"
-	"github.com/parallelcointeam/duo/pkg/proto"
 )
 
 // New creates a new, empty BlockCrypt
@@ -230,7 +230,7 @@ func (r *BlockCrypt) decryptCrypt() *BlockCrypt {
 					}
 					r.Ciphertext = buf.NewSecure()
 					r.Ciphertext.Copy(&c)
-					proto.Zero(&c)
+					core.Zero(&c)
 				}
 			}
 		}
@@ -318,7 +318,7 @@ func (r *BlockCrypt) Decrypt(buf *[]byte) (out *[]byte) {
 // Status implementation
 
 // SetStatus sets the status of the crypt
-func (r *BlockCrypt) SetStatus(s string) proto.Status {
+func (r *BlockCrypt) SetStatus(s string) core.Status {
 	switch {
 	case r == nil:
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)
@@ -329,7 +329,7 @@ func (r *BlockCrypt) SetStatus(s string) proto.Status {
 }
 
 // SetStatusIf sets the status according to an error output
-func (r *BlockCrypt) SetStatusIf(err error) proto.Status {
+func (r *BlockCrypt) SetStatusIf(err error) core.Status {
 	switch {
 	case r == nil:
 		r = New().SetStatus(er.NilRec).(*BlockCrypt)
@@ -343,7 +343,7 @@ func (r *BlockCrypt) SetStatusIf(err error) proto.Status {
 }
 
 // UnsetStatus clears the error state
-func (r *BlockCrypt) UnsetStatus() proto.Status {
+func (r *BlockCrypt) UnsetStatus() core.Status {
 	switch {
 	case r == nil:
 		r = New()

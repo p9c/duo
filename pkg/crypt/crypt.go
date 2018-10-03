@@ -8,10 +8,10 @@ package crypt
 import (
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/buf"
-	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/core"
 )
 
-var er = proto.Errors
+var er = core.Errors
 
 // Crypt is a generic structure for storing bytes encrypted and reading them to a another buffer, using a BlockCrypt AES-GCM 256 cipher
 type Crypt struct {
@@ -49,7 +49,7 @@ func (r *Crypt) WithBC(bc *bc.BlockCrypt) *Crypt {
 }
 
 // Get returns a secure buffer containing the decrypted data in the Crypt
-func (r *Crypt) Get() (out proto.Buffer) {
+func (r *Crypt) Get() (out core.Buffer) {
 	switch {
 	case r == nil:
 		r = New()
@@ -64,7 +64,7 @@ func (r *Crypt) Get() (out proto.Buffer) {
 }
 
 // Put writes a secure buffer to the Crypt
-func (r *Crypt) Put(in proto.Buffer) *Crypt {
+func (r *Crypt) Put(in core.Buffer) *Crypt {
 	switch {
 	case r == nil:
 		r = New()

@@ -2,7 +2,7 @@
 package rec
 
 import (
-	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/core"
 )
 
 var (
@@ -19,7 +19,7 @@ func init() {
 	TS = make(map[string]string)
 	for i := range TableNames {
 		t := []byte(TableNames[i])
-		Tables[TableNames[i]] = KeyPrefix(*proto.Hash64(&t))
+		Tables[TableNames[i]] = KeyPrefix(*core.Hash64(&t))
 		TS[TableNames[i]] = string(Tables[TableNames[i]])
 	}
 }
@@ -48,12 +48,12 @@ type Name struct {
 // Tx is a transaction connected to an address in the wallet
 type Tx struct {
 	Idx                   Idx
-	AcIdxs                []Idx          //in key
-	ID                    [32]byte       // encrypt
-	Data                  []byte         // encrypt
-	Prev                  proto.MerkleTx // encrypt
-	TimeRecvIsTxTime      int64          // encrypt
-	TimeRecv              int64          // encrypt
+	AcIdxs                []Idx         //in key
+	ID                    [32]byte      // encrypt
+	Data                  []byte        // encrypt
+	Prev                  core.MerkleTx // encrypt
+	TimeRecvIsTxTime      int64         // encrypt
+	TimeRecv              int64         // encrypt
 	FromMe                bool
 	Accounts              [][]byte // encrypt
 	Spent                 []byte   // encrypt

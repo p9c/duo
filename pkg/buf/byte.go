@@ -6,10 +6,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/anaskhan96/base58check"
-	"github.com/parallelcointeam/duo/pkg/proto"
 	"math/big"
 	"strings"
+
+	"github.com/anaskhan96/base58check"
+	"github.com/parallelcointeam/duo/pkg/core"
 )
 
 // NewByte creates a new Byte
@@ -43,7 +44,7 @@ func (r *Byte) Bytes() (out *[]byte) {
 }
 
 // Copy copies the byte from a provided byte slice to a new buffer
-func (r *Byte) Copy(in *[]byte) proto.Buffer {
+func (r *Byte) Copy(in *[]byte) core.Buffer {
 	r = r.NewIf()
 	switch {
 	case in == nil:
@@ -60,20 +61,20 @@ func (r *Byte) Copy(in *[]byte) proto.Buffer {
 }
 
 // Zero writes zeroes to the byte slice
-func (r *Byte) Zero() proto.Buffer {
+func (r *Byte) Zero() core.Buffer {
 	r = r.NewIf()
 	switch {
 	case r.Val == nil:
 		r = NewByte()
 		r.SetStatus(er.NilBuf)
 	default:
-		proto.Zero(r.Val)
+		core.Zero(r.Val)
 	}
 	return r
 }
 
 // Free is a
-func (r *Byte) Free() proto.Buffer {
+func (r *Byte) Free() core.Buffer {
 	r = r.NewIf()
 	switch {
 	default:
@@ -113,10 +114,10 @@ func (r *Byte) GetCoding() (out *string) {
 }
 
 // SetCoding is a
-func (r *Byte) SetCoding(in string) proto.Coder {
+func (r *Byte) SetCoding(in string) core.Coder {
 	r = r.NewIf()
-	for i := range proto.StringCodings {
-		if in == proto.StringCodings[i] {
+	for i := range core.StringCodings {
+		if in == core.StringCodings[i] {
 			r.Coding = in
 			break
 		}
@@ -127,7 +128,7 @@ func (r *Byte) SetCoding(in string) proto.Coder {
 // ListCodings is a
 func (r *Byte) ListCodings() (out *[]string) {
 	r = r.NewIf()
-	out = &proto.StringCodings
+	out = &core.StringCodings
 	return
 }
 
@@ -153,7 +154,7 @@ func (r *Byte) Freeze() (out *[]byte) {
 }
 
 // Thaw is a
-func (r *Byte) Thaw(in *[]byte) proto.Streamer {
+func (r *Byte) Thaw(in *[]byte) core.Streamer {
 	r = r.NewIf()
 	out := NewByte()
 	if err := json.Unmarshal(*in, out); !out.SetStatusIf(err).OK() {
@@ -163,7 +164,7 @@ func (r *Byte) Thaw(in *[]byte) proto.Streamer {
 }
 
 // SetStatus is a
-func (r *Byte) SetStatus(s string) proto.Status {
+func (r *Byte) SetStatus(s string) core.Status {
 	r = r.NewIf()
 	switch {
 	case s == "":
@@ -175,7 +176,7 @@ func (r *Byte) SetStatus(s string) proto.Status {
 }
 
 // SetStatusIf is a
-func (r *Byte) SetStatusIf(err error) proto.Status {
+func (r *Byte) SetStatusIf(err error) core.Status {
 	r = r.NewIf()
 	if err != nil {
 		r.State.SetStatus(err.Error())
@@ -186,7 +187,7 @@ func (r *Byte) SetStatusIf(err error) proto.Status {
 }
 
 // UnsetStatus is a
-func (r *Byte) UnsetStatus() proto.Status {
+func (r *Byte) UnsetStatus() core.Status {
 	r = r.NewIf()
 	r.State.UnsetStatus()
 	return r
@@ -201,7 +202,7 @@ func (r *Byte) OK() bool {
 }
 
 // SetElem is a
-func (r *Byte) SetElem(index int, in interface{}) proto.Array {
+func (r *Byte) SetElem(index int, in interface{}) core.Array {
 	r = r.NewIf()
 	switch {
 	case r.Val == nil:

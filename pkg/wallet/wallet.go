@@ -90,13 +90,15 @@ const ()
 
 // New returns a new Wallet
 func New() *Wallet {
-	return &Wallet{
+	w := &Wallet{
 		version:        FeatureBase,
 		maxVersion:     FeatureBase,
 		FileBacked:     false,
 		MasterKeyMaxID: 0,
 		OrderPosNext:   0,
+		KeyPoolTarget:  100,
 	}
+	return w
 }
 
 // // NewFromFile makes a new wallet by importing a wallet.dat file

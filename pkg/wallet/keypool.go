@@ -1,14 +1,26 @@
 package wallet
 
 import (
+	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
 // NewKeyPool creates a new pool of keys in reserve for generating transactions
 func (r *Wallet) NewKeyPool() *Wallet {
-
+	if r.KeyPool != nil {
+		r.EmptyKeyPool()
+	}
 	r.KeyPool = make(KeyPool)
+	for i := 0; i < r.KeyPoolTarget; i++ {
+		nk := key.NewPriv().Make()
+		idx := core.Hash64(nk.PubKey().Bytes())
+		np := &rec.Pool{
+			Idx: idx,
+			Seq: int64(i),
+			Key: nk,
+		}
+	}
 	return r
 }
 
@@ -30,7 +42,7 @@ func (r *Wallet) ReserveKeyFromKeyPool(int64, *rec.Pool) {}
 // TopUpKeyPool -
 func (r *Wallet) TopUpKeyPool() *Wallet { return w }
 
-// Destroy deletes an entire keypool
-func (r *Wallet) Destroy() *Wallet {
+// EmptyKeyPool deletes an entire keypool
+func (r *Wallet) EmptyKeyPool() *Wallet {
 	return r
 }

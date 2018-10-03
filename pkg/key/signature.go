@@ -3,8 +3,8 @@ package key
 import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/parallelcointeam/duo/pkg/buf"
+	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/hash160"
-	"github.com/parallelcointeam/duo/pkg/proto"
 )
 
 // NewSig creates a new signature
@@ -49,7 +49,7 @@ func (r *Sig) Recover(h *[]byte, addr *[]byte) (out *Pub) {
 		return
 	}
 	r.mh.Copy(h)
-	r.addr = proto.Address(*addr)
+	r.addr = core.Address(*addr)
 	pub, comp, err := btcec.RecoverCompact(btcec.S256(), *r.Bytes(), *h)
 	if pub != nil {
 		out = NewPub()

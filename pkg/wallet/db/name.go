@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dgraph-io/badger"
-	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
@@ -17,7 +17,7 @@ func (r *DB) ReadName(id *[]byte) (out *rec.Name) {
 	}
 	out = new(rec.Name)
 	k := []byte(rec.Tables["Name"])
-	idx := proto.Hash64(id)
+	idx := core.Hash64(id)
 	k = append(k, *idx...)
 	if r.BC != nil {
 		id = r.BC.Encrypt(id)
@@ -67,7 +67,7 @@ func (r *DB) WriteName(address, label *[]byte) *DB {
 	if address == nil || label == nil {
 		r.SetStatus(er.NilParam)
 	}
-	idx := proto.Hash64(address)
+	idx := core.Hash64(address)
 	var meta byte
 	if r.BC != nil {
 		meta = 1
@@ -94,7 +94,7 @@ func (r *DB) EraseName(address *[]byte) *DB {
 	}
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
-	idx := proto.Hash64(address)
+	idx := core.Hash64(address)
 	if r.BC != nil {
 		address = r.BC.Encrypt(address)
 	}

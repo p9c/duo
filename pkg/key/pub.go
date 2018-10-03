@@ -2,9 +2,10 @@ package key
 
 import (
 	"crypto/ecdsa"
+
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/parallelcointeam/duo/pkg/buf"
-	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/core"
 )
 
 // NewPub creates a new public key
@@ -30,7 +31,7 @@ func (r *Pub) Bytes() (out *[]byte) {
 }
 
 // Copy loads the public key
-func (r *Pub) Copy(in *[]byte) proto.Buffer {
+func (r *Pub) Copy(in *[]byte) core.Buffer {
 	r = r.NewIf()
 	switch {
 	case in == nil:
@@ -46,7 +47,7 @@ func (r *Pub) Copy(in *[]byte) proto.Buffer {
 }
 
 // Zero wipes the key
-func (r *Pub) Zero() proto.Buffer {
+func (r *Pub) Zero() core.Buffer {
 	r = r.NewIf()
 	switch {
 	case r.Len() < 1:
@@ -58,7 +59,7 @@ func (r *Pub) Zero() proto.Buffer {
 }
 
 // Free deallocates the buffer of the key
-func (r *Pub) Free() proto.Buffer {
+func (r *Pub) Free() core.Buffer {
 	r = r.NewIf()
 	switch {
 	case r.Len() < 1:
@@ -165,7 +166,7 @@ func (r *Pub) AsEC() (out *ecdsa.PublicKey) {
 }
 
 // GetID returns the hash160 ID of the public key
-func (r *Pub) GetID() proto.Address {
+func (r *Pub) GetID() core.Address {
 	if r == nil {
 		r = r.NewIf()
 		return ""

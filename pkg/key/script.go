@@ -3,7 +3,7 @@ package key
 import (
 	"sync"
 
-	"github.com/parallelcointeam/duo/pkg/proto"
+	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
@@ -51,7 +51,7 @@ type ScriptCompressor struct {
 
 // SigData -
 type SigData struct {
-	Hash   proto.Hash
+	Hash   core.Hash
 	Sig    []byte
 	Pubkey Pub
 }
@@ -70,7 +70,7 @@ type StoreIsMineVisitor struct {
 // AffectedKeysVisitor -
 type AffectedKeysVisitor struct {
 	KeyStore *Store
-	Keys     []proto.Address
+	Keys     []core.Address
 }
 
 // ScriptVisitor -

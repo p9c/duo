@@ -1,42 +1,47 @@
 package wallet
 
 import (
+	"time"
+
+	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/key"
-	"github.com/parallelcointeam/duo/pkg/proto"
 	"github.com/parallelcointeam/duo/pkg/tx"
 	"github.com/parallelcointeam/duo/pkg/wallet/db"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
 // KeyPool is a collection of available addresses for constructing transactions
-type KeyPool map[proto.Address]*rec.Pool
+type KeyPool map[core.Address]*rec.Pool
 
 // KeyMetadata is
-type KeyMetadata map[proto.Address]*KeyMetadata
+type KeyMetadata map[core.Address]*KeyMetadata
 
 // Transactions is a map of transactions in the wallet
-type Transactions map[proto.Hash]*rec.Tx
+type Transactions map[core.Hash]*rec.Tx
 
 // AddressBook is a collection of correspondent addresses
-type AddressBook map[proto.Address]key.Account
+type AddressBook map[core.Address]key.Account
 
 // Wallet controls access to a wallet.db file containing keys and data relating to accounts and addresses
 type Wallet struct {
-	key.Store
+	KeyStore            key.Store
 	DB                  *walletdb.DB
 	version, maxVersion int
 	FileBacked          bool
 	File                string
 	KeyPool             KeyPool
-	KeyMetadat          KeyMetadata
+	KeyPoolTarget       int64
+	KeyPoolLifespan     time.Duration
+	KeyMetadata         KeyMetadata
 	MasterKeys          key.MasterKeys
 	Transactions        Transactions
 	OrderPosNext        int64
-	RequestCountMap     map[proto.Hash]int
+	RequestCountMap     map[core.Hash]int
 	AddressBook         AddressBook
 	DefaultKey          *key.Pub
 	LockedCoinsSet      []*tx.OutPoint
 	TimeFirstKey        int64
+	core.State
 }
 
 // ReserveKey is
@@ -62,5 +67,5 @@ type ScanState struct {
 	Keys, CKeys, KeyMeta      uint
 	IsEncrypted, AnyUnordered bool
 	FileVersion               int
-	WalletUpgrade             []*proto.Hash
+	WalletUpgrade             []*core.Hash
 }

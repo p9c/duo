@@ -1,4 +1,4 @@
-package proto
+package core
 
 // State is a base status/error object, that can be embedded in any other type to proide status notifications
 type State struct {
