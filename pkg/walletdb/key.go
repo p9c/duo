@@ -115,9 +115,13 @@ func (r *DB) EraseKey(address *[]byte) *DB {
 	opt.PrefetchValues = false
 	idx := proto.Hash64(address)
 	search := append(rec.Tables["Key"], *idx...)
-	ID := buf.NewSecure().Copy(address).(*buf.Secure)
-	encid := r.Encrypt(ID)
-	search = append(search, *encid.Bytes()...)
+	if r.BC != nil {
+		ID := buf.NewSecure().Copy(address).(*buf.Secure)
+		addr := r.Encrypt(ID)
+		search = append(search, *addr.Bytes()...)
+	} else {
+		search = append(search, *address...)
+	}
 	txn := r.DB.NewTransaction(true)
 	if r.SetStatusIf(txn.Delete(search)).OK() {
 		txn.Commit(nil)

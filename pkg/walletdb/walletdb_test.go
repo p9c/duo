@@ -91,16 +91,13 @@ func TestReadWriteEraseKeyEncryptDecrypt(t *testing.T) {
 		defer wdb.Close()
 	}
 	wdb.WithBC(BC)
-	wdb.dump()
 	BCs := wdb.ReadMasterKeys()
 	bc := BCs[0]
 	bc.Unlock(pass).Arm()
-	wdb.WithBC(bc)
 	pk := key.NewPriv()
 	pk.WithBC(bc)
 	pk.Make()
 	wdb.WriteKey(pk)
-	wdb.dump()
 	addr := pk.GetID()
 	address := []byte(addr)
 	rpk := wdb.ReadKey(&address)
@@ -108,7 +105,6 @@ func TestReadWriteEraseKeyEncryptDecrypt(t *testing.T) {
 		t.Error("failed to write and read back")
 	}
 	wdb.RemoveBC()
-	wdb.dump()
 	addr = pk.GetID()
 	address = []byte(addr)
 	rpk = wdb.ReadKey(&address)
@@ -116,7 +112,6 @@ func TestReadWriteEraseKeyEncryptDecrypt(t *testing.T) {
 		t.Error("failed to remove masterkey encryption and read back")
 	}
 	wdb.WithBC(bc)
-	wdb.dump()
 	addr = rpk.GetID()
 	address = []byte(addr)
 	rrpk := wdb.ReadKey(&address)
@@ -167,8 +162,9 @@ func TestEncryptDecrypt(t *testing.T) {
 	wdb.WithBC(bc)
 	wdb.dump()
 
-	wdb.EraseMasterKey(BC.Idx)
-	wdb.EraseKey(pk.PubKey().Bytes())
+	wdb.EraseMasterKey(bc.Idx)
+	kid := []byte(pk.GetID())
+	wdb.EraseKey(&kid)
 	wdb.EraseName(&aa)
 	wdb.EraseAccount(&bb)
 
