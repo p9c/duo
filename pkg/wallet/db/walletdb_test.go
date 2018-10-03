@@ -124,7 +124,7 @@ func TestReadWriteEraseKeyEncryptDecrypt(t *testing.T) {
 	if wdb.Error() != "Key not found" {
 		t.Error("failed delete key")
 	}
-	wdb.deleteAll()
+	wdb.DeleteAll()
 }
 
 func TestEncryptDecrypt(t *testing.T) {
@@ -135,15 +135,15 @@ func TestEncryptDecrypt(t *testing.T) {
 	if wdb.OK() {
 		defer wdb.Close()
 	}
-	wdb.dump()
+	wdb.Dump()
 	wdb.WithBC(BC)
-	wdb.dump()
+	wdb.Dump()
 	BCs := wdb.ReadMasterKeys()
 	wdb.RemoveBC()
 	bc := BCs[0]
 	bc.Unlock(pass).Arm()
 	wdb.WithBC(bc)
-	wdb.dump()
+	wdb.Dump()
 
 	pk := key.NewPriv().WithBC(bc).Make()
 	wdb.WriteKey(pk)
@@ -154,13 +154,13 @@ func TestEncryptDecrypt(t *testing.T) {
 	b := key.NewPriv().WithBC(bc).Make()
 	bb := []byte(b.GetID())
 	wdb.WriteAccount(&bb, b.PubKey().Bytes())
-	wdb.dump()
+	wdb.Dump()
 
 	wdb.RemoveBC()
-	wdb.dump()
+	wdb.Dump()
 
 	wdb.WithBC(bc)
-	wdb.dump()
+	wdb.Dump()
 
 	wdb.EraseMasterKey(bc.Idx)
 	kid := []byte(pk.GetID())
@@ -168,7 +168,7 @@ func TestEncryptDecrypt(t *testing.T) {
 	wdb.EraseName(&aa)
 	wdb.EraseAccount(&bb)
 
-	wdb.deleteAll()
+	wdb.DeleteAll()
 	fmt.Println()
 }
 
@@ -177,13 +177,13 @@ func TestJustDump(t *testing.T) {
 	if wdb.OK() {
 		defer wdb.Close()
 	}
-	wdb.dump()
+	wdb.Dump()
 }
 
 func TestJustDeleteAll(t *testing.T) {
 	wdb := NewWalletDB()
 	if wdb.OK() {
-		wdb.deleteAll()
+		wdb.DeleteAll()
 	}
 	wdb.Close()
 }

@@ -14,8 +14,8 @@ type Hash string
 
 // MerkleTx is the merkle tree hash data for a transaction
 type MerkleTx struct {
-	HashBlock      [32]byte
-	MerkleBranch   [32]byte
+	HashBlock      []byte
+	MerkleBranch   []byte
 	Index          int64
 	merkleVerified bool
 }

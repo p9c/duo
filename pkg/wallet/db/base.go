@@ -54,7 +54,8 @@ func (r *DB) NewIf() *DB {
 	return r
 }
 
-func (r *DB) dump() {
+// Dump is a debugging function that outputs all the key pairs in the database to the stdout
+func (r *DB) Dump() {
 	fmt.Println("\nDUMP")
 	counter := 0
 	opt := badger.DefaultIteratorOptions
@@ -90,8 +91,8 @@ func (r *DB) dump() {
 	fmt.Println("\t", counter, itemS, "found")
 }
 
-func (r *DB) deleteAll() {
-	// fmt.Print("\nDELETE ALL\t")
+// DeleteAll basically empties the database. For testing purposes.
+func (r *DB) DeleteAll() {
 	counter := 0
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false

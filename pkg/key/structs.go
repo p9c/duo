@@ -36,6 +36,3 @@ type Store struct {
 	pubs  map[core.Address]*Pub
 	core.State
 }
-
-// MasterKeys is a map storing BC's
-type MasterKeys map[uint64]bc.BlockCrypt

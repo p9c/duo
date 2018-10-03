@@ -1,8 +1,9 @@
 package tx
 
 import (
-	"github.com/parallelcointeam/duo/pkg/Uint"
 	"sync"
+
+	"github.com/parallelcointeam/duo/pkg/core"
 )
 
 // Transaction -
@@ -15,7 +16,7 @@ type Transaction struct {
 	LockTime                uint
 }
 type OutPoint struct {
-	Hash Uint.U256
+	Hash core.Hash
 	N    uint
 }
 type InPoint struct {
@@ -52,11 +53,11 @@ type Script struct{}
 // MemPool stores the list of transactions received from the P2P network
 type MemPool struct {
 	Mutex sync.RWMutex
-	Map   map[*Uint.U256]*Transaction
+	Map   map[core.Hash]*Transaction
 	Next  map[*OutPoint]*InPoint
 }
 type Orphan struct {
 	Tx                 Transaction
-	DependsOn          []*Uint.U256
+	DependsOn          []*core.Hash
 	Priority, FeePerKB float64
 }

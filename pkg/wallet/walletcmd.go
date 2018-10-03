@@ -20,10 +20,10 @@ func (r *Wallet) AddAccount(accounnt *rec.Account) *Wallet {
 }
 
 // AddScript -
-func (r *Wallet) AddScript(script *rec.Script) *Wallet { return w }
+func (r *Wallet) AddScript(script *rec.Script) *Wallet { return r }
 
 // AddTx -
-func (r *Wallet) AddTx(tx *tx.Transaction) *Wallet { return w }
+func (r *Wallet) AddTx(tx *tx.Transaction) *Wallet { return r }
 
 // AddToWalletIfInvolvingMe -
 func (r *Wallet) AddToWalletIfInvolvingMe(id core.Address, tx *tx.Transaction, block *block.Block, update bool, findblock bool) *Wallet {
@@ -31,13 +31,13 @@ func (r *Wallet) AddToWalletIfInvolvingMe(id core.Address, tx *tx.Transaction, b
 }
 
 // AvailableCoins -
-func (r *Wallet) AvailableCoins([]tx.TxOutput, bool) {}
+func (r *Wallet) AvailableCoins([]tx.Output, bool) {}
 
 // ChangeWalletPassphrase -
-func (r *Wallet) ChangeWalletPassphrase(string, string) *Wallet { return w }
+func (r *Wallet) ChangeWalletPassphrase(string, string) *Wallet { return r }
 
 // CommitTransaction -
-func (r *Wallet) CommitTransaction(*tx.Transaction, *ReserveKey) *Wallet { return w }
+func (r *Wallet) CommitTransaction(*tx.Transaction, *ReserveKey) *Wallet { return r }
 
 // CreateTransaction -
 func (r *Wallet) CreateTransaction(*rec.Script, int64, *tx.Transaction, *ReserveKey, int64, string) *Wallet {
@@ -50,22 +50,22 @@ func (r *Wallet) CreateTransactions([]map[*rec.Script]int64, *tx.Transaction, *R
 }
 
 // DelAddressBookName -
-func (r *Wallet) DelAddressBookName(*key.TxDestination) *Wallet { return w }
+func (r *Wallet) DelAddressBookName(*tx.Destination) *Wallet { return r }
 
 // EncryptWallet -
 func (r *Wallet) EncryptWallet(string) {}
 
 // EraseFromWallet -
-func (r *Wallet) EraseFromWallet(core.Hash) *Wallet { return w }
+func (r *Wallet) EraseFromWallet(core.Hash) *Wallet { return r }
 
 // GenerateNewKey -
 func (r *Wallet) GenerateNewKey() *key.Pub { return nil }
 
 // GetAddressBalances -
-func (r *Wallet) GetAddressBalances() map[*key.TxDestination]int64 { return nil }
+func (r *Wallet) GetAddressBalances() map[*tx.Destination]int64 { return nil }
 
 // GetAddressGroupings -
-func (r *Wallet) GetAddressGroupings() []key.TxDestination { return nil }
+func (r *Wallet) GetAddressGroupings() []tx.Destination { return nil }
 
 // GetAllReserveKeys -
 func (r *Wallet) GetAllReserveKeys() []core.Address { return nil }
@@ -89,7 +89,7 @@ func (r *Wallet) GetImmatureBalance() int64 { return 0 }
 func (r *Wallet) GetKeyBirthTimes(map[*core.Address]int64) {}
 
 // GetTransaction -
-func (r *Wallet) GetTransaction(*core.Hash, *tx.Transaction) *Wallet { return w }
+func (r *Wallet) GetTransaction(*core.Hash, *tx.Transaction) *Wallet { return r }
 
 // GetTxChange -
 func (r *Wallet) GetTxChange(*tx.Transaction) int64 { return 0 }
@@ -113,22 +113,22 @@ func (r *Wallet) IncOrderPosNext(*db.DB) int64 { return 0 }
 func (r *Wallet) Inventory(*core.Hash) {}
 
 // IsChange -
-func (r *Wallet) IsChange(*tx.Out) *Wallet { return w }
+func (r *Wallet) IsChange(*tx.Out) *Wallet { return r }
 
 // IsFromMe -
-func (r *Wallet) IsFromMe(*tx.Transaction) *Wallet { return w }
+func (r *Wallet) IsFromMe(*tx.Transaction) *Wallet { return r }
 
 // IsLockedCoin -
-func (r *Wallet) IsLockedCoin(*core.Hash, uint) *Wallet { return w }
+func (r *Wallet) IsLockedCoin(*core.Hash, uint) *Wallet { return r }
 
 // IsMyTX -
-func (r *Wallet) IsMyTX(*tx.Transaction) *Wallet { return w }
+func (r *Wallet) IsMyTX(*tx.Transaction) *Wallet { return r }
 
 // IsMyTxIn -
-func (r *Wallet) IsMyTxIn(*tx.In) *Wallet { return w }
+func (r *Wallet) IsMyTxIn(*tx.In) *Wallet { return r }
 
 // IsMyTxOut -
-func (r *Wallet) IsMyTxOut(*tx.Out) *Wallet { return w }
+func (r *Wallet) IsMyTxOut(*tx.Out) *Wallet { return r }
 
 // KeepKey -
 func (r *Wallet) KeepKey(int64) {}
@@ -137,10 +137,10 @@ func (r *Wallet) KeepKey(int64) {}
 func (r *Wallet) ListLockedCoins([]tx.OutPoint) {}
 
 // LoadCryptedKey -
-func (r *Wallet) LoadCryptedKey(*key.Pub, []byte) *Wallet { return w }
+func (r *Wallet) LoadCryptedKey(*key.Pub, []byte) *Wallet { return r }
 
 // LoadKey -
-func (r *Wallet) LoadKey(*key.Priv, *key.Pub) *Wallet { return w }
+func (r *Wallet) LoadKey(*key.Priv, *key.Pub) *Wallet { return r }
 
 // LoadKeyMetadata -
 func (r *Wallet) LoadKeyMetadata(*key.Pub, *KeyMetadata) *Wallet {
@@ -148,10 +148,10 @@ func (r *Wallet) LoadKeyMetadata(*key.Pub, *KeyMetadata) *Wallet {
 }
 
 // LoadMinVersion -
-func (r *Wallet) LoadMinVersion(int) *Wallet { return w }
+func (r *Wallet) LoadMinVersion(int) *Wallet { return r }
 
 // LoadScript -
-func (r *Wallet) LoadScript(*rec.Script) *Wallet { return w }
+func (r *Wallet) LoadScript(*rec.Script) *Wallet { return r }
 
 // LoadWallet -
 func (r *Wallet) LoadWallet(bool) error { return nil }
@@ -167,13 +167,13 @@ func (r *Wallet) MarkDirty() *Wallet {
 }
 
 // NotifyAddressBookChanged -
-func (r *Wallet) NotifyAddressBookChanged(*Wallet, *key.TxDestination, string, bool, int) {}
+func (r *Wallet) NotifyAddressBookChanged(*Wallet, *tx.Destination, string, bool, int) {}
 
 // NotifyTransactionChanged -
 func (r *Wallet) NotifyTransactionChanged(*Wallet, *core.Hash, int) {}
 
 // OrderedTxItems -
-func (r *Wallet) OrderedTxItems([]AccountingEntry, string) *TxItems { return nil }
+func (r *Wallet) OrderedTxItems([]rec.Accounting, string) *tx.Items { return nil }
 
 // PrintWallet -
 func (r *Wallet) PrintWallet(*block.Block) {}
@@ -191,31 +191,31 @@ func (r *Wallet) ReturnKey(int64) {}
 func (r *Wallet) ScanForWalletTransactions(*block.Index, bool) int { return 0 }
 
 // SelectCoinsMinConf -
-func (r *Wallet) SelectCoinsMinConf(int64, int, int, []tx.TxOutput) (err error) { return }
+func (r *Wallet) SelectCoinsMinConf(int64, int, int, []tx.Output) (err error) { return }
 
 // SendMoney -
 func (r *Wallet) SendMoney(*rec.Script, int64, *tx.Transaction, bool) string { return "" }
 
 // SendMoneyToDestination -
-func (r *Wallet) SendMoneyToDestination(*key.TxDestination) string { return "" }
+func (r *Wallet) SendMoneyToDestination(*tx.Destination) string { return "" }
 
 // SetAddressBookName -
-func (r *Wallet) SetAddressBookName(*key.TxDestination, string) *Wallet { return w }
+func (r *Wallet) SetAddressBookName(*tx.Destination, string) *Wallet { return r }
 
 // SetBestChain -
 func (r *Wallet) SetBestChain(*block.Locator) {}
 
 // SetDefaultKey -
-func (r *Wallet) SetDefaultKey(*key.Pub) *Wallet { return w }
+func (r *Wallet) SetDefaultKey(*key.Pub) *Wallet { return r }
 
 // SetMaxVersion -
-func (r *Wallet) SetMaxVersion(int) *Wallet { return w }
+func (r *Wallet) SetMaxVersion(int) *Wallet { return r }
 
 // SetMinVersion -
-func (r *Wallet) SetMinVersion(int, *db.DB, bool) *Wallet { return w }
+func (r *Wallet) SetMinVersion(int, *db.DB, bool) *Wallet { return r }
 
 // Unlock -
-func (r *Wallet) Unlock(string) *Wallet { return w }
+func (r *Wallet) Unlock(string) *Wallet { return r }
 
 // UnlockAllCoins -
 func (r *Wallet) UnlockAllCoins() {}

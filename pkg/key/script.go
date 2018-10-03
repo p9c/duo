@@ -37,18 +37,6 @@ const (
 	TxMultisig
 )
 
-// TxDestination can be multiple types
-type TxDestination interface{}
-
-// NoDestination is nowhere
-type NoDestination struct{}
-
-// ScriptCompressor -
-type ScriptCompressor struct {
-	specialScripts uint // 6 defined
-	script         rec.Script
-}
-
 // SigData -
 type SigData struct {
 	Hash   core.Hash

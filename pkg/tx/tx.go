@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/parallelcointeam/duo/pkg/core"
-	"github.com/parallelcointeam/duo/pkg/tx"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
@@ -51,7 +50,7 @@ type Out struct {
 
 // OutCompressor controls optimising a transaction
 type OutCompressor struct {
-	Out *Out
+	TxOut *Out
 }
 
 // InUndo is
@@ -66,7 +65,7 @@ type Undo struct {
 // Coins is
 type Coins struct {
 	Base    bool
-	Out     []Out
+	TxOut   []Out
 	Height  int
 	Version int
 }
@@ -86,7 +85,11 @@ type Orphan struct {
 }
 
 // Pair is
-type Pair map[*tx.Transaction]*rec.Accounting
+type Pair map[*Transaction]*rec.Accounting
 
 // Items are
-type Items map[int64]TxPair
+type Items map[int64]Pair
+
+type Destination interface{}
+
+type NoDestination struct{}

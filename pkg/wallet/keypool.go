@@ -22,22 +22,23 @@ func (r *Wallet) NewKeyPool() *Wallet {
 		nk.Make()
 		idx := core.Hash64(nk.PubKey().Bytes())
 		np := &rec.Pool{
-			Idx:     idx,
-			Seq:     int64(i),
-			Key:     nk,
-			Created: time.Now(),
-			Expires: time.Now() + r.KeyPoolLifespan,
+			Idx:     *idx,
+			Seq:     i,
+			Priv:    nk.Crypt,
+			Created: time.Now().Unix(),
+			Expires: time.Now().Add(r.KeyPoolLifespan).Unix(),
 		}
+		r.DB.WritePool(np)
 		r.KeyPool[i] = np
 	}
 	return r
 }
 
 // AddReserveKey -
-func (r *Wallet) AddReserveKey(kp *rec.Pool) *Wallet { return w }
+func (r *Wallet) AddReserveKey(kp *rec.Pool) *Wallet { return r }
 
 // GetKeyFromPool -
-func (r *Wallet) GetKeyFromPool(*key.Pub, bool) *Wallet { return w }
+func (r *Wallet) GetKeyFromPool(*key.Pub, bool) *Wallet { return r }
 
 // GetKeyPoolSize -
 func (r *Wallet) GetKeyPoolSize() int { return 0 }
@@ -49,7 +50,7 @@ func (r *Wallet) GetOldestKeyPoolTime() int64 { return 0 }
 func (r *Wallet) ReserveKeyFromKeyPool(int64, *rec.Pool) {}
 
 // TopUpKeyPool -
-func (r *Wallet) TopUpKeyPool() *Wallet { return w }
+func (r *Wallet) TopUpKeyPool() *Wallet { return r }
 
 // EmptyKeyPool deletes an entire keypool
 func (r *Wallet) EmptyKeyPool() *Wallet {

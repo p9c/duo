@@ -2,7 +2,9 @@
 package rec
 
 import (
+	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/core"
+	"github.com/parallelcointeam/duo/pkg/crypt"
 )
 
 var (
@@ -49,7 +51,7 @@ type Name struct {
 type Tx struct {
 	Idx                   Idx
 	AcIdxs                []Idx         //in key
-	ID                    [32]byte      // encrypt
+	ID                    []byte        // encrypt
 	Data                  []byte        // encrypt
 	Prev                  core.MerkleTx // encrypt
 	TimeRecvIsTxTime      int64         // encrypt
@@ -92,10 +94,11 @@ type Script struct {
 
 // Pool is a wallet key pair that has not yet been put to use in a transaction. The Idx is the HWH of the unencrypted key ID (address)
 type Pool struct {
-	Idx Idx // in key // from Hash64 of public key
-	// Address []byte // in key // encrypt // from Key field
-	Seq     int64 // in key
-	Key           // encrypt
+	Idx     Idx         // in key // from Hash64 of public key
+	Address buf.Byte    // in key // encrypt // from Key field
+	Seq     int         // in key
+	Priv    crypt.Crypt // encrypt
+	Pub     buf.Byte
 	Created int64
 	Expires int64
 }
@@ -109,13 +112,13 @@ type Account struct {
 
 // Accounting is an entry regarding internal movements of funds. The index contains the 64 bit highway hash of the encrypted addresses in the accounting entry, so scanning the ledger for relevant entries is fast and happens all in memory.
 type Accounting struct {
-	Idx          []Idx      // in key
-	Sequence     int64      // in key
-	Account      [][20]byte // encrypt
-	CreditDebit  int64      // encrypt
-	Timestamp    int64      // encrypt
-	OtherAccount [][20]byte // encrypt
-	Comment      string     // encrypt
+	Idx          []Idx    // in key
+	Sequence     int      // in key
+	Account      [][]byte // encrypt
+	CreditDebit  int64    // encrypt
+	Timestamp    int64    // encrypt
+	OtherAccount [][]byte // encrypt
+	Comment      string   // encrypt
 	OrderPos     int64
 	EntryNo      int64
 	Extra        []byte // encrypt
@@ -123,15 +126,15 @@ type Accounting struct {
 
 // CreditDebit is an increase or decrease to the balance in the wallet
 type CreditDebit struct {
-	Idx     Idx      // in key
-	Address [20]byte // encrypt
-	Amount  int64    // encrypt
+	Idx     Idx    // in key
+	Address []byte // encrypt
+	Amount  int64  // encrypt
 }
 
 // BestBlock is the latest block at the time the wallet was last open
 type BestBlock struct {
-	Height uint64   // in key
-	ID     [32]byte // in key
+	Height uint64    // in key
+	ID     core.Hash // in key
 	Data   []byte
 }
 
@@ -142,5 +145,5 @@ type MinVersion struct {
 
 // DefaultKey sets the default key for receiving payments to use in interfaces
 type DefaultKey struct {
-	Address [20]byte // encrypt
+	Address []byte // encrypt
 }

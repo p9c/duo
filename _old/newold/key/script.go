@@ -1,8 +1,9 @@
 package key
 
 import (
-	"github.com/parallelcointeam/duo/pkg/Uint"
 	"sync"
+
+	"github.com/parallelcointeam/duo/pkg/Uint"
 )
 
 // Various script flags
@@ -36,8 +37,6 @@ const (
 )
 
 type ScriptID ID
-type TxDestination interface{}
-type NoDestination struct{}
 type Script []byte
 type script interface {
 	GetID() *ScriptID

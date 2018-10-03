@@ -4,7 +4,7 @@ import (
 	"github.com/parallelcointeam/duo/pkg/key"
 )
 
-// KeyMetadata is a data structure for storing metadata related to a key pair
+// KeyMetadata is a structure for storing metadata related to a key pair
 type KeyMetadata struct {
 	Pub        *key.Pub
 	Version    uint32

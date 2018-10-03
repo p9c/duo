@@ -3,6 +3,7 @@ package wallet
 import (
 	"time"
 
+	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/tx"
@@ -10,17 +11,17 @@ import (
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
-// KeyPool is a collection of available addresses for constructing transactions
-type KeyPool map[int64]*rec.Pool
+// MasterKeys is a map storing BC's
+type MasterKeys map[uint64]bc.BlockCrypt
 
-// KeyMetadata is
-type KeyMetadata map[core.Address]*KeyMetadata
+// KeyPool is a collection of available addresses for constructing transactions
+type KeyPool map[int]*rec.Pool
 
 // Transactions is a map of transactions in the wallet
 type Transactions map[core.Hash]*rec.Tx
 
 // AddressBook is a collection of correspondent addresses
-type AddressBook map[core.Address]key.Account
+type AddressBook map[core.Address]*rec.Account
 
 // Wallet controls access to a wallet.db file containing keys and data relating to accounts and addresses
 type Wallet struct {
@@ -30,13 +31,13 @@ type Wallet struct {
 	FileBacked          bool
 	File                string
 	KeyPool             KeyPool
-	KeyPoolHigh         int64
-	KeyPoolLow          int64
+	KeyPoolHigh         int
+	KeyPoolLow          int
 	KeyPoolLifespan     time.Duration
-	KeyMetadata         KeyMetadata
-	MasterKeys          key.MasterKeys
+	KeyMetadata         map[core.Address]*KeyMetadata
+	MasterKeys          MasterKeys
 	Transactions        Transactions
-	OrderPosNext        int64
+	OrderPosNext        int
 	RequestCountMap     map[core.Hash]int
 	AddressBook         AddressBook
 	DefaultKey          *key.Pub
