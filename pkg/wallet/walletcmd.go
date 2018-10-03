@@ -107,7 +107,7 @@ func (r *Wallet) GetUnconfirmedBalance() int64 { return 0 }
 func (r *Wallet) GetVersion() int { return 0 }
 
 // IncOrderPosNext -
-func (r *Wallet) IncOrderPosNext(*walletdb.DB) int64 { return 0 }
+func (r *Wallet) IncOrderPosNext(*db.DB) int64 { return 0 }
 
 // Inventory -
 func (r *Wallet) Inventory(*core.Hash) {}
@@ -212,7 +212,7 @@ func (r *Wallet) SetDefaultKey(*key.Pub) *Wallet { return w }
 func (r *Wallet) SetMaxVersion(int) *Wallet { return w }
 
 // SetMinVersion -
-func (r *Wallet) SetMinVersion(int, *walletdb.DB, bool) *Wallet { return w }
+func (r *Wallet) SetMinVersion(int, *db.DB, bool) *Wallet { return w }
 
 // Unlock -
 func (r *Wallet) Unlock(string) *Wallet { return w }

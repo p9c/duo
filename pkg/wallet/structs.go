@@ -11,7 +11,7 @@ import (
 )
 
 // KeyPool is a collection of available addresses for constructing transactions
-type KeyPool map[core.Address]*rec.Pool
+type KeyPool map[int64]*rec.Pool
 
 // KeyMetadata is
 type KeyMetadata map[core.Address]*KeyMetadata
@@ -25,12 +25,13 @@ type AddressBook map[core.Address]key.Account
 // Wallet controls access to a wallet.db file containing keys and data relating to accounts and addresses
 type Wallet struct {
 	KeyStore            key.Store
-	DB                  *walletdb.DB
+	DB                  *db.DB
 	version, maxVersion int
 	FileBacked          bool
 	File                string
 	KeyPool             KeyPool
-	KeyPoolTarget       int64
+	KeyPoolHigh         int64
+	KeyPoolLow          int64
 	KeyPoolLifespan     time.Duration
 	KeyMetadata         KeyMetadata
 	MasterKeys          key.MasterKeys

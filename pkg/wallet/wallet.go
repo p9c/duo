@@ -1,5 +1,7 @@
 package wallet
 
+import "time"
+
 // import (
 // 	"github.com/parallelcointeam/duo/pkg/Uint"
 // 	"github.com/parallelcointeam/duo/pkg/block"
@@ -91,12 +93,14 @@ const ()
 // New returns a new Wallet
 func New() *Wallet {
 	w := &Wallet{
-		version:        FeatureBase,
-		maxVersion:     FeatureBase,
-		FileBacked:     false,
-		MasterKeyMaxID: 0,
-		OrderPosNext:   0,
-		KeyPoolTarget:  100,
+		version:         FeatureBase,
+		maxVersion:      FeatureBase,
+		FileBacked:      false,
+		MasterKeyMaxID:  0,
+		OrderPosNext:    0,
+		KeyPoolHigh:     100,
+		KeyPoolLow:      10,
+		KeyPoolLifespan: 90 * 24 * time.Hour,
 	}
 	return w
 }

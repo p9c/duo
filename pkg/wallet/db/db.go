@@ -1,1 +1,1 @@
-package walletdb
+package db

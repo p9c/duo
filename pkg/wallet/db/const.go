@@ -1,4 +1,4 @@
-package walletdb
+package db
 
 const (
 	// DefaultBaseDir is the default name for the configuration directory if none other is specified

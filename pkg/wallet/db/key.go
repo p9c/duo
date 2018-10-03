@@ -1,4 +1,4 @@
-package walletdb
+package db
 
 import (
 	"github.com/dgraph-io/badger"
@@ -12,12 +12,9 @@ import (
 func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 	r = r.NewIf()
 	if !r.OK() {
-		return nil
+		return &key.Priv{}
 	}
 	out = key.NewPriv()
-	if !r.OK() {
-		return
-	}
 	idx := core.Hash64(address)
 	if r.BC != nil {
 		address = r.BC.Encrypt(address)

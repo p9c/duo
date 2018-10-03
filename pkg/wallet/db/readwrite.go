@@ -1,4 +1,4 @@
-package walletdb
+package db
 
 // WriteScript writes a script entry to the database
 func (r *DB) WriteScript() {}
@@ -21,21 +21,6 @@ func (r *DB) WriteBestBlock() {}
 
 // ReadBestBlock gets the current best block entry
 func (r *DB) ReadBestBlock() {}
-
-// ReadPool gets the oldest available pool entry and refreshes the pool after addresses are used
-func (r *DB) ReadPool() {
-
-}
-
-// WritePool adds a new pool key to the wallet
-func (r *DB) WritePool() {
-
-}
-
-// ErasePool removes a pool key
-func (r *DB) ErasePool() {
-
-}
 
 // ReadMinVersion returns the minimum version required to read this database
 func (r *DB) ReadMinVersion() {

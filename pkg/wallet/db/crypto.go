@@ -1,4 +1,4 @@
-package walletdb
+package db
 
 import (
 	"github.com/parallelcointeam/duo/pkg/buf"

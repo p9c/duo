@@ -1,4 +1,4 @@
-package walletdb
+package db
 
 // ReadTx reads a transaction entry from the database
 func (r *DB) ReadTx() {}

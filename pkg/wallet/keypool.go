@@ -1,6 +1,8 @@
 package wallet
 
 import (
+	"time"
+
 	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
@@ -12,14 +14,21 @@ func (r *Wallet) NewKeyPool() *Wallet {
 		r.EmptyKeyPool()
 	}
 	r.KeyPool = make(KeyPool)
-	for i := 0; i < r.KeyPoolTarget; i++ {
-		nk := key.NewPriv().Make()
+	for i := 0; i < r.KeyPoolHigh; i++ {
+		nk := key.NewPriv()
+		if r.DB.BC != nil {
+			nk.WithBC(r.DB.BC)
+		}
+		nk.Make()
 		idx := core.Hash64(nk.PubKey().Bytes())
 		np := &rec.Pool{
-			Idx: idx,
-			Seq: int64(i),
-			Key: nk,
+			Idx:     idx,
+			Seq:     int64(i),
+			Key:     nk,
+			Created: time.Now(),
+			Expires: time.Now() + r.KeyPoolLifespan,
 		}
+		r.KeyPool[i] = np
 	}
 	return r
 }

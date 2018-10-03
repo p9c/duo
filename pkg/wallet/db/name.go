@@ -1,4 +1,4 @@
-package walletdb
+package db
 
 import (
 	"encoding/hex"
