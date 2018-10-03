@@ -59,11 +59,10 @@ func TestMultiMasterKey(t *testing.T) {
 	p2 := []byte("testing password2")
 	pass := buf.NewSecure().Copy(&p).(*buf.Secure)
 	pass2 := buf.NewSecure().Copy(&p2).(*buf.Secure)
-	BC := bc.New().Generate(pass).Arm()
 	wdb := NewWalletDB()
 	if wdb.OK() {
+		BC := bc.New().Generate(pass).Arm()
 		wdb.WithBC(BC)
-		wdb.WriteMasterKey(BC)
 		BC2 := bc.New().CopyCipher(pass2, BC)
 		wdb.WriteMasterKey(BC2)
 		BCs := wdb.ReadMasterKeys()
@@ -78,6 +77,7 @@ func TestMultiMasterKey(t *testing.T) {
 		}
 		wdb.EraseMasterKey(BCs[0].Idx)
 		wdb.EraseMasterKey(BCs[1].Idx)
+
 		wdb.Close()
 	}
 }

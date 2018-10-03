@@ -1,29 +1,27 @@
 package walletdb
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/proto"
-	"github.com/parallelcointeam/duo/pkg/walletdb/entries"
+	"github.com/parallelcointeam/duo/pkg/wallet/db/entries"
 )
 
-// ReadName reads a name entry out of the database
-func (r *DB) ReadName(id *[]byte) (out *rec.Name) {
+// ReadAccount finds an account stored due to being a correspondent account
+func (r *DB) ReadAccount(address *[]byte) (out *rec.Account) {
 	r = r.NewIf()
 	if !r.OK() {
 		return nil
 	}
-	out = new(rec.Name)
-	k := []byte(rec.Tables["Name"])
-	idx := proto.Hash64(id)
+	out = new(rec.Account)
+	k := []byte(rec.Tables["Account"])
+	idx := proto.Hash64(address)
 	k = append(k, *idx...)
 	if r.BC != nil {
-		id = r.BC.Encrypt(id)
+		address = r.BC.Encrypt(address)
 	}
-	k = append(k, *id...)
-	fmt.Println("search", hex.EncodeToString(k))
+	k = append(k, *address...)
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
 	var V []byte
@@ -41,43 +39,54 @@ func (r *DB) ReadName(id *[]byte) (out *rec.Name) {
 		return nil
 	})
 	if r.SetStatusIf(err).OK() {
+		out.Idx = *idx
 		switch {
 		case r.BC != nil && meta&1 == 1:
-			out.Address = *r.BC.Decrypt(id)
-			out.Label = string(*r.BC.Decrypt(&V))
+			out.Address = *r.BC.Decrypt(address)
+			if len(V) > 1 {
+				out.Pub = *r.BC.Decrypt(&V)
+			}
 		case meta&1 != 1:
-			out.Address = *id
-			out.Label = string(V)
+			out.Address = *address
+			out.Pub = V
 		default:
 			r.SetStatus("record marked encrypted but no BC to decrypt with")
 			fmt.Println(r.Error())
-			out = new(rec.Name)
+			out = new(rec.Account)
 		}
-		out.Idx = *idx
 	}
 	return
 }
 
-// WriteName writes a name entry to the database
-func (r *DB) WriteName(address, label *[]byte) *DB {
+// WriteAccount writes a new account entry
+func (r *DB) WriteAccount(address, pub *[]byte) *DB {
 	r = r.NewIf()
 	if !r.OK() {
 		return nil
 	}
-	if address == nil || label == nil {
+	if address == nil {
 		r.SetStatus(er.NilParam)
+		return r
+	}
+	if pub == nil {
+		pub = &[]byte{}
 	}
 	idx := proto.Hash64(address)
+	var k, v []byte
 	var meta byte
 	if r.BC != nil {
 		meta = 1
 		address = r.BC.Encrypt(address)
-		label = r.BC.Encrypt(label)
+		pub = r.BC.Encrypt(pub)
 	}
-	k := []byte(rec.Tables["Name"])
+	k = []byte(rec.Tables["Account"])
 	k = append(k, *idx...)
 	k = append(k, *address...)
-	v := *label
+	if pub != nil {
+		v = *pub
+	} else {
+		v = []byte{}
+	}
 	txn := r.DB.NewTransaction(true)
 	err := txn.SetWithMeta(k, v, meta)
 	if r.SetStatusIf(err).OK() {
@@ -86,8 +95,8 @@ func (r *DB) WriteName(address, label *[]byte) *DB {
 	return r
 }
 
-// EraseName removes a name entry from the database
-func (r *DB) EraseName(address *[]byte) *DB {
+// EraseAccount deletes an account from the wallet database
+func (r *DB) EraseAccount(address *[]byte) *DB {
 	r = r.NewIf()
 	if !r.OK() {
 		return nil
@@ -95,14 +104,13 @@ func (r *DB) EraseName(address *[]byte) *DB {
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
 	idx := proto.Hash64(address)
+	search := append(rec.Tables["Account"], *idx...)
 	if r.BC != nil {
 		address = r.BC.Encrypt(address)
 	}
-	k := []byte(rec.Tables["Name"])
-	k = append(k, *idx...)
-	k = append(k, *address...)
+	search = append(search, *address...)
 	txn := r.DB.NewTransaction(true)
-	if r.SetStatusIf(txn.Delete(k)).OK() {
+	if r.SetStatusIf(txn.Delete(search)).OK() {
 		r.SetStatusIf(txn.Commit(nil))
 	}
 	return r

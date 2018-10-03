@@ -9,7 +9,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/key"
-	"github.com/parallelcointeam/duo/pkg/walletdb/entries"
+	"github.com/parallelcointeam/duo/pkg/wallet/db/entries"
 )
 
 // NewWalletDB creates a new walletdb.DB. Path, BaseDir, ValueDir the order of how the variadic options will be processed to override thte defaults

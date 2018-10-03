@@ -8,7 +8,7 @@ import (
 	"github.com/parallelcointeam/duo/pkg/blockcrypt"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/proto"
-	"github.com/parallelcointeam/duo/pkg/walletdb/entries"
+	"github.com/parallelcointeam/duo/pkg/wallet/db/entries"
 )
 
 // ReadMasterKeys returns all of the masterkey entries in the database

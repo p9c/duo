@@ -5,7 +5,7 @@ import (
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/proto"
-	"github.com/parallelcointeam/duo/pkg/walletdb/entries"
+	"github.com/parallelcointeam/duo/pkg/wallet/db/entries"
 )
 
 // ReadKey reads a key entry from the database
