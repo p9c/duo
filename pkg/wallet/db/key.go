@@ -22,9 +22,6 @@ func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 	k := []byte(rec.Tables["Key"])
 	k = append(k, *idx...)
 	k = append(k, *address...)
-	// fmt.Println("    ReadKey", hex.EncodeToString(k))
-	opt := badger.DefaultIteratorOptions
-	opt.PrefetchValues = false
 	var V []byte
 	var meta byte
 	err := r.DB.View(func(txn *badger.Txn) error {
@@ -34,7 +31,6 @@ func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 		}
 		meta = item.UserMeta()
 		V, er = item.Value()
-		// fmt.Println("       value", hex.EncodeToString(V))
 		if er != nil {
 			return er
 		}
@@ -55,7 +51,6 @@ func (r *DB) ReadKey(address *[]byte) (out *key.Priv) {
 			priv, pub = &pr, &pu
 		default:
 			r.SetStatus("record marked encrypted but no BC to decrypt with")
-			// fmt.Println(r.Error())
 			out = new(key.Priv)
 		}
 		out.SetKey(priv, pub)

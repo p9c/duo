@@ -4,7 +4,7 @@ import (
 	"crypto/ecdsa"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/parallelcointeam/duo/pkg/blockcrypt"
+	"github.com/parallelcointeam/duo/pkg/bc"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/core"
 )

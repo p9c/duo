@@ -3,7 +3,7 @@ package wallet
 import (
 	"time"
 
-	"github.com/parallelcointeam/duo/pkg/blockcrypt"
+	"github.com/parallelcointeam/duo/pkg/bc"
 	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/tx"

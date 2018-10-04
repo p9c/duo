@@ -4,10 +4,11 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/parallelcointeam/duo/pkg/blockcrypt"
+	"testing"
+
+	"github.com/parallelcointeam/duo/pkg/bc"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/hash160"
-	"testing"
 )
 
 func TestCryptPrivSig(t *testing.T) {

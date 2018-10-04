@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/parallelcointeam/duo/pkg/blockcrypt"
+	"github.com/parallelcointeam/duo/pkg/bc"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/key"
 )
@@ -88,43 +88,43 @@ func TestReadWriteEraseKeyEncryptDecrypt(t *testing.T) {
 	BC := bc.New().Generate(pass).Arm()
 	wdb := NewWalletDB()
 	if wdb.OK() {
-		defer wdb.Close()
+		wdb.WithBC(BC)
+		BCs := wdb.ReadMasterKeys()
+		bc := BCs[0]
+		bc.Unlock(pass).Arm()
+		pk := key.NewPriv()
+		pk.WithBC(bc)
+		wdb.Dump()
+		pk.Make()
+		wdb.WriteKey(pk)
+		wdb.Dump()
+		addr := pk.GetID()
+		address := []byte(addr)
+		rpk := wdb.ReadKey(&address)
+		if bytes.Compare(*pk.Bytes(), *rpk.Bytes()) != 0 {
+			t.Error("failed to write and read back")
+		}
+		wdb.RemoveBC()
+		wdb.Dump()
+		addr = pk.GetID()
+		address = []byte(addr)
+		rpk = wdb.ReadKey(&address)
+		if bytes.Compare(*pk.Bytes(), *rpk.Bytes()) != 0 {
+			t.Error("failed to remove masterkey encryption and read back")
+		}
+		wdb.WithBC(bc)
+		wdb.Dump()
+		addr = rpk.GetID()
+		address = []byte(addr)
+		rrpk := wdb.ReadKey(&address)
+		if bytes.Compare(*rrpk.Bytes(), *rpk.Bytes()) != 0 {
+			t.Error("failed to re-add masterkey encryption and read back")
+		}
+		wdb.EraseMasterKey(wdb.BC.Idx)
+		wdb.EraseKey(&address)
+		wdb.DeleteAll()
+		wdb.Close()
 	}
-	wdb.WithBC(BC)
-	BCs := wdb.ReadMasterKeys()
-	bc := BCs[0]
-	bc.Unlock(pass).Arm()
-	pk := key.NewPriv()
-	pk.WithBC(bc)
-	pk.Make()
-	wdb.WriteKey(pk)
-	addr := pk.GetID()
-	address := []byte(addr)
-	rpk := wdb.ReadKey(&address)
-	if bytes.Compare(*pk.Bytes(), *rpk.Bytes()) != 0 {
-		t.Error("failed to write and read back")
-	}
-	wdb.RemoveBC()
-	addr = pk.GetID()
-	address = []byte(addr)
-	rpk = wdb.ReadKey(&address)
-	if bytes.Compare(*pk.Bytes(), *rpk.Bytes()) != 0 {
-		t.Error("failed to remove masterkey encryption and read back")
-	}
-	wdb.WithBC(bc)
-	addr = rpk.GetID()
-	address = []byte(addr)
-	rrpk := wdb.ReadKey(&address)
-	if bytes.Compare(*rrpk.Bytes(), *rpk.Bytes()) != 0 {
-		t.Error("failed to re-add masterkey encryption and read back")
-	}
-	wdb.EraseMasterKey(BC.Idx)
-	wdb.EraseKey(&address)
-	wdb.ReadKey(&address)
-	if wdb.Error() != "Key not found" {
-		t.Error("failed delete key")
-	}
-	wdb.DeleteAll()
 }
 
 func TestEncryptDecrypt(t *testing.T) {

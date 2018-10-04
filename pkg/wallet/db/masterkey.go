@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 
 	"github.com/dgraph-io/badger"
-	"github.com/parallelcointeam/duo/pkg/blockcrypt"
+	"github.com/parallelcointeam/duo/pkg/bc"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"

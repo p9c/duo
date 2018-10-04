@@ -7,7 +7,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/mitchellh/go-homedir"
-	"github.com/parallelcointeam/duo/pkg/blockcrypt"
+	"github.com/parallelcointeam/duo/pkg/bc"
 	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
@@ -56,7 +56,7 @@ func (r *DB) NewIf() *DB {
 
 // Dump is a debugging function that outputs all the key pairs in the database to the stdout
 func (r *DB) Dump() {
-	fmt.Println("\nDUMP")
+	var out string
 	counter := 0
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
@@ -72,12 +72,12 @@ func (r *DB) Dump() {
 			t := rec.TS
 			for i := range t {
 				if bytes.Compare(k[:8], []byte(t[i])) == 0 {
-					fmt.Printf("\t%s ", i)
-					fmt.Printf("\tID: %s ", hex.EncodeToString(k[8:16]))
+					out += fmt.Sprintf("\t%s ", i)
+					out += fmt.Sprintf("\tID: %s ", hex.EncodeToString(k[8:16]))
 					if meta&1 == 1 {
-						fmt.Print("encrypted")
+						out += " encrypted"
 					}
-					fmt.Print("\n")
+					out += "\n"
 				}
 			}
 		}
@@ -86,11 +86,8 @@ func (r *DB) Dump() {
 	if err != nil {
 		fmt.Println("\tERROR:", err.Error())
 	}
-	itemS := "items"
-	if counter == 1 {
-		itemS = "item"
-	}
-	fmt.Println("\t", counter, itemS, "found")
+	fmt.Println("\nDUMP " + fmt.Sprint(counter) + " items found:\n" + out)
+	// fmt.Println("\t", counter, itemS, "found")
 }
 
 // DeleteAll basically empties the database. For testing purposes.
@@ -111,7 +108,7 @@ func (r *DB) DeleteAll() {
 		return nil
 	})
 	if !r.SetStatusIf(err).OK() {
-		fmt.Println("\nERROR:", err.Error())
+		fmt.Println("\nERROR:", r.Error())
 	}
 	fmt.Println(counter, "items deleted")
 }
