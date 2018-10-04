@@ -67,17 +67,19 @@ func (r *DB) Dump() {
 			counter++
 			item := iter.Item()
 			k := item.Key()
-			v, err := item.Value()
+			// v, err := item.Value()
 			meta := item.UserMeta()
 			t := rec.TS
 			for i := range t {
 				if bytes.Compare(k[:8], []byte(t[i])) == 0 {
-					fmt.Printf("\t%s\n", i)
+					fmt.Printf("\t%s ", i)
+					fmt.Printf("\tID: %s ", hex.EncodeToString(k[8:16]))
+					if meta&1 == 1 {
+						fmt.Print("encrypted")
+					}
+					fmt.Print("\n")
 				}
 			}
-			fmt.Println("\t\tkey   ", hex.EncodeToString(k))
-			fmt.Println("\t\tvalue ", hex.EncodeToString(v))
-			fmt.Println("\t\terr   ", err, "\tmeta\t", meta)
 		}
 		return nil
 	})
@@ -95,42 +97,23 @@ func (r *DB) Dump() {
 func (r *DB) DeleteAll() {
 	counter := 0
 	opt := badger.DefaultIteratorOptions
-	opt.PrefetchValues = false
 	err := r.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
-		defer iter.Close()
-		found := false
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			counter++
 			item := iter.Item()
 			k := item.Key()
-			t := rec.TS
-			for i := range t {
-				if bytes.Compare(k[:8], []byte(t[i])) == 0 {
-					fmt.Print("\ndeleted item type ", i, " index ", hex.EncodeToString(k[8:16]))
-				}
-				err := txn.Delete(k)
-				if err != nil {
-					// fmt.Println("\nERROR", err.Error())
-				} else {
-					err := txn.Delete(k)
-					if err != nil {
-						// fmt.Println("\nERROR", err.Error())
-					}
-				}
-			}
-			if !found {
-				if !r.SetStatusIf(txn.Delete(k)).OK() {
-					// fmt.Println("\nERROR:", r.Status)
-				}
+			if !r.SetStatusIf(txn.Delete(k)).OK() {
+				fmt.Println("\nERROR", r.Error())
 			}
 		}
+		iter.Close()
 		return nil
 	})
-	if err != nil {
-		// fmt.Println("\nERROR:", err.Error())
+	if !r.SetStatusIf(err).OK() {
+		fmt.Println("\nERROR:", err.Error())
 	}
-	// fmt.Println("\n", counter, "items deleted")
+	fmt.Println(counter, "items deleted")
 }
 
 // WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet. Changes the encryption if already encrypted or enables it.

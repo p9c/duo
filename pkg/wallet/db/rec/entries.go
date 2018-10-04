@@ -95,7 +95,7 @@ type Script struct {
 // Pool is a wallet key pair that has not yet been put to use in a transaction. The Idx is the HWH of the unencrypted key ID (address)
 type Pool struct {
 	Idx     Idx         // in key // from Hash64 of public key
-	Address buf.Byte    // in key // encrypt // from Key field
+	Address *buf.Byte   // in key // encrypt // from Key field
 	Seq     int         // in key
 	Priv    crypt.Crypt // encrypt
 	Pub     buf.Byte

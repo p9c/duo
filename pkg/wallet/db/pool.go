@@ -89,7 +89,7 @@ func (r *DB) WritePool(newPool *rec.Pool) *DB {
 		return r
 	}
 	t := rec.TS
-	address := &newPool.Address
+	address := newPool.Address
 	pub := &newPool.Pub
 	priv := &newPool.Priv
 	idx := core.Hash64(address.Bytes())

@@ -3,6 +3,7 @@ package wallet
 import (
 	"time"
 
+	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
@@ -22,6 +23,7 @@ func (r *Wallet) NewKeyPool() *Wallet {
 		nk.Make()
 		idx := core.Hash64(nk.PubKey().Bytes())
 		np := &rec.Pool{
+			Address: buf.NewByte().Copy(nk.PubKey().Bytes()).(*buf.Byte),
 			Idx:     *idx,
 			Seq:     i,
 			Priv:    nk.Crypt,
