@@ -17,10 +17,8 @@ func TestNewKeyPool(t *testing.T) {
 	wdb.WithBC(BC)
 	W := New(wdb)
 	W.NewKeyPool()
-	W.DB.Dump()
 	W.EmptyKeyPool()
 	W.DB.Dump()
 	W.DB.DeleteAll()
-	W.DB.Dump()
 	W.DB.Close()
 }

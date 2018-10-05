@@ -13,11 +13,19 @@ import (
 
 // NewKeyPool creates a new pool of keys in reserve for generating transactions
 func (r *Wallet) NewKeyPool() *Wallet {
+	if r == nil {
+		return New(nil)
+	}
 	if r.KeyPool != nil {
 		r.EmptyKeyPool()
 	}
-	r.KeyPool = make(KeyPool)
-	for i := 0; i < r.KeyPoolHigh; i++ {
+	r.KeyPool = &KeyPool{
+		High:     100,
+		Low:      10,
+		Lifespan: 90 * 24 * time.Hour,
+	}
+	r.KeyPool.Pool = make(map[int]*rec.Pool)
+	for i := 0; i < r.KeyPool.High; i++ {
 		nk := key.NewPriv()
 		if r.DB.BC != nil {
 			nk.WithBC(r.DB.BC)
@@ -30,10 +38,33 @@ func (r *Wallet) NewKeyPool() *Wallet {
 			Seq:     i,
 			Priv:    nk.Crypt,
 			Created: time.Now().Unix(),
-			Expires: time.Now().Add(r.KeyPoolLifespan).Unix(),
+			Expires: time.Now().Add(r.KeyPool.Lifespan).Unix(),
 		}
 		r.DB.WritePool(np)
-		r.KeyPool[i] = np
+		r.KeyPool.Pool[i] = np
+		r.KeyPool.Size++
+	}
+	return r
+}
+
+// LoadKeyPool loads the keypool into memory from the database
+func (r *Wallet) LoadKeyPool() *Wallet {
+	opt := badger.DefaultIteratorOptions
+	err := r.DB.DB.Update(func(txn *badger.Txn) error {
+		iter := txn.NewIterator(opt)
+		for iter.Rewind(); iter.Valid(); iter.Next() {
+			item := iter.Item()
+			k := item.Key()
+			table := string(k[:8])
+			if table == rec.TS["Pool"] {
+
+			}
+		}
+		iter.Close()
+		return nil
+	})
+	if !r.SetStatusIf(err).OK() {
+		fmt.Println("\nERROR:", r.Error())
 	}
 	return r
 }
@@ -58,7 +89,28 @@ func (r *Wallet) TopUpKeyPool() *Wallet { return r }
 
 // EmptyKeyPool deletes an entire keypool
 func (r *Wallet) EmptyKeyPool() *Wallet {
+	if r == nil {
+		r = New(nil)
+		r.SetStatus(er.NilRec)
+		return r
+	}
+	if r.KeyPool == nil {
+		r.KeyPool = &KeyPool{
+			High:     100,
+			Low:      10,
+			Lifespan: 90 * 24 * time.Hour,
+		}
+		r.SetStatus("keypool not initialised")
+		return r
+	}
+	if r.KeyPool.Size < 1 {
+		return r
+	}
 	opt := badger.DefaultIteratorOptions
+	for i := range r.KeyPool.Pool {
+		r.DB.ErasePool(r.KeyPool.Pool[i])
+	}
+	// And for what was not in memory...
 	err := r.DB.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		for iter.Rewind(); iter.Valid(); iter.Next() {

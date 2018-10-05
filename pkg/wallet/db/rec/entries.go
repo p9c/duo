@@ -74,7 +74,7 @@ type NoDestination struct{}
 // Seed is a 'hierarchic deterministic' wallet seed that can spawn many subkeys
 type Seed struct {
 	Idx    Idx
-	Secret [32]byte // encrypt
+	Secret []byte // encrypt
 }
 
 // Key is a key pair controlled by the user. The 64 bit highwayhash of the (encrypted) address and the encrypted address both live in the key so this and Account keys act as an index for all keys in the wallet in other fields, such as the Accounting, which has all of its addresses HWhashes

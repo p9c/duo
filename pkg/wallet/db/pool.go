@@ -116,6 +116,18 @@ func (r *DB) WritePool(newPool *rec.Pool) *DB {
 }
 
 // ErasePool removes a pool key
-func (r *DB) ErasePool() {
-
+func (r *DB) ErasePool(pool *rec.Pool) *DB {
+	k := []byte(rec.TS["Pool"])
+	k = append(k, pool.Idx...)
+	k = append(k, *core.IntToBytes(pool.Seq)...)
+	if r.BC != nil {
+		k = append(k, *r.BC.Encrypt(pool.Address.Bytes())...)
+	} else {
+		k = append(k, *pool.Address.Bytes()...)
+	}
+	txn := r.DB.NewTransaction(true)
+	if r.SetStatusIf(txn.Delete(k)).OK() {
+		r.SetStatusIf(txn.Commit(nil))
+	}
+	return r
 }

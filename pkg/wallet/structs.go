@@ -11,11 +11,19 @@ import (
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
+var er = core.Errors
+
 // MasterKeys is a map storing BC's
 type MasterKeys map[uint64]bc.BlockCrypt
 
 // KeyPool is a collection of available addresses for constructing transactions
-type KeyPool map[int]*rec.Pool
+type KeyPool struct {
+	Pool     map[int]*rec.Pool
+	High     int
+	Low      int
+	Lifespan time.Duration
+	Size     int
+}
 
 // Transactions is a map of transactions in the wallet
 type Transactions map[core.Hash]*rec.Tx
@@ -30,10 +38,7 @@ type Wallet struct {
 	version, maxVersion int
 	FileBacked          bool
 	File                string
-	KeyPool             KeyPool
-	KeyPoolHigh         int
-	KeyPoolLow          int
-	KeyPoolLifespan     time.Duration
+	KeyPool             *KeyPool
 	KeyMetadata         map[core.Address]*KeyMetadata
 	MasterKeys          MasterKeys
 	Transactions        Transactions
