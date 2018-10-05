@@ -16,9 +16,12 @@ var er = core.Errors
 // MasterKeys is a map storing BC's
 type MasterKeys map[uint64]bc.BlockCrypt
 
+// PoolMap is a collection of KeyPool entries
+type PoolMap map[int]*rec.Pool
+
 // KeyPool is a collection of available addresses for constructing transactions
 type KeyPool struct {
-	Pool     map[int]*rec.Pool
+	Pool     PoolMap
 	High     int
 	Low      int
 	Lifespan time.Duration

@@ -90,21 +90,27 @@ func (r *DB) WritePool(newPool *rec.Pool) *DB {
 	}
 	t := rec.TS
 	address := newPool.Address
-	pub := &newPool.Pub
-	priv := &newPool.Priv
+	pub := newPool.Pub
+	priv := newPool.Priv
 	idx := core.Hash64(address.Bytes())
+	creB := core.IntToBytes(newPool.Created)
+	expB := core.IntToBytes(newPool.Expires)
 	var meta byte
 	if r.BC != nil {
 		meta = 1
 		address.Copy(r.BC.Encrypt(address.Bytes()))
 		priv.Copy(r.BC.Encrypt(priv.Bytes()))
 		pub.Copy(r.BC.Encrypt(pub.Bytes()))
+		creB = r.BC.Encrypt(creB)
+		expB = r.BC.Encrypt(expB)
 	}
 	k := []byte(t["Pool"])
 	seqB := core.IntToBytes(newPool.Seq)
 	k = append(k, *idx...)
 	k = append(k, *seqB...)
 	k = append(k, *address.Bytes()...)
+	k = append(k, *creB...)
+	k = append(k, *expB...)
 	txn := r.DB.NewTransaction(true)
 	v := *priv.Bytes()
 	v = append(v, *pub.Bytes()...)

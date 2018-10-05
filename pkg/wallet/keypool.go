@@ -37,6 +37,7 @@ func (r *Wallet) NewKeyPool() *Wallet {
 			Idx:     *idx,
 			Seq:     i,
 			Priv:    nk.Crypt,
+			Pub:     nk.PubKey().(*buf.Byte),
 			Created: time.Now().Unix(),
 			Expires: time.Now().Add(r.KeyPool.Lifespan).Unix(),
 		}
@@ -47,17 +48,53 @@ func (r *Wallet) NewKeyPool() *Wallet {
 	return r
 }
 
-// LoadKeyPool loads the keypool into memory from the database
+// LoadKeyPool loads the keypool into memory from the database. Note that this does not load the public and private keys, the keys of pool entries contain everything needed to decide which one to use
 func (r *Wallet) LoadKeyPool() *Wallet {
+	r.KeyPool = new(KeyPool)
+	r.KeyPool.Pool = make(PoolMap)
 	opt := badger.DefaultIteratorOptions
+	opt.PrefetchValues = false
 	err := r.DB.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
 			k := item.Key()
+			meta := item.UserMeta()
 			table := string(k[:8])
 			if table == rec.TS["Pool"] {
+				idx := k[8:16]
+				var seq int
+				seqB := k[16:24]
+				core.BytesToInt(&seq, &seqB)
+				var cre, exp int64
+				var creB, expB []byte
+				var address []byte
+				if meta&1 == 1 {
+					if r.DB.BC != nil {
+						address = k[16:65] // 49 bytes
+						address = *r.DB.BC.Decrypt(&address)
+						creB = k[65:89] // 24 bytes
+						creB = *r.DB.BC.Decrypt(&creB)
+						expB = k[89:] // 24 bytes
+						expB = *r.DB.BC.Decrypt(&expB)
 
+					} else {
+						break
+					}
+				} else {
+					address = k[16:36]
+					creB = k[36:44]
+					expB = k[44:52]
+				}
+				core.BytesToInt(&cre, &creB)
+				core.BytesToInt(&exp, &expB)
+				r.KeyPool.Pool[seq] = &rec.Pool{
+					Idx:     idx,
+					Address: buf.NewByte().Copy(&address).(*buf.Byte),
+					Seq:     seq,
+					Created: cre,
+					Expires: exp,
+				}
 			}
 		}
 		iter.Close()
@@ -73,7 +110,9 @@ func (r *Wallet) LoadKeyPool() *Wallet {
 func (r *Wallet) AddReserveKey(kp *rec.Pool) *Wallet { return r }
 
 // GetKeyFromPool -
-func (r *Wallet) GetKeyFromPool(*key.Pub, bool) *Wallet { return r }
+func (r *Wallet) GetKeyFromPool(*key.Pub, bool) *Wallet {
+	return r
+}
 
 // GetKeyPoolSize -
 func (r *Wallet) GetKeyPoolSize() int { return 0 }

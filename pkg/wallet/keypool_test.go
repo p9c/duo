@@ -21,4 +21,5 @@ func TestNewKeyPool(t *testing.T) {
 	W.DB.Dump()
 	W.DB.DeleteAll()
 	W.DB.Close()
+
 }
