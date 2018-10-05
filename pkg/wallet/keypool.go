@@ -1,8 +1,10 @@
 package wallet
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/key"
@@ -56,5 +58,24 @@ func (r *Wallet) TopUpKeyPool() *Wallet { return r }
 
 // EmptyKeyPool deletes an entire keypool
 func (r *Wallet) EmptyKeyPool() *Wallet {
+	opt := badger.DefaultIteratorOptions
+	err := r.DB.DB.Update(func(txn *badger.Txn) error {
+		iter := txn.NewIterator(opt)
+		for iter.Rewind(); iter.Valid(); iter.Next() {
+			item := iter.Item()
+			k := item.Key()
+			table := string(k[:8])
+			if table == rec.TS["Pool"] {
+				if !r.SetStatusIf(txn.Delete(k)).OK() {
+					fmt.Println("\nERROR", r.Error())
+				}
+			}
+		}
+		iter.Close()
+		return nil
+	})
+	if !r.SetStatusIf(err).OK() {
+		fmt.Println("\nERROR:", r.Error())
+	}
 	return r
 }
