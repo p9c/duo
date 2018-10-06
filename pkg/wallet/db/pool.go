@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/dgraph-io/badger"
@@ -107,10 +108,15 @@ func (r *DB) WritePool(newPool *rec.Pool) *DB {
 	k := []byte(t["Pool"])
 	seqB := core.IntToBytes(newPool.Seq)
 	k = append(k, *idx...)
+	fmt.Println("idx ", len(*idx))
 	k = append(k, *seqB...)
+	fmt.Println("seq ", len(*seqB))
 	k = append(k, *address.Bytes()...)
+	fmt.Println("addr", address.Len())
 	k = append(k, *creB...)
+	fmt.Println("cre ", len(*creB))
 	k = append(k, *expB...)
+	fmt.Println("exp ", len(*expB))
 	// fmt.Println("privlen", priv.Len(), "publen", pub.Len())
 	txn := r.DB.NewTransaction(true)
 	v := *priv.Bytes()

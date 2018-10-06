@@ -28,14 +28,18 @@ func (r *Wallet) NewKeyPool() *Wallet {
 	}
 	r.KeyPool.Pool = make(map[int]*rec.Pool)
 	for i := 0; i < r.KeyPool.High; i++ {
-		nk := key.NewPriv()
+		var nk *key.Priv
 		if r.DB.BC != nil {
+			nk = key.NewPriv()
 			nk.WithBC(r.DB.BC)
+		} else {
+			nk = key.NewPriv()
 		}
 		nk.Make()
-		idx := core.Hash64(nk.PubKey().Bytes())
+		I := []byte(nk.GetID())
+		idx := core.Hash64(&I)
 		np := &rec.Pool{
-			Address: buf.NewByte().Copy(nk.PubKey().Bytes()).(*buf.Byte),
+			Address: buf.NewByte().Copy(&I).(*buf.Byte),
 			Idx:     *idx,
 			Seq:     i,
 			Priv:    nk.Crypt,
@@ -73,13 +77,15 @@ func (r *Wallet) LoadKeyPool() *Wallet {
 				var address []byte
 				if meta&1 == 1 {
 					if r.DB.BC != nil {
-						address = k[24:73] // 49 bytes
+						address = k[24:60] // 36 bytes
 						address = *r.DB.BC.Decrypt(&address)
-						creB = k[73:97] // 24 bytes
+						fmt.Println(r.DB.Error())
+						creB = k[60:84] // 24 bytes
 						creB = *r.DB.BC.Decrypt(&creB)
-						expB = k[97:] // 24 bytes
+						fmt.Println(r.DB.Error())
+						expB = k[84:] // 24 bytes
 						expB = *r.DB.BC.Decrypt(&expB)
-
+						fmt.Println(r.DB.Error())
 					} else {
 						break
 					}
@@ -88,6 +94,10 @@ func (r *Wallet) LoadKeyPool() *Wallet {
 					creB = k[36:44]
 					expB = k[44:52]
 				}
+				fmt.Println(k[:8], k[8:16], k[16:24], k[24:60], k[60:84], k[84:])
+				fmt.Println("key ", len(address), hex.EncodeToString(address))
+				fmt.Println("cre ", creB)
+				fmt.Println("exp ", expB)
 				core.BytesToInt(&cre, &creB)
 				core.BytesToInt(&exp, &expB)
 				r.KeyPool.Pool[seq] = &rec.Pool{
@@ -179,6 +189,7 @@ func (r *Wallet) GetKeyFromPool(allowReuse bool) (out *key.Priv) {
 			if !r.SetStatusIf(txn.Delete(k)).OK() {
 				fmt.Println("ERROR", r.Error())
 			}
+			r.DB.WriteKey(out)
 		}
 	}
 	txn.Commit(nil)
