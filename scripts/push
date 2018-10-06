@@ -1,6 +1,5 @@
 #!/bin/bash
 scripts/updatesloc
 git add .
-echo $@
-git commit -m'`echo $@`'
+git commit -m'$@'
 git push -u origin master ; git push -u gitlab master
