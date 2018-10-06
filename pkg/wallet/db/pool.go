@@ -111,6 +111,7 @@ func (r *DB) WritePool(newPool *rec.Pool) *DB {
 	k = append(k, *address.Bytes()...)
 	k = append(k, *creB...)
 	k = append(k, *expB...)
+	// fmt.Println("privlen", priv.Len(), "publen", pub.Len())
 	txn := r.DB.NewTransaction(true)
 	v := *priv.Bytes()
 	v = append(v, *pub.Bytes()...)

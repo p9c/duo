@@ -2,6 +2,7 @@ package key
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/parallelcointeam/duo/pkg/bc"
@@ -59,6 +60,18 @@ func (r *Priv) Bytes() (out *[]byte) {
 		r.SetStatus("key invalid")
 	default:
 		out = r.Get().Bytes()
+	}
+	return
+}
+
+// Hex returns the hex representation of the contennt of the crypt via the get function
+func (r *Priv) Hex() (out string) {
+	r = r.NewIf()
+	switch {
+	case !r.valid:
+		r.SetStatus("key invalid")
+	default:
+		out = hex.EncodeToString(*r.Get().Bytes())
 	}
 	return
 }

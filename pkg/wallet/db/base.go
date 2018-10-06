@@ -73,7 +73,8 @@ func (r *DB) Dump() {
 			for i := range t {
 				if bytes.Compare(k[:8], []byte(t[i])) == 0 {
 					out += fmt.Sprintf("\t%s ", i)
-					out += fmt.Sprintf("\tID: %s ", hex.EncodeToString(k[8:16]))
+					out += fmt.Sprintf("\tIdx: %s ", hex.EncodeToString(k[8:16]))
+					// out += " " + hex.EncodeToString(k) + " "
 					if meta&1 == 1 {
 						out += " encrypted"
 					}

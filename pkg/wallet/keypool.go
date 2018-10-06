@@ -1,7 +1,9 @@
 package wallet
 
 import (
+	"encoding/hex"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/dgraph-io/badger"
@@ -107,21 +109,87 @@ func (r *Wallet) LoadKeyPool() *Wallet {
 }
 
 // AddReserveKey -
-func (r *Wallet) AddReserveKey(kp *rec.Pool) *Wallet { return r }
+// func (r *Wallet) AddReserveKey(kp *rec.Pool) *Wallet { return r }
 
-// GetKeyFromPool -
-func (r *Wallet) GetKeyFromPool(*key.Pub, bool) *Wallet {
-	return r
+// ReserveKeyFromKeyPool -
+// func (r *Wallet) ReserveKeyFromKeyPool(int64, *rec.Pool) {}
+
+// GetKeyFromPool gets the oldest key form the keypool, if it is not allowed to be reused it is taken out of the pool and stored as a main wallet private/public key pair
+func (r *Wallet) GetKeyFromPool(allowReuse bool) (out *key.Priv) {
+	if r == nil {
+		r.SetStatus(er.NilRec)
+		out = key.NewPriv()
+		out.SetStatus(er.NilRec)
+		return out
+	}
+	if len(r.KeyPool.Pool) < 1 {
+		r.NewKeyPool()
+	}
+	var sorted []int
+	for i := range r.KeyPool.Pool {
+		sorted = append(sorted, r.KeyPool.Pool[i].Seq)
+	}
+	sort.Ints(sorted)
+	lowest := sorted[0]
+	outKeyPool := r.KeyPool.Pool[lowest]
+	k := []byte(rec.TS["Pool"])
+	k = append(k, outKeyPool.Idx...)
+	fmt.Println("Idx", hex.EncodeToString(outKeyPool.Idx))
+	k = append(k, *core.IntToBytes(outKeyPool.Seq)...)
+	if r.DB.BC != nil {
+		k = append(k, *r.DB.BC.Encrypt(outKeyPool.Address.Bytes())...)
+		k = append(k, *r.DB.BC.Encrypt(core.IntToBytes(outKeyPool.Created))...)
+		k = append(k, *r.DB.BC.Encrypt(core.IntToBytes(outKeyPool.Expires))...)
+	} else {
+		k = append(k, *outKeyPool.Address.Bytes()...)
+		k = append(k, *core.IntToBytes(outKeyPool.Created)...)
+		k = append(k, *core.IntToBytes(outKeyPool.Expires)...)
+	}
+	txn := r.DB.DB.NewTransaction(true)
+	item, err := txn.Get(k)
+	if r.SetStatusIf(err).OK() {
+		v, err := item.Value()
+		meta := item.UserMeta()
+		if r.SetStatusIf(err).OK() {
+			if meta&1 == 1 {
+				if r.DB.BC == nil {
+					r.SetStatus("no crypt for crypted record")
+					out = &key.Priv{}
+					out.SetStatus(r.Error())
+					return
+				}
+				privB := v[:64]
+				pubB := v[64:]
+				out = key.NewPriv()
+				out.SetKey(r.DB.BC.Decrypt(&privB), r.DB.BC.Decrypt(&pubB))
+				out.WithBC(r.DB.BC)
+			} else {
+				privB := v[:32]
+				pubB := v[32:]
+				out = key.NewPriv()
+				out.SetKey(&privB, &pubB)
+			}
+		}
+	}
+	if !r.OK() {
+		out = &key.Priv{}
+		out.SetStatus(r.Error())
+	} else {
+		if !allowReuse {
+			if !r.SetStatusIf(txn.Delete(k)).OK() {
+				fmt.Println("ERROR", r.Error())
+			}
+		}
+	}
+	txn.Commit(nil)
+	return
 }
 
-// GetKeyPoolSize -
-func (r *Wallet) GetKeyPoolSize() int { return 0 }
+// GetKeyPoolSize returns the number of keys in the keypool
+func (r *Wallet) GetKeyPoolSize() int { return r.KeyPool.Size }
 
 // GetOldestKeyPoolTime -
 func (r *Wallet) GetOldestKeyPoolTime() int64 { return 0 }
-
-// ReserveKeyFromKeyPool -
-func (r *Wallet) ReserveKeyFromKeyPool(int64, *rec.Pool) {}
 
 // TopUpKeyPool -
 func (r *Wallet) TopUpKeyPool() *Wallet { return r }

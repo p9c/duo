@@ -1,0 +1,2 @@
+#!/bin/bash
+echo `scripts/sloccount.sh pkg/` lines of code in pkg/ `date -u`>> sloc.log
