@@ -157,13 +157,13 @@ func BytesToInt(out interface{}, in *[]byte) {
 		case 2:
 			i := uint16(I[0])
 			i += uint16(I[1]) << 8
-			*out.(*uint16) = i
+			*out.(*int) = int(i)
 		case 4:
 			i := int32(I[0])
 			i += int32(I[1]) << 8
 			i += int32(I[2]) << 16
 			i += int32(I[3]) << 24
-			*out.(*int32) = i
+			*out.(*int) = int(i)
 		case 8:
 			i := int64(I[0])
 			i += int64(I[1]) << 8
@@ -173,20 +173,20 @@ func BytesToInt(out interface{}, in *[]byte) {
 			i += int64(I[5]) << 40
 			i += int64(I[6]) << 48
 			i += int64(I[7]) << 56
-			*out.(*int64) = i
+			*out.(*int) = int(i)
 		}
 	case *uint:
 		switch intlen {
 		case 2:
 			i := uint16(I[0]) +
 				uint16(I[1])<<8
-			*out.(*uint16) = i
+			*out.(*uint) = uint(i)
 		case 4:
 			i := uint32(I[0]) +
 				uint32(I[1])<<8 +
 				uint32(I[2])<<16 +
 				uint32(I[3])<<24
-			*out.(*uint32) = i
+			*out.(*uint) = uint(i)
 		case 8:
 			i := uint64(I[0]) +
 				uint64(I[1])<<8 +
@@ -196,7 +196,7 @@ func BytesToInt(out interface{}, in *[]byte) {
 				uint64(I[5])<<40 +
 				uint64(I[6])<<48 +
 				uint64(I[7])<<56
-			*out.(*uint64) = i
+			*out.(*uint) = uint(i)
 		}
 	}
 

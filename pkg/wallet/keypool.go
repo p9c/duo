@@ -53,9 +53,9 @@ func (r *Wallet) LoadKeyPool() *Wallet {
 	r.KeyPool = new(KeyPool)
 	r.KeyPool.Pool = make(PoolMap)
 	opt := badger.DefaultIteratorOptions
-	opt.PrefetchValues = false
 	err := r.DB.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
+		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
 			k := item.Key()
@@ -71,11 +71,11 @@ func (r *Wallet) LoadKeyPool() *Wallet {
 				var address []byte
 				if meta&1 == 1 {
 					if r.DB.BC != nil {
-						address = k[16:65] // 49 bytes
+						address = k[24:73] // 49 bytes
 						address = *r.DB.BC.Decrypt(&address)
-						creB = k[65:89] // 24 bytes
+						creB = k[73:97] // 24 bytes
 						creB = *r.DB.BC.Decrypt(&creB)
-						expB = k[89:] // 24 bytes
+						expB = k[97:] // 24 bytes
 						expB = *r.DB.BC.Decrypt(&expB)
 
 					} else {
@@ -95,9 +95,9 @@ func (r *Wallet) LoadKeyPool() *Wallet {
 					Created: cre,
 					Expires: exp,
 				}
+				r.KeyPool.Size++
 			}
 		}
-		iter.Close()
 		return nil
 	})
 	if !r.SetStatusIf(err).OK() {
@@ -152,6 +152,7 @@ func (r *Wallet) EmptyKeyPool() *Wallet {
 	// And for what was not in memory...
 	err := r.DB.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
+		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
 			k := item.Key()
@@ -162,7 +163,6 @@ func (r *Wallet) EmptyKeyPool() *Wallet {
 				}
 			}
 		}
-		iter.Close()
 		return nil
 	})
 	if !r.SetStatusIf(err).OK() {

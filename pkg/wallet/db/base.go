@@ -96,6 +96,7 @@ func (r *DB) DeleteAll() {
 	opt := badger.DefaultIteratorOptions
 	err := r.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
+		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			counter++
 			item := iter.Item()
@@ -104,7 +105,6 @@ func (r *DB) DeleteAll() {
 				fmt.Println("\nERROR", r.Error())
 			}
 		}
-		iter.Close()
 		return nil
 	})
 	if !r.SetStatusIf(err).OK() {
@@ -116,6 +116,9 @@ func (r *DB) DeleteAll() {
 // WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet. Changes the encryption if already encrypted or enables it.
 func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 	r = r.NewIf()
+	if r.BC != nil {
+		r.RemoveBC()
+	}
 	if BC != nil {
 		r.BC = BC
 	} else {
@@ -125,6 +128,7 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 	opt := badger.DefaultIteratorOptions
 	err := r.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
+		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
 			k := item.Key()
@@ -135,6 +139,8 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 			// meta := item.UserMeta()
 			t := rec.TS
 			switch string(k[:8]) {
+			case t["MasterKey"]:
+				r.SetStatusIf(txn.Delete(k))
 			case t["Account"]:
 				if r.SetStatusIf(txn.Delete(k)).OK() {
 					addr := k[16:]
@@ -165,8 +171,6 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 			case t["DefaultKey"]:
 			}
 		}
-		iter.Close()
-		txn.Commit(nil)
 		return nil
 	})
 	if err != nil {
@@ -183,9 +187,7 @@ func (r *DB) RemoveBC() *DB {
 		return r
 	}
 	BC := r.BC
-	var masterkeyIdx []byte
 	opt := badger.DefaultIteratorOptions
-	opt.PrefetchValues = false
 	err := r.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		defer iter.Close()
@@ -202,8 +204,7 @@ func (r *DB) RemoveBC() *DB {
 			// K, V := hex.EncodeToString(k), hex.EncodeToString(v)
 			switch table {
 			case t["MasterKey"]:
-				K := k[8:16]
-				r.EraseMasterKey(&K)
+				r.SetStatusIf(txn.Delete(k))
 			case t["Name"]:
 				Naddress := k[16:]
 				label := v
@@ -225,9 +226,9 @@ func (r *DB) RemoveBC() *DB {
 					pub = *r.BC.Decrypt(&pub)
 				}
 				r.EraseKey(&Kaddress)
-				r.BC = nil
 				pk := key.NewPriv()
 				pk.SetKey(&priv, &pub)
+				r.BC = nil
 				r.WriteKey(pk)
 				r.BC = BC
 			case t["Account"]:
@@ -266,9 +267,7 @@ func (r *DB) RemoveBC() *DB {
 		return nil
 	})
 	if r.SetStatusIf(err).OK() {
-		if masterkeyIdx != nil {
-			r.EraseMasterKey(&masterkeyIdx)
-		}
+		r.EraseAllMasterKeys()
 	}
 	r.BC = nil
 	return r

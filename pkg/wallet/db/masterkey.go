@@ -3,6 +3,7 @@ package db
 import (
 	"bytes"
 	"crypto/rand"
+	"fmt"
 
 	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/bc"
@@ -91,5 +92,31 @@ func (r *DB) EraseMasterKey(idx *[]byte) *DB {
 	if !r.SetStatusIf(txn.Commit(nil)).OK() {
 		return r
 	}
+	return r
+}
+
+// EraseAllMasterKeys deletes all of the masterkeys
+func (r *DB) EraseAllMasterKeys() *DB {
+	counter := 0
+	opt := badger.DefaultIteratorOptions
+	err := r.DB.Update(func(txn *badger.Txn) error {
+		iter := txn.NewIterator(opt)
+		defer iter.Close()
+		for iter.Rewind(); iter.Valid(); iter.Next() {
+			counter++
+			item := iter.Item()
+			k := item.Key()
+			if string(k[:8]) == rec.TS["MasterKey"] {
+				if !r.SetStatusIf(txn.Delete(k)).OK() {
+					fmt.Println("\nERROR", r.Error())
+				}
+			}
+		}
+		return nil
+	})
+	if !r.SetStatusIf(err).OK() {
+		fmt.Println("\nERROR:", r.Error())
+	}
+	fmt.Println(counter, "items deleted")
 	return r
 }
