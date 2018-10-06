@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"encoding/hex"
 	"fmt"
 	"sort"
 	"time"
@@ -56,7 +55,11 @@ func (r *Wallet) NewKeyPool() *Wallet {
 
 // LoadKeyPool loads the keypool into memory from the database. Note that this does not load the public and private keys, the keys of pool entries contain everything needed to decide which one to use
 func (r *Wallet) LoadKeyPool() *Wallet {
-	r.KeyPool = new(KeyPool)
+	r.KeyPool = &KeyPool{
+		High:     100,
+		Low:      10,
+		Lifespan: 90 * 24 * time.Hour,
+	}
 	r.KeyPool.Pool = make(PoolMap)
 	opt := badger.DefaultIteratorOptions
 	err := r.DB.DB.Update(func(txn *badger.Txn) error {
@@ -79,13 +82,10 @@ func (r *Wallet) LoadKeyPool() *Wallet {
 					if r.DB.BC != nil {
 						address = k[24:60] // 36 bytes
 						address = *r.DB.BC.Decrypt(&address)
-						fmt.Println(r.DB.Error())
 						creB = k[60:84] // 24 bytes
 						creB = *r.DB.BC.Decrypt(&creB)
-						fmt.Println(r.DB.Error())
 						expB = k[84:] // 24 bytes
 						expB = *r.DB.BC.Decrypt(&expB)
-						fmt.Println(r.DB.Error())
 					} else {
 						break
 					}
@@ -94,10 +94,6 @@ func (r *Wallet) LoadKeyPool() *Wallet {
 					creB = k[36:44]
 					expB = k[44:52]
 				}
-				fmt.Println(k[:8], k[8:16], k[16:24], k[24:60], k[60:84], k[84:])
-				fmt.Println("key ", len(address), hex.EncodeToString(address))
-				fmt.Println("cre ", creB)
-				fmt.Println("exp ", expB)
 				core.BytesToInt(&cre, &creB)
 				core.BytesToInt(&exp, &expB)
 				r.KeyPool.Pool[seq] = &rec.Pool{
@@ -144,7 +140,6 @@ func (r *Wallet) GetKeyFromPool(allowReuse bool) (out *key.Priv) {
 	outKeyPool := r.KeyPool.Pool[lowest]
 	k := []byte(rec.TS["Pool"])
 	k = append(k, outKeyPool.Idx...)
-	fmt.Println("Idx", hex.EncodeToString(outKeyPool.Idx))
 	k = append(k, *core.IntToBytes(outKeyPool.Seq)...)
 	if r.DB.BC != nil {
 		k = append(k, *r.DB.BC.Encrypt(outKeyPool.Address.Bytes())...)
@@ -190,9 +185,11 @@ func (r *Wallet) GetKeyFromPool(allowReuse bool) (out *key.Priv) {
 				fmt.Println("ERROR", r.Error())
 			}
 			r.DB.WriteKey(out)
+			delete(r.KeyPool.Pool, lowest)
 		}
 	}
 	txn.Commit(nil)
+	r.KeyPool.Size--
 	return
 }
 
@@ -203,7 +200,36 @@ func (r *Wallet) GetKeyPoolSize() int { return r.KeyPool.Size }
 func (r *Wallet) GetOldestKeyPoolTime() int64 { return 0 }
 
 // TopUpKeyPool -
-func (r *Wallet) TopUpKeyPool() *Wallet { return r }
+func (r *Wallet) TopUpKeyPool() *Wallet {
+	if r.KeyPool.Size < r.KeyPool.Low {
+		toAdd := r.KeyPool.High - r.KeyPool.Size
+		for i := 0; i < toAdd; i++ {
+			var nk *key.Priv
+			if r.DB.BC != nil {
+				nk = key.NewPriv()
+				nk.WithBC(r.DB.BC)
+			} else {
+				nk = key.NewPriv()
+			}
+			nk.Make()
+			I := []byte(nk.GetID())
+			idx := core.Hash64(&I)
+			np := &rec.Pool{
+				Address: buf.NewByte().Copy(&I).(*buf.Byte),
+				Idx:     *idx,
+				Seq:     i,
+				Priv:    nk.Crypt,
+				Pub:     nk.PubKey().(*buf.Byte),
+				Created: time.Now().Unix(),
+				Expires: time.Now().Add(r.KeyPool.Lifespan).Unix(),
+			}
+			r.DB.WritePool(np)
+			r.KeyPool.Pool[i] = np
+			r.KeyPool.Size++
+		}
+	}
+	return r
+}
 
 // EmptyKeyPool deletes an entire keypool
 func (r *Wallet) EmptyKeyPool() *Wallet {

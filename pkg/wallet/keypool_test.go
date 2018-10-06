@@ -21,9 +21,24 @@ func TestNewKeyPool(t *testing.T) {
 	wwdb := db.NewWalletDB()
 	wwdb.WithBC(BC)
 	WW := New(wwdb)
+	defer WW.DB.Close()
 	WW.LoadKeyPool()
-	WW.DB.Dump()
-	_ = WW.GetKeyFromPool(false)
+	// WW.DB.Dump()
+	for i := 0; i < 91; i++ {
+		_ = WW.GetKeyFromPool(false)
+	}
+	// WW.DB.Dump()
+	WW.TopUpKeyPool()
+	// WW.DB.Dump()
+	WW.EmptyKeyPool()
 	WW.DB.Dump()
 	WW.DB.DeleteAll()
+	WW.DB.DeleteAll()
+}
+
+func TestJustErasePool(t *testing.T) {
+	wdb := db.NewWalletDB()
+	W := New(wdb)
+	defer wdb.Close()
+	W.EmptyKeyPool()
 }
