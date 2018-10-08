@@ -12,7 +12,7 @@ import (
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
 
-// NewWalletDB creates a new walletdb.DB. Path, BaseDir, ValueDir the order of how the variadic options will be processed to override thte defaults
+// NewWalletDB creates a new walletDB. Path, BaseDir, ValueDir the order of how the variadic options will be processed to override thte defaults
 func NewWalletDB(params ...string) (db *DB) {
 	var err error
 	db = &DB{
@@ -92,7 +92,7 @@ func (r *DB) Dump() {
 }
 
 // DeleteAll basically empties the database. For testing purposes.
-func (r *DB) DeleteAll() {
+func (r *DB) DeleteAll() *DB {
 	counter := 0
 	opt := badger.DefaultIteratorOptions
 	err := r.DB.View(func(txn *badger.Txn) error {
@@ -101,9 +101,13 @@ func (r *DB) DeleteAll() {
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			counter++
 			item := iter.Item()
-			r.DB.Update(func(txn *badger.Txn) error {
+			err := r.DB.Update(func(txn *badger.Txn) error {
 				return txn.Delete(item.Key())
 			})
+			if err != nil {
+				r.SetStatusIf(err)
+				return r
+			}
 		}
 		return nil
 	})
@@ -111,6 +115,7 @@ func (r *DB) DeleteAll() {
 		fmt.Println("\nERROR:", r.Error())
 	}
 	fmt.Println(counter, "items deleted")
+	return r
 }
 
 // WithBC attaches a BlockCrypt and thus enabling encryption of sensitive data in the wallet. Changes the encryption if already encrypted or enables it.
@@ -126,7 +131,7 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 		return r
 	}
 	opt := badger.DefaultIteratorOptions
-	err := r.DB.Update(func(txn *badger.Txn) error {
+	err := r.DB.View(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
@@ -140,19 +145,27 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 			t := rec.TS
 			switch string(k[:8]) {
 			case t["MasterKey"]:
-				r.SetStatusIf(txn.Delete(item.Key()))
+				r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+					return txn.Delete(item.Key())
+				}))
 			case t["Account"]:
-				if r.SetStatusIf(txn.Delete(item.Key())).OK() {
+				if r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+					return txn.Delete(item.Key())
+				})).OK() {
 					addr := k[16:]
 					r.WriteAccount(&addr, &v)
 				}
 			case t["Name"]:
-				if r.SetStatusIf(txn.Delete(item.Key())).OK() {
+				if r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+					return txn.Delete(item.Key())
+				})).OK() {
 					addr := k[16:]
 					r.WriteName(&addr, &v)
 				}
 			case t["Key"]:
-				if r.SetStatusIf(txn.Delete(item.Key())).OK() {
+				if r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+					return txn.Delete(item.Key())
+				})).OK() {
 					priv := v[:32]
 					pub := v[32:]
 					pk := key.NewPriv()
@@ -188,7 +201,7 @@ func (r *DB) RemoveBC() *DB {
 	}
 	BC := r.BC
 	opt := badger.DefaultIteratorOptions
-	err := r.DB.Update(func(txn *badger.Txn) error {
+	err := r.DB.View(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
@@ -204,7 +217,9 @@ func (r *DB) RemoveBC() *DB {
 			// K, V := hex.EncodeToString(k), hex.EncodeToString(v)
 			switch table {
 			case t["MasterKey"]:
-				r.SetStatusIf(txn.Delete(item.Key()))
+				r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+					return txn.Delete(item.Key())
+				}))
 			case t["Name"]:
 				Naddress := k[16:]
 				label := v

@@ -183,8 +183,13 @@ func (r *Wallet) GetKeyFromPool(allowReuse bool) (out *key.Priv) {
 		out.SetStatus(r.Error())
 	} else {
 		if !allowReuse {
-			if !r.SetStatusIf(txn.Delete(k)).OK() {
-				fmt.Println("ERROR", r.Error())
+			r.SetStatusIf(r.DB.DB.Update(func(txn *badger.Txn) error {
+				return txn.Delete(k)
+			}))
+			if !r.OK() {
+				R := key.NewPriv()
+				R.SetStatus(r.Error())
+				return R
 			}
 			r.DB.WriteKey(out)
 			delete(r.KeyPool.Pool, lowest)
@@ -198,7 +203,23 @@ func (r *Wallet) GetKeyFromPool(allowReuse bool) (out *key.Priv) {
 func (r *Wallet) GetKeyPoolSize() int { return r.KeyPool.Size }
 
 // GetOldestKeyPoolTime -
-func (r *Wallet) GetOldestKeyPoolTime() int64 { return 0 }
+func (r *Wallet) GetOldestKeyPoolTime() int64 {
+	if r == nil {
+		r.SetStatus(er.NilRec)
+		return 0
+	}
+	if len(r.KeyPool.Pool) < 1 {
+		r.NewKeyPool()
+	}
+	var sorted []int
+	for i := range r.KeyPool.Pool {
+		sorted = append(sorted, r.KeyPool.Pool[i].Seq)
+	}
+	sort.Ints(sorted)
+	lowest := sorted[0]
+	outKeyPool := r.KeyPool.Pool[lowest]
+	return outKeyPool.Created
+}
 
 // TopUpKeyPool -
 func (r *Wallet) TopUpKeyPool() *Wallet {
@@ -252,13 +273,7 @@ func (r *Wallet) EmptyKeyPool() *Wallet {
 		return r
 	}
 	opt := badger.DefaultIteratorOptions
-	// for i := range r.KeyPool.Pool {
-	// 	r.DB.ErasePool(r.KeyPool.Pool[i])
-	// 	delete(r.KeyPool.Pool, i)
-	// 	r.KeyPool.Size--
-	// }
-	// And for what was not in memory...
-	err := r.DB.DB.Update(func(txn *badger.Txn) error {
+	err := r.DB.DB.View(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
