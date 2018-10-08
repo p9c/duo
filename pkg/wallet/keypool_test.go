@@ -29,10 +29,9 @@ func TestNewKeyPool(t *testing.T) {
 	}
 	// WW.DB.Dump()
 	WW.TopUpKeyPool()
-	// WW.DB.Dump()
+	WW.DB.Dump()
 	WW.EmptyKeyPool()
 	WW.DB.Dump()
-	WW.DB.DeleteAll()
 	WW.DB.DeleteAll()
 }
 

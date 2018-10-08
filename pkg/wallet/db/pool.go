@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/dgraph-io/badger"
 	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/wallet/db/rec"
 )
@@ -102,18 +103,19 @@ func (r *DB) WritePool(newPool *rec.Pool) *DB {
 	}
 	k := []byte(t["Pool"])
 	seqB := core.IntToBytes(newPool.Seq)
+
 	k = append(k, *idx...)
 	k = append(k, *seqB...)
 	k = append(k, *address.Bytes()...)
 	k = append(k, *creB...)
 	k = append(k, *expB...)
-	txn := r.DB.NewTransaction(true)
+
 	v := *priv.Bytes()
 	v = append(v, *pub.Bytes()...)
-	err := txn.SetWithMeta(k, v, meta)
-	if r.SetStatusIf(err).OK() {
-		r.SetStatusIf(txn.Commit(nil))
-	}
+
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		return txn.SetWithMeta(k, v, meta)
+	}))
 	return r
 }
 
@@ -122,14 +124,19 @@ func (r *DB) ErasePool(pool *rec.Pool) *DB {
 	k := []byte(rec.TS["Pool"])
 	k = append(k, pool.Idx...)
 	k = append(k, *core.IntToBytes(pool.Seq)...)
+	creB := core.IntToBytes(pool.Created)
+	expB := core.IntToBytes(pool.Expires)
 	if r.BC != nil {
 		k = append(k, *r.BC.Encrypt(pool.Address.Bytes())...)
+		creB = r.BC.Encrypt(creB)
+		expB = r.BC.Encrypt(expB)
 	} else {
 		k = append(k, *pool.Address.Bytes()...)
 	}
-	txn := r.DB.NewTransaction(true)
-	if r.SetStatusIf(txn.Delete(k)).OK() {
-		r.SetStatusIf(txn.Commit(nil))
-	}
+	k = append(k, *creB...)
+	k = append(k, *expB...)
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		return txn.Delete(k)
+	}))
 	return r
 }

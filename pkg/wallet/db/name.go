@@ -78,11 +78,9 @@ func (r *DB) WriteName(address, label *[]byte) *DB {
 	k = append(k, *idx...)
 	k = append(k, *address...)
 	v := *label
-	txn := r.DB.NewTransaction(true)
-	err := txn.SetWithMeta(k, v, meta)
-	if r.SetStatusIf(err).OK() {
-		r.SetStatusIf(txn.Commit(nil))
-	}
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		return txn.SetWithMeta(k, v, meta)
+	}))
 	return r
 }
 
@@ -101,9 +99,8 @@ func (r *DB) EraseName(address *[]byte) *DB {
 	k := []byte(rec.Tables["Name"])
 	k = append(k, *idx...)
 	k = append(k, *address...)
-	txn := r.DB.NewTransaction(true)
-	if r.SetStatusIf(txn.Delete(k)).OK() {
-		r.SetStatusIf(txn.Commit(nil))
-	}
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		return txn.Delete(k)
+	}))
 	return r
 }

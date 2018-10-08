@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"time"
@@ -151,6 +152,7 @@ func (r *Wallet) GetKeyFromPool(allowReuse bool) (out *key.Priv) {
 		k = append(k, *core.IntToBytes(outKeyPool.Expires)...)
 	}
 	txn := r.DB.DB.NewTransaction(true)
+	defer txn.Commit(nil)
 	item, err := txn.Get(k)
 	if r.SetStatusIf(err).OK() {
 		v, err := item.Value()
@@ -188,7 +190,6 @@ func (r *Wallet) GetKeyFromPool(allowReuse bool) (out *key.Priv) {
 			delete(r.KeyPool.Pool, lowest)
 		}
 	}
-	txn.Commit(nil)
 	r.KeyPool.Size--
 	return
 }
@@ -251,9 +252,11 @@ func (r *Wallet) EmptyKeyPool() *Wallet {
 		return r
 	}
 	opt := badger.DefaultIteratorOptions
-	for i := range r.KeyPool.Pool {
-		r.DB.ErasePool(r.KeyPool.Pool[i])
-	}
+	// for i := range r.KeyPool.Pool {
+	// 	r.DB.ErasePool(r.KeyPool.Pool[i])
+	// 	delete(r.KeyPool.Pool, i)
+	// 	r.KeyPool.Size--
+	// }
 	// And for what was not in memory...
 	err := r.DB.DB.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
@@ -263,9 +266,10 @@ func (r *Wallet) EmptyKeyPool() *Wallet {
 			k := item.Key()
 			table := string(k[:8])
 			if table == rec.TS["Pool"] {
-				if !r.SetStatusIf(txn.Delete(k)).OK() {
-					fmt.Println("\nERROR", r.Error())
-				}
+				fmt.Println("del", hex.EncodeToString(k[8:16]))
+				r.SetStatusIf(r.DB.DB.Update(func(txn *badger.Txn) error {
+					return txn.Delete(item.Key())
+				}))
 			}
 		}
 		return nil

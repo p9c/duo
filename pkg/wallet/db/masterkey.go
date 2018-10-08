@@ -68,11 +68,9 @@ func (r *DB) WriteMasterKey(BC *bc.BlockCrypt) *DB {
 	value := *BC.Crypt.Val
 	value = append(value, *BC.IV.Bytes()...)
 	value = append(value, *core.IntToBytes(BC.Iterations)...)
-	txn := r.DB.NewTransaction(true)
-	err := txn.SetWithMeta(key, value, 0)
-	if r.SetStatusIf(err).OK() {
-		txn.Commit(nil)
-	}
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		return txn.SetWithMeta(key, value, 0)
+	}))
 	return r
 }
 
@@ -86,12 +84,9 @@ func (r *DB) EraseMasterKey(idx *[]byte) *DB {
 	if !r.SetStatusIf(err).OK() {
 		return r
 	}
-	if !r.SetStatusIf(txn.Delete(search)).OK() {
-		return r
-	}
-	if !r.SetStatusIf(txn.Commit(nil)).OK() {
-		return r
-	}
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		return txn.Delete(search)
+	}))
 	return r
 }
 
@@ -99,17 +94,16 @@ func (r *DB) EraseMasterKey(idx *[]byte) *DB {
 func (r *DB) EraseAllMasterKeys() *DB {
 	counter := 0
 	opt := badger.DefaultIteratorOptions
-	err := r.DB.Update(func(txn *badger.Txn) error {
+	err := r.DB.View(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			counter++
 			item := iter.Item()
-			k := item.Key()
-			if string(k[:8]) == rec.TS["MasterKey"] {
-				if !r.SetStatusIf(txn.Delete(k)).OK() {
-					fmt.Println("\nERROR", r.Error())
-				}
+			if string(item.Key()[:8]) == rec.TS["MasterKey"] {
+				r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+					return txn.Delete(item.Key())
+				}))
 			}
 		}
 		return nil
@@ -117,6 +111,6 @@ func (r *DB) EraseAllMasterKeys() *DB {
 	if !r.SetStatusIf(err).OK() {
 		fmt.Println("\nERROR:", r.Error())
 	}
-	fmt.Println(counter, "items deleted")
+	fmt.Println(counter, "master keys deleted")
 	return r
 }

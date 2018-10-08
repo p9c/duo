@@ -95,16 +95,15 @@ func (r *DB) Dump() {
 func (r *DB) DeleteAll() {
 	counter := 0
 	opt := badger.DefaultIteratorOptions
-	err := r.DB.Update(func(txn *badger.Txn) error {
+	err := r.DB.View(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			counter++
 			item := iter.Item()
-			k := item.Key()
-			if !r.SetStatusIf(txn.Delete(k)).OK() {
-				fmt.Println("\nERROR", r.Error())
-			}
+			r.DB.Update(func(txn *badger.Txn) error {
+				return txn.Delete(item.Key())
+			})
 		}
 		return nil
 	})
@@ -141,19 +140,19 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 			t := rec.TS
 			switch string(k[:8]) {
 			case t["MasterKey"]:
-				r.SetStatusIf(txn.Delete(k))
+				r.SetStatusIf(txn.Delete(item.Key()))
 			case t["Account"]:
-				if r.SetStatusIf(txn.Delete(k)).OK() {
+				if r.SetStatusIf(txn.Delete(item.Key())).OK() {
 					addr := k[16:]
 					r.WriteAccount(&addr, &v)
 				}
 			case t["Name"]:
-				if r.SetStatusIf(txn.Delete(k)).OK() {
+				if r.SetStatusIf(txn.Delete(item.Key())).OK() {
 					addr := k[16:]
 					r.WriteName(&addr, &v)
 				}
 			case t["Key"]:
-				if r.SetStatusIf(txn.Delete(k)).OK() {
+				if r.SetStatusIf(txn.Delete(item.Key())).OK() {
 					priv := v[:32]
 					pub := v[32:]
 					pk := key.NewPriv()
@@ -205,7 +204,7 @@ func (r *DB) RemoveBC() *DB {
 			// K, V := hex.EncodeToString(k), hex.EncodeToString(v)
 			switch table {
 			case t["MasterKey"]:
-				r.SetStatusIf(txn.Delete(k))
+				r.SetStatusIf(txn.Delete(item.Key()))
 			case t["Name"]:
 				Naddress := k[16:]
 				label := v

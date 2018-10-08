@@ -88,12 +88,9 @@ func (r *DB) WriteKey(priv *key.Priv) *DB {
 	// fmt.Println("    WriteKey", hex.EncodeToString(k))
 	v := *pk
 	v = append(v, *pp...)
-	// fmt.Println("       value", hex.EncodeToString(v))
-	txn := r.DB.NewTransaction(true)
-	err := txn.SetWithMeta(k, v, meta)
-	if r.SetStatusIf(err).OK() {
-		r.SetStatusIf(txn.Commit(nil))
-	}
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		return txn.SetWithMeta(k, v, meta)
+	}))
 	return r
 }
 
@@ -114,9 +111,8 @@ func (r *DB) EraseKey(address *[]byte) *DB {
 	} else {
 		search = append(search, *address...)
 	}
-	txn := r.DB.NewTransaction(true)
-	if r.SetStatusIf(txn.Delete(search)).OK() {
-		txn.Commit(nil)
-	}
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		return txn.Delete(search)
+	}))
 	return r
 }

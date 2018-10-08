@@ -87,11 +87,9 @@ func (r *DB) WriteAccount(address, pub *[]byte) *DB {
 	} else {
 		v = []byte{}
 	}
-	txn := r.DB.NewTransaction(true)
-	err := txn.SetWithMeta(k, v, meta)
-	if r.SetStatusIf(err).OK() {
-		r.SetStatusIf(txn.Commit(nil))
-	}
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		return txn.SetWithMeta(k, v, meta)
+	}))
 	return r
 }
 
@@ -109,9 +107,8 @@ func (r *DB) EraseAccount(address *[]byte) *DB {
 		address = r.BC.Encrypt(address)
 	}
 	search = append(search, *address...)
-	txn := r.DB.NewTransaction(true)
-	if r.SetStatusIf(txn.Delete(search)).OK() {
-		r.SetStatusIf(txn.Commit(nil))
-	}
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		return txn.Delete(search)
+	}))
 	return r
 }
