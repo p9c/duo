@@ -1,7 +1,11 @@
 package wallet
 
 import (
+	"bytes"
+
+	"github.com/parallelcointeam/duo/pkg/bc"
 	"github.com/parallelcointeam/duo/pkg/block"
+	"github.com/parallelcointeam/duo/pkg/buf"
 	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/key"
 	"github.com/parallelcointeam/duo/pkg/tx"
@@ -15,7 +19,15 @@ func (r *Wallet) AddKeyPair(k *key.Priv) *Wallet {
 }
 
 // AddAccount adds a new account (correspondent address and optionally public key)
-func (r *Wallet) AddAccount(accounnt *rec.Account) *Wallet {
+func (r *Wallet) AddAccount(account *rec.Account) *Wallet {
+	allIDs := r.DB.GetAllAccountIDs()
+	for i := range allIDs {
+		if bytes.Compare(allIDs[i], account.Idx) == 0 {
+			r.SetStatus("account already in wallet")
+			return r
+		}
+	}
+	r.DB.WriteAccount(account.Address, account.Pub)
 	return r
 }
 
@@ -33,8 +45,37 @@ func (r *Wallet) AddToWalletIfInvolvingMe(id core.Address, tx *tx.Transaction, b
 // AvailableCoins -
 func (r *Wallet) AvailableCoins([]tx.Output, bool) {}
 
-// ChangeWalletPassphrase -
-func (r *Wallet) ChangeWalletPassphrase(string, string) *Wallet { return r }
+// ChangeWalletPassphrase removes any old master keys and creates a new one based on a given password. If the crypt is not locked the old password is required to change it, and if it's not encrypted we just return an error
+func (r *Wallet) ChangeWalletPassphrase(oldp, newp *buf.Secure) *Wallet {
+	var BC *bc.BlockCrypt
+	if r.DB.BC == nil {
+		mks := r.DB.ReadMasterKeys()
+		if len(mks) < 1 {
+			r.SetStatus("wallet is not encrypted")
+			return r
+		}
+		for i := range mks {
+			mks[i].Unlock(oldp).Arm()
+			if !mks[i].OK() {
+				r.SetStatus("password was incorrect for locked wallet")
+			} else {
+				BC = mks[i]
+				r.UnsetStatus()
+				break
+			}
+		}
+		if BC == nil {
+			r.SetStatus("did not find key unlocked by given password")
+			return r
+		}
+		for i := range mks {
+			r.DB.EraseMasterKey(mks[i].Idx)
+		}
+	}
+	BC = bc.New().CopyCipher(newp, r.DB.BC)
+	r.DB.WriteMasterKey(BC)
+	return r
+}
 
 // CommitTransaction -
 func (r *Wallet) CommitTransaction(*tx.Transaction, *ReserveKey) *Wallet { return r }

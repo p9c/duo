@@ -103,9 +103,9 @@ type Pool struct {
 
 // Account is an address and public key of a counterparty account, for which the user does  not have a private key. The public key is filled in only when the address is found in the chain and the signature is available to recover the key.
 type Account struct {
-	Idx     Idx    // in key
-	Address []byte // encrypt      // in key
-	Pub     []byte // encrypt
+	Idx     Idx     // in key
+	Address *[]byte // encrypt      // in key
+	Pub     *[]byte // encrypt
 }
 
 // Accounting is an entry regarding internal movements of funds. The index contains the 64 bit highway hash of the encrypted addresses in the accounting entry, so scanning the ledger for relevant entries is fast and happens all in memory.

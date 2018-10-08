@@ -11,13 +11,13 @@ var er = core.Errors
 
 // BlockCrypt stores the state of a GCM AES cipher for encrypting up to 4Gb of data
 type BlockCrypt struct {
+	Idx             *[]byte
 	Crypt           *buf.Byte
 	Password        *buf.Secure
 	Ciphertext      *buf.Secure
 	IV              *buf.Byte
 	Iterations      int64
 	GCM             *cipher.AEAD
-	Idx             *[]byte
 	Unlocked, Armed bool
 	core.State
 }

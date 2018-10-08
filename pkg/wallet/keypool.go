@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"encoding/hex"
 	"fmt"
 	"sort"
 	"time"
@@ -281,7 +280,6 @@ func (r *Wallet) EmptyKeyPool() *Wallet {
 			k := item.Key()
 			table := string(k[:8])
 			if table == rec.TS["Pool"] {
-				fmt.Println("del", hex.EncodeToString(k[8:16]))
 				r.SetStatusIf(r.DB.DB.Update(func(txn *badger.Txn) error {
 					return txn.Delete(item.Key())
 				}))

@@ -42,13 +42,13 @@ func (r *DB) ReadAccount(address *[]byte) (out *rec.Account) {
 		out.Idx = *idx
 		switch {
 		case r.BC != nil && meta&1 == 1:
-			out.Address = *r.BC.Decrypt(address)
+			out.Address = r.BC.Decrypt(address)
 			if len(V) > 1 {
-				out.Pub = *r.BC.Decrypt(&V)
+				out.Pub = r.BC.Decrypt(&V)
 			}
 		case meta&1 != 1:
-			out.Address = *address
-			out.Pub = V
+			out.Address = address
+			out.Pub = &V
 		default:
 			r.SetStatus("record marked encrypted but no BC to decrypt with")
 			fmt.Println(r.Error())
@@ -111,4 +111,26 @@ func (r *DB) EraseAccount(address *[]byte) *DB {
 		return txn.Delete(search)
 	}))
 	return r
+}
+
+// GetAllAccountIDs returns an array containing all of the accounts in the database by their index
+func (r *DB) GetAllAccountIDs() (out []rec.Idx) {
+	r = r.NewIf()
+	if !r.OK() {
+		return nil
+	}
+	r.SetStatusIf(r.DB.View(func(txn *badger.Txn) error {
+		iter := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer iter.Close()
+		for iter.Rewind(); iter.Valid(); iter.Next() {
+			item := iter.Item()
+			k := item.Key()
+			table := string(k[:8])
+			if table == rec.TS["Account"] {
+				out = append(out, k[8:16])
+			}
+		}
+		return nil
+	}))
+	return
 }
