@@ -38,9 +38,25 @@ RUN git clone https://github.com/parallelcointeam/parallelcoin.git
 RUN cd parallelcoin/src; \
     echo "Building parallelcoind...";\
     make -j$(nproc) -f makefile.unix;\
-    sudo cp parallelcoind usr/local/bin/;\
+    sudo cp parallelcoind /usr/local/bin/;\
     echo "cleaning up";\
     make -f makefile.unix clean;\
     echo "All done"
 
-CMD [ "/usr/bin/parallelcoind -printtoconsole -debug -debugnet"]
+RUN su user -c 'yay -S --noconfirm nano net-tools'
+
+EXPOSE 11047 
+EXPOSE 11048
+EXPOSE 21047
+EXPOSE 21048
+
+WORKDIR /data
+
+VOLUME /data
+
+RUN ln -s /data /root/.parallelcoin
+
+# CMD tail -f /dev/null
+
+CMD mkdir /root/.parallelcoin;cp /data/parallelcoin.conf /root/.parallelcoin/parallelcoin.conf;\
+  /usr/local/bin/parallelcoind -rpcuser=user -rpcpassword=pa55word -port=11047 -rpcport=11048 -bind=0.0.0.0 -rpcbind=0.0.0.0 -listen -server
