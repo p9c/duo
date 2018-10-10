@@ -1,5 +1,5 @@
-// Package client is an RPC interface to a Parallelcoin full node wallet RPC
-package client
+// Package rpc is an RPC interface to a Parallelcoin full node wallet RPC
+package rpc
 
 import (
 	"bytes"
@@ -12,28 +12,27 @@ import (
 	"time"
 )
 
-func New(host string, port int, user, passwd string, useTLS bool) *Client {
+// NewClient creates a new RPC client
+func NewClient(host string, port int, user, passwd string, useTLS bool) *Client {
 	if len(host) == 0 {
 		host = "127.0.0.1"
 	}
 	if port == 0 || port < 1024 {
 		port = 11048
 	}
-	var serverAddr string
+	var URL string
 	var httpClient *http.Client
 	if useTLS {
-		serverAddr = "https://"
+		URL = "https://"
 		t := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 		httpClient = &http.Client{Transport: t}
 	} else {
-		serverAddr = "http://"
+		URL = "http://"
 		httpClient = &http.Client{}
 	}
-	c = &rpcClient{serverAddr: fmt.Sprintf("%s%s:%d", serverAddr, host, port), user: user, passwd: passwd, httpClient: httpClient}
-	return
-
+	return &Client{URL: fmt.Sprintf("%s%s:%d", URL, host, port), Username: user, Password: passwd, httpClient: httpClient}
 }
 
 // DoTimeoutRequest process a HTTP request with timeout
@@ -57,16 +56,16 @@ func (c *Client) DoTimeoutRequest(timer *time.Timer, req *http.Request) (*http.R
 }
 
 // Call prepare & exec the request
-func (c *Client) Call(method string, params interface{}) (rr rpcResponse, err error) {
-	connectTimer := time.NewTimer(RPCCLIENT_TIMEOUT * time.Second)
-	rpcR := rpcRequest{method, params, time.Now().UnixNano(), "1.0"}
+func (c *Client) Call(method string, params interface{}) (rr Response, err error) {
+	connectTimer := time.NewTimer(RPCClientTimeout * time.Second)
+	rpcR := Request{method, params, time.Now().UnixNano(), "1.0"}
 	payloadBuffer := &bytes.Buffer{}
 	jsonEncoder := json.NewEncoder(payloadBuffer)
 	err = jsonEncoder.Encode(rpcR)
 	if err != nil {
 		return
 	}
-	req, err := http.NewRequest("POST", c.serverAddr, payloadBuffer)
+	req, err := http.NewRequest("POST", c.URL, payloadBuffer)
 	if err != nil {
 		return
 	}
@@ -74,8 +73,8 @@ func (c *Client) Call(method string, params interface{}) (rr rpcResponse, err er
 	req.Header.Add("Accept", "application/json")
 
 	// Auth ?
-	if len(c.user) > 0 || len(c.passwd) > 0 {
-		req.SetBasicAuth(c.user, c.passwd)
+	if len(c.Username) > 0 || len(c.Password) > 0 {
+		req.SetBasicAuth(c.Username, c.Password)
 	}
 
 	resp, err := c.DoTimeoutRequest(connectTimer, req)

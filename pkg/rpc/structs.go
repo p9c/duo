@@ -7,8 +7,16 @@ import (
 	"github.com/parallelcointeam/duo/pkg/core"
 )
 
-var er core.Errors
+var er core.CommonErrors
 
+const (
+	// VERSION represents bicoind package version
+	VERSION = 0.1
+	// RPCClientTimeout represent http timeout for rcp client
+	RPCClientTimeout = 30
+)
+
+// A Client is a connection to a websocket JSON RPC server
 type Client struct {
 	URL        string
 	Username   string
@@ -17,6 +25,7 @@ type Client struct {
 	core.State
 }
 
+// Request is a JSON RPC request
 type Request struct {
 	Method  string      `json:"method"`
 	Params  interface{} `json:"params"`
@@ -24,6 +33,7 @@ type Request struct {
 	JSONRPC string      `json:"jsonrpc"`
 }
 
+// Response is the response to a Request
 type Response struct {
 	ID     int64           `json:"id"`
 	Result json.RawMessage `json:"result"`
