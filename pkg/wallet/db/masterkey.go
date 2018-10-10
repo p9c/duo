@@ -19,7 +19,6 @@ func (r *DB) ReadMasterKeys() (BC []*bc.BlockCrypt) {
 		return nil
 	}
 	opt := badger.DefaultIteratorOptions
-	opt.PrefetchValues = false
 	err := r.DB.View(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(opt)
 		defer iter.Close()

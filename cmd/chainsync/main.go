@@ -39,9 +39,105 @@ func main() {
 	blockstoreBaseDir := path + "/" + db.DefaultBaseDir
 
 	if _, err := os.Stat(blockstoreBaseDir + "/blocks"); !os.IsNotExist(err) {
+		// Find current position and update from there
+		dbOptions := &badger.DefaultOptions
+		dbOptions.Dir = blockstoreBaseDir + "/blockchain"
+		dbOptions.ValueDir = dbOptions.Dir + "/values"
+		db, err := badger.Open(*dbOptions)
+		if err != nil {
+			fmt.Println("opening db", err.Error())
+			os.Exit(1)
+		}
+		defer db.Close()
+		// Key with content "latest" has value of the head block at last update
+		var latest uint64
+		var latesthash []byte
+		var counter uint64
+		err = db.View(func(txn *badger.Txn) error {
+			// item, er := txn.Get([]byte("latest"))
+			// if item == nil {
+			// no latest key found, search the index for the latest and update it
+			fmt.Println("counter:", counter)
+			counter++
+			opt := badger.DefaultIteratorOptions
+			opt.PrefetchValues = false
+			iter := txn.NewIterator(opt)
+			defer iter.Close()
+			var key []byte
+			var hH, Hh, hp int
+			for iter.Rewind(); iter.Valid(); iter.Next() {
+				item := iter.Item()
+				key = item.Key()
+				value, err := item.Value()
+				if err != nil {
+					fmt.Println("reading key/value pairs", err.Error())
+					os.Exit(1)
+				}
+				// var table byte
+				var height uint64
+				switch key[0] {
+				case 1:
+					hH++
+					// table = key[0]
+					h := append(key[1:8], 0)
+					core.BytesToInt(&height, &h)
+					// fmt.Printf("height->hash height %09d hash %s\n",
+					// height,
+					// hex.EncodeToString(value))
+					if height > latest {
+						latest = height
+						latesthash = value
+					}
+				case 2:
+					Hh++
+					// table = key[0]
+				case 4:
+					hp++
+					// table = key[0]
+					h := append(key[1:8], 0)
+					core.BytesToInt(&height, &h)
+					st := value[:8]
+					le := value[8:]
+					var start uint64
+					var length uint32
+					core.BytesToInt(&start, &st)
+					core.BytesToInt(&length, &le)
+					// fmt.Printf("height->position height %09d start %09d length %09d\n",
+					// 	height,
+					// 	start,
+					// 	length)
+				}
+			}
+			fmt.Println(hH, Hh, hp)
+			err = db.Update(func(txn *badger.Txn) error {
+				k := append(*core.IntToBytes(latest), latesthash...)
+				fmt.Println("latest", *core.IntToBytes(latest), latesthash)
+				return txn.Set([]byte("latest"), k)
+			})
+			if err != nil {
+				fmt.Println(err.Error())
+				return err
+			}
+			// } else {
 
+			// 	V, er := item.Value()
+			// 	if er != nil {
+			// 		fmt.Println(err.Error())
+			// 		return er
+			// 	}
+
+			// 	latestB := V[:8]
+			// 	core.BytesToInt(&latest, &latestB)
+			// 	latesthash = V[8:]
+			// }
+			fmt.Println("updated until block height", latest, "hash", hex.EncodeToString(latesthash))
+			return nil
+		})
+		if err != nil {
+			fmt.Println("finding latest block", err.Error())
+		}
 	} else {
-
+		// Sync from zero
 		blockchain, err := os.Create(blockstoreBaseDir + "/blocks")
 		if err != nil {
 			fmt.Println("creating blockchain file", err.Error())
@@ -67,8 +163,9 @@ func main() {
 
 		var hashes [][]byte
 		var position uint64
-
-		for i := uint64(0); i < str.Blocks; i++ {
+		limit := str.Blocks
+		// limit := uint64(1000)
+		for i := uint64(0); i < limit; i++ {
 			getHash, err := C.Call("getblockhash", []uint64{i})
 			if err != nil {
 				hashes = append(hashes, []byte{})
@@ -84,11 +181,11 @@ func main() {
 				position += uint64(length)
 				blockchain.Write(bytes)
 
-				k1 := *core.IntToBytes(0x01000000 & i)
+				k1 := *core.IntToBytes(1 + i<<8)
 				v1 := hashes[i]
 				k2 := append([]byte{2}, hashes[i]...)
 				v2 := *core.IntToBytes(i)
-				k3 := *core.IntToBytes(0x04000000 & i)
+				k3 := *core.IntToBytes(4 + i<<8)
 				v3 := append(*core.IntToBytes(start), *core.IntToBytes(length)...)
 				err := db.Update(func(txn *badger.Txn) error {
 					return txn.Set(k1, v1)
