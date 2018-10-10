@@ -1,2 +1,3 @@
 #!/bin/bash
-echo `scripts/sloccount.sh pkg/` lines of code in pkg/ `date -u`>> sloc.log
+
+echo `scripts/sloccount.sh pkg/`+`scripts/sloccount.sh cmd/` lines of code in pkg/ and cmd/ `date -u`>> sloc.log
