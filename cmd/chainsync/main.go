@@ -110,9 +110,9 @@ func main() {
 			}
 			fmt.Println(hH, Hh, hp)
 			err = db.Update(func(txn *badger.Txn) error {
-				k := append(*core.IntToBytes(latest), latesthash...)
+				v := append(*core.IntToBytes(latest), latesthash...)
 				fmt.Println("latest", *core.IntToBytes(latest), latesthash)
-				return txn.Set([]byte("latest"), k)
+				return txn.Set([]byte("latest"), v)
 			})
 			if err != nil {
 				fmt.Println(err.Error())

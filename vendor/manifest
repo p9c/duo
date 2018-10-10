@@ -112,6 +112,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/detailyang/go-fallocate",
+			"repository": "https://github.com/detailyang/go-fallocate",
+			"vcs": "git",
+			"revision": "432fa640bd2e7f0e2689c7fd8503a0269915ebd8",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/dgraph-io/badger",
 			"repository": "https://github.com/dgraph-io/badger",
 			"vcs": "git",
