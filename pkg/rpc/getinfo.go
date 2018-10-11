@@ -6,7 +6,7 @@ type GetInfo struct {
 	ProtocolVersion   uint32  `json:"protocolversion"`
 	WalletVersion     uint32  `json:"walletversion"`
 	Balance           float64 `json:"balance"`
-	Blocks            uint64  `json:"blocks"`
+	Blocks            uint32  `json:"blocks"`
 	TimeOffset        int64   `json:"timeoffset"`
 	Connections       uint32  `json:"connections"`
 	Proxy             string  `json:"proxy"`

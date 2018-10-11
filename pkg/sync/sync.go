@@ -2,7 +2,6 @@ package sync
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -18,6 +17,7 @@ import (
 
 // NewNode creates a new blockchain sync node/server
 func NewNode() (r *Node) {
+	r = new(Node)
 	r.RPC = rpc.NewClient("127.0.0.1", 11048, "user", "pa55word", false)
 	var path string
 	var err error
@@ -45,117 +45,126 @@ func NewNode() (r *Node) {
 		fmt.Println("creating blockchain file", err.Error())
 		os.Exit(1)
 	}
-	defer blockchain.Close()
 
 	err = fallocate.Fallocate(blockchain, 0, 256*256*256*256)
 	if err != nil {
 		fmt.Println("allocating blockchain file", err.Error())
 		os.Exit(1)
 	}
-
+	r.Chain = blockchain
 	return
 }
 
 // Close shuts down the blockchain sync server
 func (r *Node) Close() *Node {
 	r.DB.Close()
+	r.Chain.Close()
 	return r
-}
-
-// GetBestBlockHeight returns the newest consensus block height
-func (r *Node) GetBestBlockHeight() uint64 {
-	resp, err := r.RPC.Call("getinfo", nil)
-	if err != nil {
-		fmt.Println("rpc getinfo", err.Error())
-		os.Exit(1)
-	}
-	str := new(rpc.GetInfo)
-	err = json.Unmarshal(resp.Result, str)
-	if err != nil {
-		fmt.Println("unmarshalling info", err.Error())
-		os.Exit(1)
-	}
-	return str.Blocks
-}
-
-// GetRawBlock gets the raw block given a block height
-func (r *Node) GetRawBlock(height uint64) *[]byte {
-	getHash, err := r.RPC.Call("getblockhash", []uint64{height})
-	if err != nil {
-	} else {
-		unquoted, _ := strconv.Unquote(string(getHash.Result))
-		bytes, _ := hex.DecodeString(string(unquoted))
-		resp, err := r.RPC.Call("getblock", []interface{}{hex.EncodeToString(bytes), false})
-		if err != nil {
-		} else {
-			unquoted, _ = strconv.Unquote(string(resp.Result))
-			bytes, _ = hex.DecodeString(unquoted)
-		}
-		return &bytes
-	}
-	return &[]byte{}
-}
-
-// GetLatestSynced returns the newest block height stored in the database, updates it if it wasn't already stored
-func (r *Node) GetLatestSynced() (latest uint64, latesthash []byte) {
-	err := r.DB.View(func(txn *badger.Txn) error {
-		item, _ := txn.Get([]byte("latest"))
-		if item == nil {
-			opt := badger.DefaultIteratorOptions
-			opt.PrefetchValues = false
-			iter := txn.NewIterator(opt)
-			defer iter.Close()
-			var key []byte
-			for iter.Rewind(); iter.Valid(); iter.Next() {
-				item := iter.Item()
-				key = item.Key()
-				value, err := item.Value()
-				if err != nil {
-					fmt.Println("reading key/value pairs", err.Error())
-					os.Exit(1)
-				}
-				// var table byte
-				var height uint64
-				if key[0] == 1 {
-					h := append(key[1:8], 0)
-					core.BytesToInt(&height, &h)
-					if height > latest {
-						latest = height
-						latesthash = value
-					}
-				}
-			}
-			err := r.DB.Update(func(txn *badger.Txn) error {
-				k := append(*core.IntToBytes(latest), latesthash...)
-				fmt.Println("latest", *core.IntToBytes(latest), latesthash)
-				return txn.Set([]byte("latest"), k)
-			})
-			if err != nil {
-				fmt.Println(err.Error())
-				return err
-			}
-			fmt.Println("updated until block height", latest, "hash", hex.EncodeToString(latesthash))
-			return nil
-		}
-		v, err := item.Value()
-		if err != nil {
-			return err
-		}
-		if v != nil {
-			heightB := v[:8]
-			core.BytesToInt(&latest, &heightB)
-			latesthash = v[8:]
-		}
-		return nil
-	})
-	if err != nil {
-		fmt.Println("finding latest block", err.Error())
-	}
-	return
 }
 
 // Sync updates the blockchain to the latest current available block height
 func (r *Node) Sync() *Node {
+	var hashes [][]byte
+	var position uint64
+	limit := r.GetBestBlockHeight()
+	start, _ := r.GetLatestSynced()
+	var value []byte
+	if start != 0 {
+		err := r.DB.View(func(txn *badger.Txn) error {
+			var err error
+			item, _ := txn.Get(*core.IntToBytes(start))
+			value, err = item.Value()
+			if !r.SetStatusIf(err).OK() {
+				fmt.Println(err.Error())
+				return err
+			}
+			return nil
+		})
+		if !r.SetStatusIf(err).OK() {
+			fmt.Println(err.Error())
+			return r
+		} else {
+			var start int64
+			var length uint32
+			sB := append(value[32:38], []byte{0, 0}...)
+			core.BytesToInt(&start, &sB)
+			lB := append(value[38:41], []byte{0}...)
+			core.BytesToInt(&length, &lB)
+			start += int64(length)
+			r.Chain.Seek(start, 0)
+			fmt.Println("seeking to end of last record at position", start)
+		}
 
+	}
+
+	for i := start; i < limit; i++ {
+		getHash, err := r.RPC.Call("getblockhash", []uint32{i})
+		if err != nil {
+			hashes = append(hashes, []byte{})
+		} else {
+			unquoted, _ := strconv.Unquote(string(getHash.Result))
+			Hash, _ := hex.DecodeString(string(unquoted))
+			hashes = append(hashes, Hash)
+			resp, _ := r.RPC.Call("getblock", []interface{}{hex.EncodeToString(hashes[i]), false})
+			unquoted, _ = strconv.Unquote(string(resp.Result))
+			bytes, _ := hex.DecodeString(unquoted)
+			begin := position
+			length := uint32(len(bytes))
+			position += uint64(length)
+			r.Chain.Write(bytes)
+
+			k1 := removeTrailingZeroes(*core.IntToBytes(i))
+			// fmt.Print("K height ", hex.EncodeToString(k1))
+			v1 := (*core.IntToBytes(length))[:3]
+			// fmt.Print(" V length ", hex.EncodeToString(v1))
+			b := removeTrailingZeroes((*core.IntToBytes(begin))[:6])
+			b = append([]byte{byte(len(b))}, b...)
+			// fmt.Print(" begin ", hex.EncodeToString(b))
+			v1 = append(v1, 0)
+			v1 = append(v1, b...)
+			H := removeLeadingZeroes(Hash)
+			// fmt.Print(" hash ", hex.EncodeToString(H))
+			v1 = append(v1, H...)
+
+			// fmt.Println()
+			h := core.Hash64(&Hash)
+			// fmt.Print("K hash ", hex.EncodeToString(*h))
+			k2 := *h
+			v2 := removeTrailingZeroes(*core.IntToBytes(i))
+			// fmt.Println(" V height", hex.EncodeToString(v2))
+			err := r.DB.Update(func(txn *badger.Txn) error {
+				return txn.Set(k1, v1)
+			})
+			if err != nil {
+				fmt.Println("writing kv 1", err.Error())
+				os.Exit(1)
+			}
+			err = r.DB.View(func(txn *badger.Txn) error {
+				item, _ := txn.Get(k2)
+				if item != nil {
+					v, err := item.Value()
+					if err != nil {
+						fmt.Println("reading colliding hash", err.Error())
+						os.Exit(1)
+					}
+					fmt.Println("COLLISION ON HASH64 OF BLOCKHASH", k2)
+					v2 = append(v, v2...)
+				}
+				return nil
+			})
+
+			err = r.DB.Update(func(txn *badger.Txn) error {
+				return txn.Set(k2, v2)
+			})
+			if err != nil {
+				fmt.Println("writing kv 2", err.Error())
+				os.Exit(1)
+			}
+			// fmt.Println()
+		}
+		if i%1000 == 0 {
+			fmt.Print(i, "...")
+		}
+	}
 	return r
 }

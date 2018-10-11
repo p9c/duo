@@ -2,4 +2,4 @@
 scripts/updatesloc
 git add .
 git commit -S -m"`echo $@`"
-git push -u origin master ; git push -u gitlab master
+git push -u origin master #; git push -u gitlab master
