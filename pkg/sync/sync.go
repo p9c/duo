@@ -67,7 +67,7 @@ func (r *Node) Sync() *Node {
 	var hashes [][]byte
 	var position uint64
 	limit := r.GetBestBlockHeight()
-	start, _ := r.GetLatestSynced()
+	start, _, _ := r.GetLatestSynced()
 	var value []byte
 	if start != 0 {
 		err := r.DB.View(func(txn *badger.Txn) error {
@@ -113,25 +113,19 @@ func (r *Node) Sync() *Node {
 			position += uint64(length)
 			r.Chain.Write(bytes)
 
-			k1 := removeTrailingZeroes(*core.IntToBytes(i))
-			// fmt.Print("K height ", hex.EncodeToString(k1))
+			k1 := append([]byte{1}, removeTrailingZeroes(*core.IntToBytes(i))...)
+
 			v1 := (*core.IntToBytes(length))[:3]
-			// fmt.Print(" V length ", hex.EncodeToString(v1))
 			b := removeTrailingZeroes((*core.IntToBytes(begin))[:6])
 			b = append([]byte{byte(len(b))}, b...)
-			// fmt.Print(" begin ", hex.EncodeToString(b))
-			v1 = append(v1, 0)
-			v1 = append(v1, b...)
 			H := removeLeadingZeroes(Hash)
-			// fmt.Print(" hash ", hex.EncodeToString(H))
 			v1 = append(v1, H...)
-
-			// fmt.Println()
 			h := core.Hash64(&Hash)
-			// fmt.Print("K hash ", hex.EncodeToString(*h))
-			k2 := *h
+
+			k2 := append([]byte{2}, *h...)
+
 			v2 := removeTrailingZeroes(*core.IntToBytes(i))
-			// fmt.Println(" V height", hex.EncodeToString(v2))
+
 			err := r.DB.Update(func(txn *badger.Txn) error {
 				return txn.Set(k1, v1)
 			})
@@ -140,6 +134,7 @@ func (r *Node) Sync() *Node {
 				os.Exit(1)
 			}
 			err = r.DB.View(func(txn *badger.Txn) error {
+				// TODO make the multiple references each use full 32 bits
 				item, _ := txn.Get(k2)
 				if item != nil {
 					v, err := item.Value()
@@ -152,7 +147,6 @@ func (r *Node) Sync() *Node {
 				}
 				return nil
 			})
-
 			err = r.DB.Update(func(txn *badger.Txn) error {
 				return txn.Set(k2, v2)
 			})
@@ -167,4 +161,66 @@ func (r *Node) Sync() *Node {
 		}
 	}
 	return r
+}
+
+// GetLatestSynced returns the newest block height stored in the database, updates it if it wasn't already stored
+func (r *Node) GetLatestSynced() (latest uint32, latesthash []byte, end uint64) {
+	if r.Latest != 0 && r.LatestHash != nil && r.End != 0 {
+		return r.Latest, r.LatestHash, r.End
+	}
+	err := r.DB.View(func(txn *badger.Txn) error {
+		item, _ := txn.Get([]byte("latest"))
+		if item == nil {
+			opt := badger.DefaultIteratorOptions
+			opt.PrefetchValues = false
+			iter := txn.NewIterator(opt)
+			defer iter.Close()
+			var key []byte
+			for iter.Rewind(); iter.Valid(); iter.Next() {
+				item := iter.Item()
+				key = item.Key()
+				value, err := item.Value()
+				if err != nil {
+					fmt.Println("reading key/value pairs", err.Error())
+					os.Exit(1)
+				}
+				var height uint32
+				if key[0] == 1 {
+					h := append(key[1:8], 0)
+					core.BytesToInt(&height, &h)
+					if height > latest {
+						latest = height
+						latesthash = value
+					}
+				}
+			}
+			err := r.DB.Update(func(txn *badger.Txn) error {
+				k := append(*core.IntToBytes(latest), latesthash...)
+				fmt.Println("latest", *core.IntToBytes(latest), latesthash)
+				return txn.Set([]byte("latest"), k)
+			})
+			if err != nil {
+				fmt.Println(err.Error())
+				return err
+			}
+			fmt.Println("updated until block height", latest, "hash", hex.EncodeToString(latesthash))
+			return nil
+		}
+		v, err := item.Value()
+		if err != nil {
+			return err
+		}
+		if v != nil {
+			heightB := v[:8]
+			core.BytesToInt(&latest, &heightB)
+			latesthash = v[8:]
+		}
+		return nil
+	})
+	if err != nil {
+		fmt.Println("finding latest block", err.Error())
+	}
+	r.Latest = latest
+	r.LatestHash = latesthash
+	return
 }
