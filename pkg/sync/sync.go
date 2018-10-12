@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	fallocate "github.com/detailyang/go-fallocate"
 	homedir "github.com/mitchellh/go-homedir"
 
 	"github.com/dgraph-io/badger"
@@ -30,7 +29,7 @@ func NewNode() (r *Node) {
 
 	if _, err := os.Stat(blockstoreBaseDir + "/blocks"); !os.IsNotExist(err) {
 		dbOptions := &badger.DefaultOptions
-		dbOptions.Dir = blockstoreBaseDir + "/blockchain"
+		dbOptions.Dir = blockstoreBaseDir + "/index"
 		dbOptions.ValueDir = dbOptions.Dir + "/values"
 		db, err := badger.Open(*dbOptions)
 		if err != nil {
@@ -40,25 +39,12 @@ func NewNode() (r *Node) {
 		r.DB = db
 	}
 
-	blockchain, err := os.Create(blockstoreBaseDir + "/blocks")
-	if err != nil {
-		fmt.Println("creating blockchain file", err.Error())
-		os.Exit(1)
-	}
-
-	err = fallocate.Fallocate(blockchain, 0, 256*256*256*256)
-	if err != nil {
-		fmt.Println("allocating blockchain file", err.Error())
-		os.Exit(1)
-	}
-	r.Chain = blockchain
 	return
 }
 
 // Close shuts down the blockchain sync server
 func (r *Node) Close() *Node {
 	r.DB.Close()
-	r.Chain.Close()
 	return r
 }
 
@@ -67,7 +53,7 @@ func (r *Node) Sync() *Node {
 	var hashes [][]byte
 	var position uint64
 	limit := r.GetBestBlockHeight()
-	start, _, _ := r.GetLatestSynced()
+	start, _ := r.GetLatestSynced()
 	var value []byte
 	if start != 0 {
 		err := r.DB.View(func(txn *badger.Txn) error {
@@ -91,7 +77,6 @@ func (r *Node) Sync() *Node {
 			lB := append(value[38:41], []byte{0}...)
 			core.BytesToInt(&length, &lB)
 			start += int64(length)
-			r.Chain.Seek(start, 0)
 			fmt.Println("seeking to end of last record at position", start)
 		}
 
@@ -111,7 +96,6 @@ func (r *Node) Sync() *Node {
 			begin := position
 			length := uint32(len(bytes))
 			position += uint64(length)
-			r.Chain.Write(bytes)
 
 			k1 := append([]byte{1}, removeTrailingZeroes(*core.IntToBytes(i))...)
 
@@ -164,63 +148,9 @@ func (r *Node) Sync() *Node {
 }
 
 // GetLatestSynced returns the newest block height stored in the database, updates it if it wasn't already stored
-func (r *Node) GetLatestSynced() (latest uint32, latesthash []byte, end uint64) {
-	if r.Latest != 0 && r.LatestHash != nil && r.End != 0 {
-		return r.Latest, r.LatestHash, r.End
+func (r *Node) GetLatestSynced() (latest uint32, latesthash []byte) {
+	if r.Latest != 0 && r.LatestHash != nil {
+		return r.Latest, r.LatestHash
 	}
-	err := r.DB.View(func(txn *badger.Txn) error {
-		item, _ := txn.Get([]byte("latest"))
-		if item == nil {
-			opt := badger.DefaultIteratorOptions
-			opt.PrefetchValues = false
-			iter := txn.NewIterator(opt)
-			defer iter.Close()
-			var key []byte
-			for iter.Rewind(); iter.Valid(); iter.Next() {
-				item := iter.Item()
-				key = item.Key()
-				value, err := item.Value()
-				if err != nil {
-					fmt.Println("reading key/value pairs", err.Error())
-					os.Exit(1)
-				}
-				var height uint32
-				if key[0] == 1 {
-					h := append(key[1:8], 0)
-					core.BytesToInt(&height, &h)
-					if height > latest {
-						latest = height
-						latesthash = value
-					}
-				}
-			}
-			err := r.DB.Update(func(txn *badger.Txn) error {
-				k := append(*core.IntToBytes(latest), latesthash...)
-				fmt.Println("latest", *core.IntToBytes(latest), latesthash)
-				return txn.Set([]byte("latest"), k)
-			})
-			if err != nil {
-				fmt.Println(err.Error())
-				return err
-			}
-			fmt.Println("updated until block height", latest, "hash", hex.EncodeToString(latesthash))
-			return nil
-		}
-		v, err := item.Value()
-		if err != nil {
-			return err
-		}
-		if v != nil {
-			heightB := v[:8]
-			core.BytesToInt(&latest, &heightB)
-			latesthash = v[8:]
-		}
-		return nil
-	})
-	if err != nil {
-		fmt.Println("finding latest block", err.Error())
-	}
-	r.Latest = latest
-	r.LatestHash = latesthash
 	return
 }

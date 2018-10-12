@@ -10,17 +10,8 @@ func EncodeKV(in interface{}) (k, v []byte) {
 		// 1 identifies a block record, trailing zeroes are removed from height value
 		k = append([]byte{1}, removeTrailingZeroes(*core.IntToBytes(I.Height))...)
 
-		// 3 bytes (24 bits) of length are encoded, allowing up to 16mb block size
-		l := (*core.IntToBytes(I.Length))[:3]
-		// a prefix byte of the length of the start point in the blockchain as a contiguous string of bytes where the block is stored, and trailing zeroes removed (saving space not storing nothing)
-
-		// The start position is stored with a prefix denoting length of nonzero bytes, trailing bytes are omitted to save space
-		s := removeTrailingZeroes(*core.IntToBytes(I.Start))
-
 		// The full 32 byte block hash next has its 'difficulty' zero prefix bytes removed
-		h := removeLeadingZeroes(I.Hash)
-
-		v = append(append(l, s...), h...)
+		v = removeLeadingZeroes(I.Hash)
 
 	case Hash:
 		I := in.(Hash)

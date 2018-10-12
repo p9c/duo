@@ -14,25 +14,12 @@ func DecodeKV(k, v []byte) interface{} {
 		var height uint32
 		core.BytesToInt(&height, &hB)
 
-		lB := append(v[:3], []byte{0}...)
-		var length uint32
-		core.BytesToInt(&length, &lB)
-
-		sL := v[3]
-		sB := v[4 : 4+sL]
-		sPadL := 8 - sL
-		sB = append(sB, make([]byte, sPadL)...)
-		var start uint64
-		core.BytesToInt(&start, &sB)
-
-		h := v[4+sL:]
+		h := append(make([]byte, 32-len(v)), v...)
 
 		return []interface{}{
 			k[0],
 			&Block{
 				Height: height,
-				Length: length,
-				Start:  start,
 				Hash:   h,
 			},
 		}
@@ -41,11 +28,11 @@ func DecodeKV(k, v []byte) interface{} {
 		// key is 8 bytes of HHash64
 		hhash := k[1:]
 
-		// value is trailing zero byte truncated 32 bit block height
+		// The value only stores the non-zero trailing bytes
 		hL := len(v)
 		hPad := 4 - hL
 		var height uint32
-		hB := append(make([]byte, hPad), k[1:]...)
+		hB := append(k[1:], make([]byte, hPad)...)
 		core.BytesToInt(&height, &hB)
 		return []interface{}{
 			k[0],

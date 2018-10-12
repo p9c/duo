@@ -1,8 +1,6 @@
 package sync
 
 import (
-	"os"
-
 	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/rpc"
 
@@ -19,23 +17,19 @@ import (
 type Node struct {
 	RPC        *rpc.Client
 	DB         *badger.DB
-	Chain      *os.File
 	Latest     uint32
 	LatestHash []byte
-	End        uint64
 	Best       uint32
 	BestTime   int64
 	core.State
 }
 
-// Block links height to disk position and hash. This record type is identified by a prefix 1 byte
+// Block links height to hash. This record type is identified by a prefix 1 byte
 type Block struct {
 	// key
 	Height uint32
 	// value
-	Length uint32
-	Start  uint64
-	Hash   []byte
+	Hash []byte
 }
 
 // Hash links the block hash to the height. This enables reverse lookup from hash to height. In the database the height value is pruned of its' trailing zeros to save space.
