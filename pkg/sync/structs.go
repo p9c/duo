@@ -38,7 +38,7 @@ type Block struct {
 	Hash   []byte
 }
 
-// Hash links the block hash to the height. This enables reverse lookup from hash to height.
+// Hash links the block hash to the height. This enables reverse lookup from hash to height. In the database the height value is pruned of its' trailing zeros to save space.
 type Hash struct {
 	// key
 	HHash []byte
@@ -58,7 +58,7 @@ type Address struct {
 	Locations []Location
 }
 
-// Location is a spsecification for a transaction in a block
+// Location is a specification for a transaction in a block. 32 bits encodes up to 4 billion (more than enough) blocks and 16 bits for transaction number allows addressing up to 65536 transactions in the array inside a block, which is precisely the information required to gather the inputs and outputs and compute a balance.
 type Location struct {
 	Height uint32
 	TxNum  uint16

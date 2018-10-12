@@ -10,22 +10,22 @@ func DecodeKV(k, v []byte) interface{} {
 		hB := k[1:]
 		hL := len(hB)
 		padL := 4 - hL
-		hB = append(make([]byte, padL), hB...)
+		hB = append(hB, make([]byte, padL)...)
 		var height uint32
 		core.BytesToInt(&height, &hB)
 
-		lB := append([]byte{0}, v[:2]...)
+		lB := append(v[:3], []byte{0}...)
 		var length uint32
 		core.BytesToInt(&length, &lB)
 
-		sL := v[2]
-		sB := v[3 : 3+sL]
+		sL := v[3]
+		sB := v[4 : 4+sL]
 		sPadL := 8 - sL
 		sB = append(sB, make([]byte, sPadL)...)
 		var start uint64
 		core.BytesToInt(&start, &sB)
 
-		h := v[3+sL:]
+		h := v[4+sL:]
 
 		return []interface{}{
 			k[0],
@@ -38,12 +38,14 @@ func DecodeKV(k, v []byte) interface{} {
 		}
 	case 2:
 		// hash reverse lookup
-		hhash := k
+		// key is 8 bytes of HHash64
+		hhash := k[1:]
 
-		hL := len(k)
+		// value is trailing zero byte truncated 32 bit block height
+		hL := len(v)
 		hPad := 4 - hL
 		var height uint32
-		hB := append(k[1:], make([]byte, hPad)...)
+		hB := append(make([]byte, hPad), k[1:]...)
 		core.BytesToInt(&height, &hB)
 		return []interface{}{
 			k[0],
@@ -76,10 +78,4 @@ func DecodeKV(k, v []byte) interface{} {
 		}
 	}
 	return nil
-}
-
-// EncodeKV decodes the record types used in the sync indices
-func EncodeKV(in interface{}) (k, v []byte) {
-
-	return
 }
