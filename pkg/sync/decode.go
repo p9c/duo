@@ -57,7 +57,7 @@ func DecodeKV(k, v []byte) interface{} {
 	case 4:
 		// address record
 		var addr Address
-		addr.HHash = k
+		addr.HHash = k[1:]
 		numRefs := len(v) / 6
 		for i := 0; i < numRefs; i++ {
 			h := v[6*i : 6*i+4]
@@ -75,6 +75,22 @@ func DecodeKV(k, v []byte) interface{} {
 		return []interface{}{
 			k[0],
 			addr,
+		}
+	case 8:
+		// cached balance query results
+		var bal BalanceCache
+		bal.HHash = k[:1]
+
+		bL := v[0]
+		b := v[1 : bL+1]
+		balance := append(b, make([]byte, 8-bL)...)
+		h := v[bL+1:]
+		height := append(h, make([]byte, 4-len(h))...)
+		core.BytesToInt(&bal.Balance, &balance)
+		core.BytesToInt(&bal.Height, &height)
+		return []interface{}{
+			k[0],
+			bal,
 		}
 	}
 	return nil

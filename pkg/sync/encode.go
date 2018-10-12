@@ -42,6 +42,15 @@ func EncodeKV(in interface{}) (k, v []byte) {
 			txnum := *core.IntToBytes(I.Locations[i].TxNum)
 			v = append(append(v, height...), txnum...)
 		}
+	case BalanceCache:
+		I := in.(BalanceCache)
+
+		k = append([]byte{8}, I.HHash...)
+
+		b := removeTrailingZeroes(*core.IntToBytes(I.Balance))
+		k = append([]byte{byte(len(b))}, b...)
+		h := removeTrailingZeroes(*core.IntToBytes(I.Height))
+		k = append(k, h...)
 	}
 	return
 }

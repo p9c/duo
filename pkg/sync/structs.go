@@ -63,3 +63,18 @@ type Location struct {
 	Height uint32
 	TxNum  uint16
 }
+
+// BalanceCache is a result cache that stores the results of previous queries of balances of an address with the contemporary best block height so subsequent queries don't have to make as many RPC queries to get the answer.
+//
+// We aren't storing the tx data, just making it much faster to find it.
+type BalanceCache struct {
+	// key
+	//     Highway Hash 64 of 160 bit address
+	HHash []byte
+
+	// value
+	// Balance is prefix-length-trailing-zero-trimmed
+	Balance uint64
+	// Height is trailing zero trimmed
+	Height uint32
+}
