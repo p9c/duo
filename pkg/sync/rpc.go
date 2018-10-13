@@ -11,8 +11,8 @@ import (
 	"github.com/parallelcointeam/duo/pkg/rpc"
 )
 
-// GetBestBlockHeight returns the newest consensus block height and
-func (r *Node) GetBestBlockHeight() uint32 {
+// LegacyGetBestBlockHeight returns the newest consensus block height and
+func (r *Node) LegacyGetBestBlockHeight() uint32 {
 	resp, err := r.RPC.Call("getinfo", nil)
 	if err != nil {
 		fmt.Println("rpc getinfo", err.Error())
@@ -45,4 +45,15 @@ func (r *Node) GetRawBlock(height uint64) *[]byte {
 		return &bytes
 	}
 	return &[]byte{}
+}
+
+// LegacyGetBlockHash gets the block hash using an external parallelcoind full node
+func (r *Node) LegacyGetBlockHash(height uint32) (blockHash []byte) {
+	getHash, err := r.RPC.Call("getblockhash", []uint64{uint64(height)})
+	if err != nil {
+	} else {
+		unquoted, _ := strconv.Unquote(string(getHash.Result))
+		blockHash, _ = hex.DecodeString(unquoted)
+	}
+	return
 }

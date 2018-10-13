@@ -18,6 +18,7 @@ import (
 func NewNode() (r *Node) {
 	r = new(Node)
 	r.RPC = rpc.NewClient("127.0.0.1", 11048, "user", "pa55word", false)
+
 	var path string
 	var err error
 	if path, err = homedir.Dir(); err != nil {
@@ -27,17 +28,15 @@ func NewNode() (r *Node) {
 
 	blockstoreBaseDir := path + "/" + db.DefaultBaseDir
 
-	if _, err := os.Stat(blockstoreBaseDir + "/blocks"); !os.IsNotExist(err) {
-		dbOptions := &badger.DefaultOptions
-		dbOptions.Dir = blockstoreBaseDir + "/index"
-		dbOptions.ValueDir = dbOptions.Dir + "/values"
-		db, err := badger.Open(*dbOptions)
-		if err != nil {
-			fmt.Println("opening db", err.Error())
-			os.Exit(1)
-		}
-		r.DB = db
+	dbOptions := &badger.DefaultOptions
+	dbOptions.Dir = blockstoreBaseDir + "/index"
+	dbOptions.ValueDir = dbOptions.Dir + "/values"
+	db, err := badger.Open(*dbOptions)
+	if err != nil {
+		fmt.Println("opening db", err.Error())
+		os.Exit(1)
 	}
+	r.DB = db
 
 	return
 }
@@ -50,99 +49,80 @@ func (r *Node) Close() *Node {
 
 // Sync updates the blockchain to the latest current available block height
 func (r *Node) Sync() *Node {
-	var hashes [][]byte
-	var position uint64
-	limit := r.GetBestBlockHeight()
-	start, _ := r.GetLatestSynced()
-	var value []byte
-	if start != 0 {
-		err := r.DB.View(func(txn *badger.Txn) error {
-			var err error
-			item, _ := txn.Get(*core.IntToBytes(start))
-			value, err = item.Value()
-			if !r.SetStatusIf(err).OK() {
-				fmt.Println(err.Error())
-				return err
-			}
-			return nil
-		})
-		if !r.SetStatusIf(err).OK() {
-			fmt.Println(err.Error())
-			return r
-		} else {
-			var start int64
-			var length uint32
-			sB := append(value[32:38], []byte{0, 0}...)
-			core.BytesToInt(&start, &sB)
-			lB := append(value[38:41], []byte{0}...)
-			core.BytesToInt(&length, &lB)
-			start += int64(length)
-			fmt.Println("seeking to end of last record at position", start)
-		}
+	var startHeight uint32
+	var latestB []byte
 
+	// var startBlockHash []byte
+
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte("latest"))
+		if err == nil {
+			latestB, err = item.Value()
+		}
+		return err
+	}))
+	if latestB != nil {
+		heightB := latestB[:4]
+		core.BytesToInt(&startHeight, &heightB)
+
+		// we probably don't need the hash but it's there for other reasons
+		// hashB := latestB[4:]
+		// startBlockHash = append(make([]byte, 32-len(hashB)), hashB...)
 	}
 
-	for i := start; i < limit; i++ {
-		getHash, err := r.RPC.Call("getblockhash", []uint32{i})
-		if err != nil {
-			hashes = append(hashes, []byte{})
-		} else {
-			unquoted, _ := strconv.Unquote(string(getHash.Result))
-			Hash, _ := hex.DecodeString(string(unquoted))
-			hashes = append(hashes, Hash)
-			resp, _ := r.RPC.Call("getblock", []interface{}{hex.EncodeToString(hashes[i]), false})
-			unquoted, _ = strconv.Unquote(string(resp.Result))
-			bytes, _ := hex.DecodeString(unquoted)
-			begin := position
-			length := uint32(len(bytes))
-			position += uint64(length)
+	// If we got a latest height we are assuming that the database is consistent up to this point. If we find errors or just want to recheck we can just delete the latest key and run this function and it will start from zero
 
-			k1 := append([]byte{1}, removeTrailingZeroes(*core.IntToBytes(i))...)
+	bestBlockHeight := r.LegacyGetBestBlockHeight()
 
-			v1 := (*core.IntToBytes(length))[:3]
-			b := removeTrailingZeroes((*core.IntToBytes(begin))[:6])
-			b = append([]byte{byte(len(b))}, b...)
-			H := removeLeadingZeroes(Hash)
-			v1 = append(v1, H...)
-			h := core.Hash64(&Hash)
-
-			k2 := append([]byte{2}, *h...)
-
-			v2 := removeTrailingZeroes(*core.IntToBytes(i))
-
-			err := r.DB.Update(func(txn *badger.Txn) error {
-				return txn.Set(k1, v1)
-			})
+	var v []byte
+	k := []byte("latest")
+	var lastBlockUpdated uint32
+	// bestBlockHeight = 50
+	for i := startHeight; i <= bestBlockHeight; i++ {
+		k1, v1 := EncodeKV(Block{Height: i, Hash: r.LegacyGetBlockHash(i)})
+		h := r.LegacyGetBlockHash(i)
+		k2, v2 := EncodeKV(Hash{
+			HHash:  *core.Hash64(&h),
+			Height: i,
+		})
+		// fmt.Println(k2, v2)
+		r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+			err := txn.Set(k1, v1)
 			if err != nil {
-				fmt.Println("writing kv 1", err.Error())
-				os.Exit(1)
+				return err
 			}
-			err = r.DB.View(func(txn *badger.Txn) error {
-				// TODO make the multiple references each use full 32 bits
-				item, _ := txn.Get(k2)
-				if item != nil {
-					v, err := item.Value()
-					if err != nil {
-						fmt.Println("reading colliding hash", err.Error())
-						os.Exit(1)
-					}
-					fmt.Println("COLLISION ON HASH64 OF BLOCKHASH", k2)
-					v2 = append(v, v2...)
-				}
-				return nil
-			})
-			err = r.DB.Update(func(txn *badger.Txn) error {
-				return txn.Set(k2, v2)
-			})
-			if err != nil {
-				fmt.Println("writing kv 2", err.Error())
-				os.Exit(1)
-			}
-			// fmt.Println()
-		}
+			err = txn.Set(k2, v2)
+			return err
+		}))
+		lastBlockUpdated = i
 		if i%1000 == 0 {
-			fmt.Print(i, "...")
+			// update the latest
+			r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+				v = append(*core.IntToBytes(lastBlockUpdated),
+					r.LegacyGetBlockHash(lastBlockUpdated)...)
+				err := txn.Set(k, v)
+				return err
+			}))
+			fmt.Print(lastBlockUpdated, "...")
 		}
+		if !r.OK() {
+			break
+		}
+	}
+	fmt.Println("done")
+
+	// update the latest
+	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+		v = append(*core.IntToBytes(lastBlockUpdated),
+			r.LegacyGetBlockHash(lastBlockUpdated)...)
+		err := txn.Set(k, v)
+		return err
+	}))
+	if r.OK() {
+		r.Latest = lastBlockUpdated
+		hS := string(r.LegacyGetBlockHash(lastBlockUpdated))
+		hS, _ = strconv.Unquote(hS)
+		r.LatestHash, _ = hex.DecodeString(hS)
 	}
 	return r
 }
@@ -153,4 +133,26 @@ func (r *Node) GetLatestSynced() (latest uint32, latesthash []byte) {
 		return r.Latest, r.LatestHash
 	}
 	return
+}
+
+// RemoveOldVersions walks the database and removes old versions of records
+func (r *Node) RemoveOldVersions() *Node {
+	opt := badger.DefaultIteratorOptions
+	opt.PrefetchValues = false
+	err := r.DB.Update(func(txn *badger.Txn) error {
+		iter := txn.NewIterator(opt)
+		defer iter.Close()
+		for iter.Rewind(); iter.Valid(); iter.Next() {
+			item := iter.Item()
+			item.DiscardEarlierVersions()
+			// if result {
+			// 	fmt.Println(item.Value())
+			// }
+		}
+		return nil
+	})
+	if !r.SetStatusIf(err).OK() {
+		fmt.Println("\nERROR:", r.Error())
+	}
+	return r
 }
