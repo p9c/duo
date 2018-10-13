@@ -54,7 +54,7 @@ func (r *Node) Sync() *Node {
 
 	// var startBlockHash []byte
 
-	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+	r.SetStatusIf(r.DB.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("latest"))
 		if err == nil {
 			latestB, err = item.Value()
