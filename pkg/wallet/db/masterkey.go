@@ -24,7 +24,7 @@ func (r *DB) ReadMasterKeys() (BC []*bc.BlockCrypt) {
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
-			key := item.Key()
+			key := item.KeyCopy(nil)
 			value, _ := item.Value()
 			table := key[:8]
 			if bytes.Compare(table, rec.Tables["MasterKey"]) == 0 {
@@ -99,9 +99,9 @@ func (r *DB) EraseAllMasterKeys() *DB {
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			counter++
 			item := iter.Item()
-			if string(item.Key()[:8]) == rec.TS["MasterKey"] {
+			if string(item.KeyCopy(nil)[:8]) == rec.TS["MasterKey"] {
 				r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-					return txn.Delete(item.Key())
+					return txn.Delete(item.KeyCopy(nil))
 				}))
 			}
 		}

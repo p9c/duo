@@ -124,7 +124,7 @@ func (r *DB) GetAllAccountIDs() (out []rec.Idx) {
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
-			k := item.Key()
+			k := item.KeyCopy(nil)
 			table := string(k[:8])
 			if table == rec.TS["Account"] {
 				out = append(out, k[8:16])

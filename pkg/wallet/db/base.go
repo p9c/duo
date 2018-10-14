@@ -66,7 +66,7 @@ func (r *DB) Dump() {
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			counter++
 			item := iter.Item()
-			k := item.Key()
+			k := item.KeyCopy(nil)
 			// v, err := item.Value()
 			meta := item.UserMeta()
 			t := rec.TS
@@ -102,7 +102,7 @@ func (r *DB) DeleteAll() *DB {
 			counter++
 			item := iter.Item()
 			err := r.DB.Update(func(txn *badger.Txn) error {
-				return txn.Delete(item.Key())
+				return txn.Delete(item.KeyCopy(nil))
 			})
 			if err != nil {
 				r.SetStatusIf(err)
@@ -136,7 +136,7 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
-			k := item.Key()
+			k := item.KeyCopy(nil)
 			v, err := item.Value()
 			if !r.SetStatusIf(err).OK() {
 				return r
@@ -146,25 +146,25 @@ func (r *DB) WithBC(BC *bc.BlockCrypt) *DB {
 			switch string(k[:8]) {
 			case t["MasterKey"]:
 				r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-					return txn.Delete(item.Key())
+					return txn.Delete(item.KeyCopy(nil))
 				}))
 			case t["Account"]:
 				if r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-					return txn.Delete(item.Key())
+					return txn.Delete(item.KeyCopy(nil))
 				})).OK() {
 					addr := k[16:]
 					r.WriteAccount(&addr, &v)
 				}
 			case t["Name"]:
 				if r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-					return txn.Delete(item.Key())
+					return txn.Delete(item.KeyCopy(nil))
 				})).OK() {
 					addr := k[16:]
 					r.WriteName(&addr, &v)
 				}
 			case t["Key"]:
 				if r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-					return txn.Delete(item.Key())
+					return txn.Delete(item.KeyCopy(nil))
 				})).OK() {
 					priv := v[:32]
 					pub := v[32:]
@@ -206,7 +206,7 @@ func (r *DB) RemoveBC() *DB {
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
-			k := item.Key()
+			k := item.KeyCopy(nil)
 			v, err := item.Value()
 			meta := item.UserMeta()
 			if !r.SetStatusIf(err).OK() {
@@ -218,7 +218,7 @@ func (r *DB) RemoveBC() *DB {
 			switch table {
 			case t["MasterKey"]:
 				r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-					return txn.Delete(item.Key())
+					return txn.Delete(item.KeyCopy(nil))
 				}))
 			case t["Name"]:
 				Naddress := k[16:]

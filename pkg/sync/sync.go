@@ -2,10 +2,12 @@ package sync
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
 
+	"github.com/anaskhan96/base58check"
 	homedir "github.com/mitchellh/go-homedir"
 
 	"github.com/dgraph-io/badger"
@@ -49,43 +51,24 @@ func (r *Node) Close() *Node {
 
 // Sync updates the blockchain to the latest current available block height
 func (r *Node) Sync() *Node {
-	var startHeight uint32
-	var latestB []byte
-
-	// var startBlockHash []byte
-
-	r.SetStatusIf(r.DB.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte("latest"))
-		if err == nil {
-			latestB, err = item.Value()
-		}
-		return err
-	}))
-	if latestB != nil {
-		heightB := latestB[:4]
-		core.BytesToInt(&startHeight, &heightB)
-
-		// we probably don't need the hash but it's there for other reasons
-		// hashB := latestB[4:]
-		// startBlockHash = append(make([]byte, 32-len(hashB)), hashB...)
-	}
-
+	startHeight := r.getLatest()
 	// If we got a latest height we are assuming that the database is consistent up to this point. If we find errors or just want to recheck we can just delete the latest key and run this function and it will start from zero
 
 	bestBlockHeight := r.LegacyGetBestBlockHeight()
 
 	var v []byte
-	k := []byte("latest")
 	var lastBlockUpdated uint32
-	// bestBlockHeight = 50
 	for i := startHeight; i <= bestBlockHeight; i++ {
-		k1, v1 := EncodeKV(Block{Height: i, Hash: r.LegacyGetBlockHash(i)})
+		foundtx := false
+		foundrepeat := false
 		h := r.LegacyGetBlockHash(i)
+		k1, v1 := EncodeKV(Block{Height: i, Hash: h})
 		k2, v2 := EncodeKV(Hash{
 			HHash:  *core.Hash64(&h),
 			Height: i,
 		})
-		// fmt.Println(k2, v2)
+
+		// Set the keys for the forward and reverse height/hash lookup table
 		r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
 			err := txn.Set(k1, v1)
 			if err != nil {
@@ -94,16 +77,86 @@ func (r *Node) Sync() *Node {
 			err = txn.Set(k2, v2)
 			return err
 		}))
+
+		// Update the address index, append the new reference if the record already exists
+		resp, err := r.RPC.Call("getblock", []interface{}{hex.EncodeToString(h), true})
+		if !r.SetStatusIf(err).OK() {
+			fmt.Println("getting block", r.Error())
+		}
+		var blk rpc.GetBlock
+		if !r.SetStatusIf(json.Unmarshal(resp.Result, &blk)).OK() {
+			fmt.Println("unmarshalling block json", r.Error())
+			return r
+		}
+
+		for j := range blk.Tx {
+			resp, err := r.RPC.Call("getrawtransaction", []interface{}{blk.Tx[j], 1})
+			if err == nil {
+				foundtx = true
+				// fmt.Println("tx", j)
+				var tx rpc.RawTransaction
+				err = json.Unmarshal(resp.Result, &tx)
+				if err != nil {
+					fmt.Println("unmarshalling transaction", err)
+				} else {
+					for k := range tx.Vout {
+						for l := range tx.Vout[k].ScriptPubKey.Addresses {
+							addr := tx.Vout[k].ScriptPubKey.Addresses[l]
+							id, _ := base58check.Decode(addr)
+							I, _ := hex.DecodeString(id[2:])
+							hhash := *core.Hash64(&I)
+							height := *core.IntToBytes(i)
+							posI := uint16(k)
+							pos := *core.IntToBytes(posI)
+
+							k3 := append([]byte{16}, hhash...)
+							v3 := append(pos, height...)
+
+							r.SetStatusIf(r.DB.View(func(txn *badger.Txn) error {
+								item, err := txn.Get(append([]byte{16}, hhash...))
+								if item != nil {
+									existing, err := item.ValueCopy(nil)
+									if err == nil {
+										foundrepeat = true
+										v3 = append(existing, v3...)
+										return nil
+									}
+								}
+								return err
+							}))
+							r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+								v = pruneToHeight(v3, i)
+								err = txn.Set(k3, v3)
+								return err
+							}))
+						}
+					}
+				}
+			}
+		}
+
 		lastBlockUpdated = i
-		if i%1000 == 0 {
-			// update the latest
-			r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-				v = append(*core.IntToBytes(lastBlockUpdated),
-					r.LegacyGetBlockHash(lastBlockUpdated)...)
-				err := txn.Set(k, v)
-				return err
-			}))
-			fmt.Print(lastBlockUpdated, "...")
+		// update the latest
+		r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+			v = append(*core.IntToBytes(lastBlockUpdated),
+				r.LegacyGetBlockHash(lastBlockUpdated)...)
+			err := txn.Set([]byte("latest"), v)
+			return err
+		}))
+		if i%288 == 0 {
+			fmt.Println()
+		}
+		if i%72 == 0 {
+			fmt.Printf("\n%7d ", i)
+		} else {
+			switch {
+			case !foundtx && !foundrepeat:
+				fmt.Print(".")
+			case foundtx && !foundrepeat:
+				fmt.Print("*")
+			case foundtx && foundrepeat:
+				fmt.Print("+")
+			}
 		}
 		if !r.OK() {
 			break
@@ -111,13 +164,6 @@ func (r *Node) Sync() *Node {
 	}
 	fmt.Println("done")
 
-	// update the latest
-	r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-		v = append(*core.IntToBytes(lastBlockUpdated),
-			r.LegacyGetBlockHash(lastBlockUpdated)...)
-		err := txn.Set(k, v)
-		return err
-	}))
 	if r.OK() {
 		r.Latest = lastBlockUpdated
 		hS := string(r.LegacyGetBlockHash(lastBlockUpdated))
@@ -137,6 +183,8 @@ func (r *Node) GetLatestSynced() (latest uint32, latesthash []byte) {
 
 // RemoveOldVersions walks the database and removes old versions of records
 func (r *Node) RemoveOldVersions() *Node {
+	fmt.Println("\nRemoving old versions of records")
+	var counter int
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = false
 	err := r.DB.Update(func(txn *badger.Txn) error {
@@ -144,11 +192,12 @@ func (r *Node) RemoveOldVersions() *Node {
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
-			item.DiscardEarlierVersions()
-			// if result {
-			// 	fmt.Println(item.Value())
-			// }
+			if item.DiscardEarlierVersions() {
+				fmt.Print("%")
+				counter++
+			}
 		}
+		fmt.Printf("\n%d old records flushed\n", counter)
 		return nil
 	})
 	if !r.SetStatusIf(err).OK() {

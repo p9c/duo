@@ -67,7 +67,7 @@ func (r *Wallet) LoadKeyPool() *Wallet {
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
-			k := item.Key()
+			k := item.KeyCopy(nil)
 			meta := item.UserMeta()
 			table := string(k[:8])
 			if table == rec.TS["Pool"] {
@@ -277,11 +277,11 @@ func (r *Wallet) EmptyKeyPool() *Wallet {
 		defer iter.Close()
 		for iter.Rewind(); iter.Valid(); iter.Next() {
 			item := iter.Item()
-			k := item.Key()
+			k := item.KeyCopy(nil)
 			table := string(k[:8])
 			if table == rec.TS["Pool"] {
 				r.SetStatusIf(r.DB.DB.Update(func(txn *badger.Txn) error {
-					return txn.Delete(item.Key())
+					return txn.Delete(item.KeyCopy(nil))
 				}))
 			}
 		}

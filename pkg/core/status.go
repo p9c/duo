@@ -40,6 +40,9 @@ func (r *State) SetStatusIf(err error) Status {
 	if err != nil {
 		r.err = err
 		r.Status = r.err.Error()
+	} else {
+		r.err = nil
+		r.Status = ""
 	}
 	return r
 }
