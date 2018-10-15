@@ -127,12 +127,17 @@ func (r *Node) Sync() *Node {
 									if err == nil {
 										foundrepeat = true
 
-										V := append(existing, v3...)
-										v3 = V
+										// fmt.Print("\n", i, " ", len(existing)+len(v3), " ", hex.EncodeToString(existing))
+										// fmt.Println(" " + hex.EncodeToString(v3))
+
+										v3 = encodeAddressRecord(existing, Location{
+											Height: i,
+											TxNum:  uint16(k),
+										})
+
 										if len(v3) > 8192 {
 											hugeaddr = true
 										}
-										// fmt.Println("\nrepeat",)
 										return nil
 									}
 								}
