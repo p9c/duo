@@ -1,6 +1,8 @@
 package sync
 
-import "github.com/parallelcointeam/duo/pkg/core"
+import (
+	"encoding/binary"
+)
 
 // EncodeKV decodes the record types used in the sync indices
 func EncodeKV(in interface{}) (k, v []byte) {
@@ -8,7 +10,10 @@ func EncodeKV(in interface{}) (k, v []byte) {
 	case Block:
 		I := in.(Block)
 		// 1 identifies a block record, trailing zeroes are removed from height value
-		k = append([]byte{1}, removeTrailingZeroes(*core.IntToBytes(I.Height))...)
+		k = make([]byte, 5)
+		l := binary.PutUvarint(k, uint64(I.Height))
+		k = k[:l]
+		k = append([]byte{1}, k...)
 
 		// The full 32 byte block hash next has its 'difficulty' zero prefix bytes removed
 		v = removeLeadingZeroes(I.Hash)
@@ -20,7 +25,9 @@ func EncodeKV(in interface{}) (k, v []byte) {
 		k = append([]byte{2}, I.HHash...)
 
 		// Height is stored with trailing zeroes omitted as in the Block record
-		v = removeTrailingZeroes(*core.IntToBytes(I.Height))
+		v = make([]byte, 5)
+		l := binary.PutUvarint(v, uint64(I.Height))
+		v = v[:l]
 
 	case Address:
 		I := in.(Address)
@@ -29,8 +36,12 @@ func EncodeKV(in interface{}) (k, v []byte) {
 		k = append([]byte{4}, I.HHash...)
 
 		for i := range I.Locations {
-			height := *core.IntToBytes(I.Locations[i].Height)
-			txnum := *core.IntToBytes(I.Locations[i].TxNum)
+			height := make([]byte, 5)
+			txnum := make([]byte, 3)
+			l := binary.PutUvarint(height, uint64(I.Locations[i].Height))
+			height = height[:l]
+			l = binary.PutUvarint(txnum, uint64(I.Locations[i].TxNum))
+			txnum = txnum[:l]
 			v = append(append(v, height...), txnum...)
 		}
 	case BalanceCache:
@@ -38,10 +49,13 @@ func EncodeKV(in interface{}) (k, v []byte) {
 
 		k = append([]byte{8}, I.HHash...)
 
-		b := removeTrailingZeroes(*core.IntToBytes(I.Balance))
-		k = append([]byte{byte(len(b))}, b...)
-		h := removeTrailingZeroes(*core.IntToBytes(I.Height))
-		k = append(k, h...)
+		b := make([]byte, 9)
+		l := binary.PutUvarint(b, I.Balance)
+		b = b[:l]
+		h := make([]byte, 5)
+		l = binary.PutUvarint(h, uint64(I.Height))
+		h = h[:l]
+		v = append(b, h...)
 	}
 	return
 }

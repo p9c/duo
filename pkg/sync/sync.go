@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -31,6 +32,8 @@ func NewNode() (r *Node) {
 	blockstoreBaseDir := path + "/" + db.DefaultBaseDir
 
 	dbOptions := &badger.DefaultOptions
+	// dbOptions.ValueThreshold = 40960
+	// dbOptions.NumVersionsToKeep = 1
 	dbOptions.Dir = blockstoreBaseDir + "/index"
 	dbOptions.ValueDir = dbOptions.Dir + "/values"
 	db, err := badger.Open(*dbOptions)
@@ -70,11 +73,11 @@ func (r *Node) Sync() *Node {
 
 		// Set the keys for the forward and reverse height/hash lookup table
 		r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-			err := txn.Set(k1, v1)
+			err := txn.SetWithDiscard(k1, v1, 0)
 			if err != nil {
 				return err
 			}
-			err = txn.Set(k2, v2)
+			err = txn.SetWithDiscard(k2, v2, 0)
 			return err
 		}))
 
@@ -89,6 +92,7 @@ func (r *Node) Sync() *Node {
 			return r
 		}
 
+		hugeaddr := false
 		for j := range blk.Tx {
 			resp, err := r.RPC.Call("getrawtransaction", []interface{}{blk.Tx[j], 1})
 			if err == nil {
@@ -105,9 +109,13 @@ func (r *Node) Sync() *Node {
 							id, _ := base58check.Decode(addr)
 							I, _ := hex.DecodeString(id[2:])
 							hhash := *core.Hash64(&I)
-							height := *core.IntToBytes(i)
-							posI := uint16(k)
-							pos := *core.IntToBytes(posI)
+							height := make([]byte, 5)
+							l := binary.PutUvarint(height, uint64(i))
+							height = height[:l]
+
+							pos := make([]byte, 3)
+							l = binary.PutUvarint(pos, uint64(k))
+							pos = pos[:l]
 
 							k3 := append([]byte{16}, hhash...)
 							v3 := append(pos, height...)
@@ -118,15 +126,25 @@ func (r *Node) Sync() *Node {
 									existing, err := item.ValueCopy(nil)
 									if err == nil {
 										foundrepeat = true
-										v3 = append(existing, v3...)
+
+										V := append(existing, v3...)
+										v3 = V
+										if len(v3) > 8192 {
+											hugeaddr = true
+										}
+										// fmt.Println("\nrepeat",)
 										return nil
 									}
 								}
 								return err
 							}))
 							r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-								v = pruneToHeight(v3, i)
-								err = txn.Set(k3, v3)
+								err = txn.Delete(k3)
+								return err
+							}))
+							r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
+								// v = pruneToHeight(v3, i)
+								err = txn.SetWithDiscard(k3, v3, 0)
 								return err
 							}))
 						}
@@ -137,12 +155,15 @@ func (r *Node) Sync() *Node {
 
 		lastBlockUpdated = i
 		// update the latest
+		v = append(*core.IntToBytes(lastBlockUpdated),
+			r.LegacyGetBlockHash(lastBlockUpdated)...)
 		r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-			v = append(*core.IntToBytes(lastBlockUpdated),
-				r.LegacyGetBlockHash(lastBlockUpdated)...)
-			err := txn.Set([]byte("latest"), v)
+			err = txn.SetWithDiscard([]byte("latest"), v, 0)
 			return err
 		}))
+		if i&16384 == 0 {
+			r.DB.RunValueLogGC(0.5)
+		}
 		if i%288 == 0 {
 			fmt.Println()
 		}
@@ -150,6 +171,8 @@ func (r *Node) Sync() *Node {
 			fmt.Printf("\n%7d ", i)
 		} else {
 			switch {
+			case hugeaddr:
+				fmt.Print("!")
 			case !foundtx && !foundrepeat:
 				fmt.Print(".")
 			case foundtx && !foundrepeat:
@@ -200,6 +223,7 @@ func (r *Node) RemoveOldVersions() *Node {
 		fmt.Printf("\n%d old records flushed\n", counter)
 		return nil
 	})
+	r.DB.RunValueLogGC(0.5)
 	if !r.SetStatusIf(err).OK() {
 		fmt.Println("\nERROR:", r.Error())
 	}

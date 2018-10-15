@@ -71,7 +71,7 @@ func (r *Node) UpdateAddresses() *Node {
 							r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
 								v = pruneToHeight(v, i)
 								fmt.Println("k", k, "v", v)
-								err = txn.Set(k, v)
+								err = txn.SetWithDiscard(k, v, 0)
 								return err
 							}))
 						}
@@ -81,7 +81,7 @@ func (r *Node) UpdateAddresses() *Node {
 		}
 		if i%1000 == 0 {
 			r.SetStatusIf(r.DB.Update(func(txn *badger.Txn) error {
-				return txn.Set([]byte("address"), *core.IntToBytes(i))
+				return txn.SetWithDiscard([]byte("address"), *core.IntToBytes(i), 0)
 			}))
 		}
 	}
