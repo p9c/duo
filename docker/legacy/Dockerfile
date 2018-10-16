@@ -50,13 +50,13 @@ EXPOSE 11048
 EXPOSE 21047
 EXPOSE 21048
 
-WORKDIR /data
+WORKDIR /root
 
 VOLUME /data
 
-RUN ln -s /data /root/.parallelcoin
-
 # CMD tail -f /dev/null
 
-CMD mkdir /root/.parallelcoin;cp /data/parallelcoin.conf /root/.parallelcoin/parallelcoin.conf;\
-  /usr/local/bin/parallelcoind -rpcuser=user -rpcpassword=pa55word -port=11047 -rpcport=11048 -bind=0.0.0.0 -rpcbind=0.0.0.0 -listen -server
+RUN mkdir /root/.parallelcoin
+RUN echo "rpcuser=user">/root/.parallelcoin/parallelcoin.conf
+RUN echo "rpcpassword=pa55word">/root/.parallelcoin/parallelcoin.conf
+CMD /usr/local/bin/parallelcoind -rpcuser=user -rpcpassword=pa55word -port=11047 -rpcport=11048 -bind=0.0.0.0 -rpcbind=0.0.0.0 -listen -server

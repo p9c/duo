@@ -8,7 +8,7 @@ import (
 
 func main() {
 	node := sync.NewNode()
-	node.RemoveOldVersions()
+	// node.RemoveOldVersions()
 	node.Sync()
 	if !node.OK() {
 		fmt.Println(node.Error())

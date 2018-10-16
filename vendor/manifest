@@ -179,6 +179,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/golang/snappy",
+			"repository": "https://github.com/golang/snappy",
+			"vcs": "git",
+			"revision": "2e65f85255dbc3072edf28d6b5b8efc472979f5a",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/hashicorp/hcl",
 			"repository": "https://github.com/hashicorp/hcl",
 			"vcs": "git",

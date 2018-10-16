@@ -130,6 +130,7 @@ func (r *Node) Sync() *Node {
 										// fmt.Print("\n", i, " ", len(existing)+len(v3), " ", hex.EncodeToString(existing))
 										// fmt.Println(" " + hex.EncodeToString(v3))
 
+										// fmt.Println(i)
 										v3 = encodeAddressRecord(existing, Location{
 											Height: i,
 											TxNum:  uint16(k),
@@ -166,9 +167,6 @@ func (r *Node) Sync() *Node {
 			err = txn.SetWithDiscard([]byte("latest"), v, 0)
 			return err
 		}))
-		if i&16384 == 0 {
-			r.DB.RunValueLogGC(0.5)
-		}
 		if i%288 == 0 {
 			fmt.Println()
 		}

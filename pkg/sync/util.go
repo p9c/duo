@@ -2,8 +2,10 @@ package sync
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/dgraph-io/badger"
+	"github.com/golang/snappy"
 	"github.com/parallelcointeam/duo/pkg/core"
 )
 
@@ -48,42 +50,65 @@ func (r *Node) getLatest() (h uint32) {
 }
 
 func decodeAddressRecord(addr []byte) (out []Location, length uint32) {
+	var dec []byte
+	var err error
+	dec, err = snappy.Decode(nil, addr)
+	if err == nil {
+		addr = dec
+	}
 	cursor, length := 0, 0
 	for cursor < len(addr) {
-		var height, txnum uint64
-		height, step := binary.Uvarint(addr[cursor:])
+		var h, n uint64
+		var height uint32
+		var txnum uint16
+		h, step := binary.Uvarint(addr[cursor:])
 		cursor += step
-		txnum, step = binary.Uvarint(addr[cursor:])
+		n, step = binary.Uvarint(addr[cursor:])
 		cursor += step
+		l := len(out)
+		if l > 1 {
+			height = out[l-1].Height + uint32(h)
+		} else {
+			height, txnum = uint32(h), uint16(n)
+		}
 		out = append(out, Location{Height: uint32(height), TxNum: uint16(txnum)})
-		cursor++
+		length++
 	}
 	return
 }
 
 func encodeAddressRecord(existing []byte, loc Location) (out []byte) {
 	ex, _ := decodeAddressRecord(existing)
+	// fmt.Println("ex", ex)
 	ex = append(ex, loc)
+	var h, n []byte
 	for i := range ex {
 		if i == 0 {
-			h := make([]byte, 5)
+			h = make([]byte, 5)
 			l := binary.PutUvarint(h, uint64(ex[0].Height))
 			h = h[:l]
-			n := make([]byte, 5)
+			n = make([]byte, 5)
 			l = binary.PutUvarint(n, uint64(ex[0].TxNum))
 			n = n[:l]
 			out = append(h, n...)
 		} else {
 			nh := ex[i].Height - ex[i-1].Height
-			h := make([]byte, 5)
+			// fmt.Println("\n", ex[i].Height, ex[i-1].Height, nh)
+			h = make([]byte, 5)
 			l := binary.PutUvarint(h, uint64(nh))
 			h = h[:l]
-			n := make([]byte, 5)
-			l = binary.PutUvarint(n, uint64(ex[0].TxNum))
+			n = make([]byte, 5)
+			l = binary.PutUvarint(n, uint64(ex[i].TxNum))
 			n = n[:l]
 			out = append(out, append(h, n...)...)
 		}
+		// fmt.Println("\n", uint64(ex[i].Height), h, uint64(ex[0].TxNum), n)
 	}
-
+	enc := snappy.Encode(nil, out)
+	out = enc
+	if len(enc) > len(out) {
+		fmt.Println("\ncompressor expanded!")
+	}
+	// fmt.Print(len(out)) //, hex.EncodeToString(out))
 	return
 }
