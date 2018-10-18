@@ -1,0 +1,97 @@
+ajkviVcqSE518qMnqME8D9smwggWSyEogW 
+53D824C23FDA79AC92294E2174C01BC303D6BAB4F4EBDA0353 
+is the destination address
+
+102920
+
+
+00000000
+ac
+88f4b4bad603c31bc074214e2992ac79da3fc224d814a976
+19
+000000000bebc200
+01
+00000000
+2f6d75746172745365646f6e2f0d00000005c90500400856679d6a042f485332502f0601920803
+27
+ffffffff
+0000000000000000000000000000000000000000000000000000000000000000
+0100
+00000101
+ef6506f3
+1c33d82a
+56679d68
+f55daf675b4f894359333d770047dc02f2be2b9b667089dfa9962909c80aaaa9
+000000000001bbf8ce581d88fabcc9d3b0dc130eb6d5e4b329c48e6d68d1edcf
+00000202
+
+
+                    00000000                                                                                locktime
+[ TxOut             ac                                                                                      OP_CHECKSIG
+[                   88f4b4bad603c31bc074214e2992ac79da3fc224d814a9                                          Miner's signature on their chosen output address
+[                   76                                                                                      OP_PUSH
+[                   19                                                                                      length of txout scriptsig (25 bytes)
+[                   000000000bebc200                                                                        Tx value (20 million satoshis = 2 coins)
+                    01                                                                                      number of txouts
+[ TxIn              00000000                                                                                sequence number
+[                   2f6d75746172745365646f6e2f0d00000005c90500400856679d6a042f485332502f0601920803          scriptsig (generator type, this is 'coinbase')
+[                   27                                                                                      0x27 is 39 length of txin script
+[                   ffffffff                                                                                prev txout index
+[                   0000000000000000000000000000000000000000000000000000000000000000                        previous txhash
+                    0100                                                                                    optional flag
+                    00000101                                                                                tx version
+[ Block header      ef6506f3                                                                                nonce (4016375539)     
+[                   1c33d82a                                                                                bits
+[                   56679d68                                                                                time
+[                   f55daf675b4f894359333d770047dc02f2be2b9b667089dfa9962909c80aaaa9                        merkletree root (first tx hash)
+[                   000000000001bbf8ce581d88fabcc9d3b0dc130eb6d5e4b329c48e6d68d1edcf                        previous block hash
+[                   00000202                                                                                version
+
+version  prevblockhash                                                    merklehashroot                                                   time     bits     nonce
+00000202 000000000001bbf8ce581d88fabcc9d3b0dc130eb6d5e4b329c48e6d68d1edcf f55daf675b4f894359333d770047dc02f2be2b9b667089dfa9962909c80aaaa9 56679d68 1c33d82a ef6506f3
+1 transactions in block
+version  prevtxhash                                                       outindex
+00000001 0000000000000000000000000000000000000000000000000000000000000000 ffffffff
+value
+089201062f503253
+089201062f503253482f046a9d675608400005c9050000000d2f6e6f64655374726174756d2f000000000100c2eb0b000000001976a914d824c23fda79ac92294e2174c01bc303d6bab4f488ac00000000
+
+
+02020000
+cfedd1686d8ec429b3e4d5b60e13dcb0d3c9bcfa881d58cef8bb010000000000
+a9aa0ac8092996a9df8970669b2bbef202dc4700773d335943894f5b67af5df5
+689d6756
+2ad8331c
+f30665ef
+
+01010000
+0001
+0000000000000000000000000000000000000000000000000000000000000000
+ffffffff
+27
+03089201062f503253482f046a9d675608400005c9050000000d2f6e6f64655374726174756d2f
+00000000
+0100c2eb0b000000
+001976a914d824c23fda79ac92294e2174c01bc303d6bab4f488ac00000000
+
+
+{
+    "hash" : "a0aa90c9392f7c9f413017b2224abbfd9336da779534902d273912c5321ae3e7",
+    "confirmations" : 72317,
+    "size" : 205,
+    "height" : 102920,
+    "version" : 514,
+    "pow_algo_id" : 1,
+    "pow_algo" : "scrypt",
+    "pow_hash" : "000000001769697743aac770234f556d457dfed279b44fef01aa75d9746650ed",
+    "merkleroot" : "f55daf675b4f894359333d770047dc02f2be2b9b667089dfa9962909c80aaaa9",
+    "tx" : [
+        "f55daf675b4f894359333d770047dc02f2be2b9b667089dfa9962909c80aaaa9"
+    ],
+    "time" : 1449631080,
+    "nonce" : 4016375539,
+    "bits" : "1c33d82a",
+    "difficulty" : 4.93777802,
+    "previousblockhash" : "000000000001bbf8ce581d88fabcc9d3b0dc130eb6d5e4b329c48e6d68d1edcf",
+    "nextblockhash" : "000000000001cf7b09b4400263b22d00b547bc4aa6add87a9a8229c650b04b79"
+}
