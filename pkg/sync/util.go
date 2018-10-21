@@ -112,3 +112,98 @@ func encodeAddressRecord(existing []byte, loc Location) (out []byte) {
 	// fmt.Print(len(out)) //, hex.EncodeToString(out))
 	return
 }
+
+// AppendVarint takes any type of integer and returns the Varint
+func AppendVarint(to []byte, in interface{}) (out []byte) {
+	var U uint64
+	var I int64
+	var signed bool
+	switch in.(type) {
+	case uint:
+		U = uint64(in.(uint))
+	case byte:
+		U = uint64(in.(byte))
+	case uint16:
+		U = uint64(in.(uint16))
+	case uint32:
+		U = uint64(in.(uint32))
+	case uint64:
+		U = uint64(in.(uint64))
+	case int:
+		signed = true
+		I = int64(in.(int))
+	case int8:
+		signed = true
+		I = int64(in.(int8))
+	case int16:
+		signed = true
+		I = int64(in.(int16))
+	case int32:
+		signed = true
+		I = int64(in.(int32))
+	case int64:
+		signed = true
+		I = int64(in.(int64))
+	default:
+		return []byte{}
+	}
+	out = make([]byte, 9)
+	if signed {
+		l := binary.PutVarint(out, I)
+		out = out[:l]
+		return append(to, out...)
+	}
+	l := binary.PutUvarint(out, U)
+	out = out[:l]
+	return append(to, out...)
+
+}
+
+// ExtractVarint reads the first varint contained in a given byte slice and returns the value according to the type of the typ parameter, and slices the input bytes removing the extracted integer
+func ExtractVarint(typ interface{}, in []byte) (outbytes []byte, outint interface{}) {
+	switch typ.(type) {
+	case uint:
+		o, l := binary.Uvarint(in)
+		outbytes = in[l:]
+		outint = uint(o)
+	case byte:
+		o, l := binary.Uvarint(in)
+		outbytes = in[l:]
+		outint = byte(o)
+	case uint16:
+		o, l := binary.Uvarint(in)
+		outbytes = in[l:]
+		outint = uint16(o)
+	case uint32:
+		o, l := binary.Uvarint(in)
+		outbytes = in[l:]
+		outint = uint32(o)
+	case uint64:
+		o, l := binary.Uvarint(in)
+		outbytes = in[l:]
+		outint = uint64(o)
+	case int:
+		o, l := binary.Varint(in)
+		outbytes = in[l:]
+		outint = int(o)
+	case int8:
+		o, l := binary.Varint(in)
+		outbytes = in[l:]
+		outint = int8(o)
+	case int16:
+		o, l := binary.Varint(in)
+		outbytes = in[l:]
+		outint = int16(o)
+	case int32:
+		o, l := binary.Varint(in)
+		outbytes = in[l:]
+		outint = int32(o)
+	case int64:
+		o, l := binary.Varint(in)
+		outbytes = in[l:]
+		outint = int64(o)
+	default:
+		return nil, []byte{}
+	}
+	return
+}

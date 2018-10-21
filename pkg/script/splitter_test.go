@@ -103,16 +103,16 @@ func TestGetRawBlock(t *testing.T) {
 			bitlen = 8
 			r = r[50:]
 		}
-
 		fmt.Println()
+
 		fmt.Println("value")
 		fmt.Print(hex.EncodeToString(r[:8]), " ")
 		var x uint64
 		xx := r[:8]
 		core.BytesToInt(&x, &xx)
 		// fmt.Print(hex.EncodeToString(r), " ")
-
 		fmt.Println()
+
 		fmt.Println(hex.EncodeToString(r))
 		fmt.Println()
 	}
