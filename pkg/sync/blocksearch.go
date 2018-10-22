@@ -19,6 +19,7 @@ func (r *Node) GetBlockHash(height uint32) (out []byte) {
 
 // GetHeightFromHash returns the height of a block with a given hash
 func (r *Node) GetHeightFromHash(h []byte) (out uint32) {
+	out = ^uint32(0)
 	r.SetStatusIf(r.DB.View(func(txn *badger.Txn) error {
 		H := *core.Hash64(&h)
 		item, err := txn.Get(append([]byte{2}, H...))
@@ -30,6 +31,5 @@ func (r *Node) GetHeightFromHash(h []byte) (out uint32) {
 		}
 		return err
 	}))
-
-	return ^uint32(0)
+	return
 }

@@ -18,7 +18,7 @@ func TestVarints(t *testing.T) {
 		int32(10020000),
 		uint32(1003230000),
 		int64(10000006932),
-		uint64(1002000302),
+		uint64(10020),
 	}
 	for j := range slice {
 		bytes = AppendVarint(bytes, slice[j])
