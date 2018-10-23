@@ -1,4 +1,4 @@
-package script
+package block
 
 import (
 	"crypto/rand"
@@ -105,15 +105,19 @@ func TestGetRawBlock(t *testing.T) {
 		}
 		fmt.Println()
 
-		fmt.Println("value")
-		fmt.Print(hex.EncodeToString(r[:8]), " ")
-		var x uint64
-		xx := r[:8]
-		core.BytesToInt(&x, &xx)
-		// fmt.Print(hex.EncodeToString(r), " ")
-		fmt.Println()
+		// fmt.Println("value")
+		// fmt.Print(hex.EncodeToString(r[:8]), " ")
+		// var x uint64
+		// xx := r[:8]
+		// core.BytesToInt(&x, &xx)
+		// // fmt.Print(hex.EncodeToString(r), " ")
+		// fmt.Println()
 
-		fmt.Println(hex.EncodeToString(r))
+		var value interface{}
+		r, value = sync.ExtractVarint(uint64(0), r)
+		fmt.Println("value", value.(uint64))
+
+		fmt.Println("\nRest:\n", hex.EncodeToString(r))
 		fmt.Println()
 	}
 }

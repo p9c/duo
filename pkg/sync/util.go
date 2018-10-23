@@ -113,7 +113,7 @@ func encodeAddressRecord(existing []byte, loc Location) (out []byte) {
 	return
 }
 
-// AppendVarint takes any type of integer and returns the Varint
+// AppendVarint takes any type of integer and returns the Varint. This is 7 bits per byte with a continuation marker on the 8th bit
 func AppendVarint(to []byte, in interface{}) (out []byte) {
 	var U uint64
 	var I int64
