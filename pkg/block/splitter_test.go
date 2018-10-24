@@ -93,75 +93,85 @@ func TestGetRawBlock(t *testing.T) {
 		var txCount uint64
 		var txCountIface interface{}
 		r, txCountIface = ExtractCompactInt(txCount, r)
-		// txCount = txCountIface.(uint64)
-		fmt.Println("TxCount                 ", txCountIface)
+		txCount = txCountIface.(uint64)
+		fmt.Println("TxCount                 ", txCount)
 
-		rV := r[:4]
-		r = r[4:]
-		var tx0v uint32
-		core.BytesToInt(&tx0v, &rV)
-		fmt.Println("    tx version          ", tx0v)
+		txc := int(txCount)
+		for txs := 0; txs < txc; txs++ {
 
-		// This is present when there is segwit, which there isn't
-		// fl := r[:2]
-		// fmt.Println(fl)
-		// var flg uint16
-		// core.BytesToInt(&flg, &fl)
-		// fmt.Printf("    flag                 %04x\n", flg)
-		// if flg == 1 {
-		// 	r = r[2:]
-		// }
+			rV := r[:4]
+			r = r[4:]
+			var tx0v uint32
+			core.BytesToInt(&tx0v, &rV)
+			fmt.Println("    tx version          ", tx0v)
 
-		var txV uint64
-		var txI interface{}
-		r, txI = ExtractCompactInt(txV, r)
-		txV = txI.(uint64)
-		fmt.Println("    in-counter          ", txV)
+			// This is present when there is segwit, which there isn't
+			// fl := r[:2]
+			// fmt.Println(fl)
+			// var flg uint16
+			// core.BytesToInt(&flg, &fl)
+			// fmt.Printf("    flag                 %04x\n", flg)
+			// if flg == 1 {
+			// 	r = r[2:]
+			// }
 
-		tx1pth := *rev(r[:32])
-		r = r[32:]
-		fmt.Println("    PrevTxHash          ", hx(tx1pth))
+			var txV uint64
+			var txI interface{}
+			r, txI = ExtractCompactInt(txV, r)
+			txiV := int(txI.(uint64))
+			fmt.Println("    in-counter          ", txV)
 
-		tx1txi := *rev(r[:4])
-		r = r[4:]
-		fmt.Printf("    Prev Txout Index     %08x\n", tx1txi)
+			for txis := 0; txis < txiV; txis++ {
 
-		r, txI = ExtractCompactInt(txV, r)
-		txV = txI.(uint64)
-		fmt.Println("    Txin script length  ", txV)
+				tx1pth := *rev(r[:32])
+				r = r[32:]
+				fmt.Println("    PrevTxHash          ", hx(tx1pth))
 
-		tx1scr := *rev(r[:txV])
-		r = r[txV:]
-		fmt.Println("    script              ", hx(tx1scr))
+				tx1txi := *rev(r[:4])
+				r = r[4:]
+				fmt.Printf("    Prev Txout Index     %08x\n", tx1txi)
 
-		tx1seq := r[:4]
-		r = r[4:]
-		fmt.Println("    seq number          ", hx(tx1seq))
+				r, txI = ExtractCompactInt(txV, r)
+				txV = txI.(uint64)
+				fmt.Println("    Txin script length  ", txV)
 
-		r, txI = ExtractCompactInt(txV, r)
-		txV = txI.(uint64)
-		fmt.Println("    out-counter         ", txV)
+				tx1scr := *rev(r[:txV])
+				r = r[txV:]
+				fmt.Println("    script              ", hx(tx1scr))
 
-		tx1val := r[:8]
-		r = r[8:]
-		var tx1V uint64
-		core.BytesToInt(&tx1V, &tx1val)
-		fmt.Printf("    value                %4.7f\n", float64(tx1V)/core.COIN)
+				tx1seq := r[:4]
+				r = r[4:]
+				fmt.Println("    seq number          ", hx(tx1seq))
+			}
+			r, txI = ExtractCompactInt(txV, r)
+			txoV := int(txI.(uint64))
+			fmt.Println("    out-counter         ", txV)
 
-		r, txI = ExtractCompactInt(txV, r)
-		txV = txI.(uint64)
-		fmt.Println("    Txout script length ", txV)
+			for txos := 0; txos < txoV; txos++ {
 
-		tx1scro := *rev(r[:txV])
-		r = r[txV:]
-		fmt.Println("    script              ", hx(tx1scro))
+				// NEED FOR LOOP HERE
 
-		lockb := *rev(r[:4])
-		r = r[4:]
-		var lock uint32
-		core.BytesToInt(lock, &lockb)
-		fmt.Println("    locktime            ", lock)
+				tx1val := r[:8]
+				r = r[8:]
+				var tx1V uint64
+				core.BytesToInt(&tx1V, &tx1val)
+				fmt.Printf("    value                %4.7f\n", float64(tx1V)/core.COIN)
 
+				r, txI = ExtractCompactInt(txV, r)
+				txV = txI.(uint64)
+				fmt.Println("    Txout script length ", txV)
+
+				tx1scro := *rev(r[:txV])
+				r = r[txV:]
+				fmt.Println("    script              ", hx(tx1scro))
+
+			}
+			lockb := *rev(r[:4])
+			r = r[4:]
+			var lock uint32
+			core.BytesToInt(lock, &lockb)
+			fmt.Println("    locktime            ", lock)
+		}
 		fmt.Println("\nRest:\n", hx(r))
 		fmt.Println()
 	}
