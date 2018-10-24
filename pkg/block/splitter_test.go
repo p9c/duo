@@ -146,7 +146,21 @@ func TestGetRawBlock(t *testing.T) {
 		r = r[8:]
 		var tx1V uint64
 		core.BytesToInt(&tx1V, &tx1val)
-		fmt.Println("    value               ", float64(tx1V)/core.COIN)
+		fmt.Printf("    value                %4.7f\n", float64(tx1V)/core.COIN)
+
+		r, txI = ExtractCompactInt(txV, r)
+		txV = txI.(uint64)
+		fmt.Println("    Txout script length ", txV)
+
+		tx1scro := *rev(r[:txV])
+		r = r[txV:]
+		fmt.Println("    script              ", hx(tx1scro))
+
+		lockb := *rev(r[:4])
+		r = r[4:]
+		var lock uint32
+		core.BytesToInt(lock, &lockb)
+		fmt.Println("    locktime            ", lock)
 
 		fmt.Println("\nRest:\n", hx(r))
 		fmt.Println()
