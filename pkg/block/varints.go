@@ -1,9 +1,13 @@
 package block
 
-import "github.com/parallelcointeam/duo/pkg/core"
+import (
+	"fmt"
 
-// AppendVarint takes any type of integer and returns the Varint. This is for the bitcoin protocol format varint that stores up to FC in 1 byte, FD means two bytes with uint16 after, FE 4 bytes after, FF 8 bytes after. The bytes are in little-endian, with the MSB first
-func AppendVarint(to []byte, in interface{}) (out []byte) {
+	"github.com/parallelcointeam/duo/pkg/core"
+)
+
+// AppendCompactInt takes any type of integer and returns the CompactInt appended to a byte slice. This is for the bitcoin protocol format varint that stores up to FC in 1 byte, FD means two bytes with uint16 after, FE 4 bytes after, FF 8 bytes after. The bytes are in little-endian, with the MSB first
+func AppendCompactInt(to []byte, in interface{}) (out []byte) {
 	var outint uint64
 	switch in.(type) {
 	case uint:
@@ -59,30 +63,53 @@ func AppendVarint(to []byte, in interface{}) (out []byte) {
 	return
 }
 
-// ExtractVarint reads the first varint contained in a given byte slice and returns the value according to the type of the typ parameter, and slices the input bytes removing the extracted integer
-func ExtractVarint(typ interface{}, in []byte) (outbytes []byte, outint interface{}) {
+// ExtractCompactInt reads the first varint contained in a given byte slice and returns the value according to the type of the typ parameter, and slices the input bytes removing the extracted integer
+func ExtractCompactInt(typ interface{}, in []byte) (outbytes []byte, outint interface{}) {
+	var out uint64
 	switch {
 	case in[0] < 0xFD:
 		outbytes = in[1:]
-		outint = outbytes
+		out = uint64(in[0])
 	case in[0] == 0xFD:
-		var out uint16
+		var o uint16
 		t := in[1:3]
-		core.BytesToInt(&out, &t)
+		core.BytesToInt(&o, &t)
 		outbytes = in[3:]
-		outint = out
+		out = uint64(o)
 	case in[0] == 0xFE:
-		var out uint32
+		var o uint32
 		t := in[1:5]
-		core.BytesToInt(&out, &t)
+		core.BytesToInt(&o, &t)
 		outbytes = in[5:]
-		outint = out
+		out = uint64(o)
 	case in[0] == 0xFF:
-		var out uint64
 		t := in[1:9]
 		core.BytesToInt(&out, &t)
 		outbytes = in[9:]
-		outint = out
+	}
+	switch typ.(type) {
+	case byte:
+		outint = byte(out)
+	case uint16:
+		outint = uint16(out)
+	case uint32:
+		outint = uint32(out)
+	case uint64:
+		outint = uint64(out)
+	case int8:
+		outint = int8(out)
+	case int16:
+		outint = int16(out)
+	case int32:
+		outint = int32(out)
+	case int64:
+		outint = int64(out)
+	case int:
+		outint = int(out)
+	case uint:
+		outint = uint(out)
+	default:
+		fmt.Println("wtf?")
 	}
 	return
 }

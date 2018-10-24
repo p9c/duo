@@ -2,13 +2,30 @@ package block
 
 import (
 	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/parallelcointeam/duo/pkg/core"
 	"github.com/parallelcointeam/duo/pkg/sync"
 )
+
+/*
+
+Block Header Format:
+
+Version: Little Endian uint32 - 2 = sha256d, 514 = scrypt
+HashPrevBlock: Little Endian 32 bytes
+HashMerkleRoot: Little Endian 32 bytes
+Time: Big Endian 32 bits unix timestamp seconds since Jan 1 1970 00:00 UTC
+Bits: Little Endian Current PoW target in compact format
+Nonce: Little Endian random 32 bit number incremented for each PoW round
+
+Transactions
+
+
+
+*/
 
 func TestGetRawBlock(t *testing.T) {
 	node := sync.NewNode()
@@ -19,7 +36,6 @@ func TestGetRawBlock(t *testing.T) {
 		for {
 			rand.Read(b)
 			core.BytesToInt(&B, &b)
-			// fmt.Println(B, b)
 			if B < best {
 				break
 			}
@@ -27,105 +43,112 @@ func TestGetRawBlock(t *testing.T) {
 		rb := node.GetRawBlock(uint64(B))
 		r := *rb
 
-		fmt.Println(B)
-		fmt.Println(hex.EncodeToString(rev(r)))
-		fmt.Println()
-		fmt.Println("version  prevblockhash                                                    merklehashroot                                                   time     bits     nonce")
+		fmt.Println("BLOCK", B)
 
-		fmt.Print(hex.EncodeToString(rev(r[:4])), " ")
-		fmt.Print(hex.EncodeToString(rev(r[4:36])), " ")
-		fmt.Print(hex.EncodeToString(rev(r[36:68])), " ")
-		fmt.Print(hex.EncodeToString(rev(r[68:72])), " ")
-		fmt.Print(hex.EncodeToString(rev(r[72:76])), " ")
-		fmt.Println(hex.EncodeToString(rev(r[76:80])), " ")
-
-		fmt.Println(r[81], "transactions in block")
-		var txcount uint64
-		txcount = 0
-		bitlen := 1
-		switch {
-		case r[81] < 0xFD:
-			txcount = uint64(r[81])
-			bitlen = 1
-			// fmt.Println("txcount", txcount, "bitlen", bitlen)
-			r = r[82:]
-		case r[81] == 0xFD:
-			t := r[82:84]
-			core.BytesToInt(&txcount, &t)
-			// txcount += uint64(r[81])
-			bitlen = 2
-			r = r[84:]
-		case r[81] == 0xFE:
-			t := r[82:86]
-			core.BytesToInt(&txcount, &t)
-			// txcount += uint64(r[81])
-			bitlen = 4
-			r = r[86:]
-		case r[81] == 0xFF:
-			t := r[82:90]
-			core.BytesToInt(&txcount, &t)
-			// txcount += uint64(r[81])
-			bitlen = 8
-			r = r[90:]
+		var Version uint32
+		v := r[:4]
+		r = r[4:]
+		core.BytesToInt(&Version, &v)
+		fmt.Print("Version ", Version)
+		switch Version {
+		case 2:
+			fmt.Println(" : SHA256D PoW")
+		case 514:
+			fmt.Println(" : Scrypt PoW")
 		}
-		_ = bitlen
 
-		// fmt.Println("00000001 0000000000000000000000000000000000000000000000000000000000000000 ffffffff"
-		fmt.Println("version  prevtxhash                                                       outindex")
-		fmt.Print(hex.EncodeToString(r[:4]), " ")
+		HashPrevBlock := *rev(r[:32])
+		r = r[32:]
+		fmt.Println("HashPrevBlock           ", hx(HashPrevBlock))
 
-		fmt.Print(hex.EncodeToString(r[4:36]), " ")
+		HashMerkleRoot := *rev(r[:32])
+		r = r[32:]
+		fmt.Println("HashMerkleRoot          ", hx(HashMerkleRoot))
 
-		fmt.Print(hex.EncodeToString(r[36:40]), " ")
+		ti := r[:4]
+		r = r[4:]
+		var t32 int32
+		core.BytesToInt(&t32, &ti)
+		BlockTime := int64(t32)
+		fmt.Println("Unix timestamp          ", hx(ti))
+		fmt.Println("                    Time", time.Unix(BlockTime, 0))
 
-		switch {
-		case r[41] < 0xFD:
-			txcount = uint64(r[41])
-			bitlen = 1
-			// fmt.Println("txcount", txcount, "bitlen", bitlen)
-			r = r[42:]
-		case r[41] == 0xFD:
-			t := r[42:44]
-			core.BytesToInt(&txcount, &t)
-			// txcount += uint64(r[81])
-			bitlen = 2
-			r = r[44:]
-		case r[41] == 0xFE:
-			t := r[42:46]
-			core.BytesToInt(&txcount, &t)
-			// txcount += uint64(r[81])
-			bitlen = 4
-			r = r[46:]
-		case r[41] == 0xFF:
-			t := r[42:50]
-			core.BytesToInt(&txcount, &t)
-			// txcount += uint64(r[81])
-			bitlen = 8
-			r = r[50:]
-		}
-		fmt.Println()
+		Bits := *rev(r[:4])
+		r = r[4:]
+		fmt.Println("Bits                    ", hx(Bits))
+		coeff := Bits[0]
+		base := Bits[1:]
+		tail := make([]byte, coeff-3)
+		tgt := append(base, tail...)
+		Target := append(make([]byte, 32-len(tgt)), tgt...)
+		fmt.Println("                  Target", hx(Target))
 
-		// fmt.Println("value")
-		// fmt.Print(hex.EncodeToString(r[:8]), " ")
-		// var x uint64
-		// xx := r[:8]
-		// core.BytesToInt(&x, &xx)
-		// // fmt.Print(hex.EncodeToString(r), " ")
-		// fmt.Println()
+		nn := r[:4]
+		nn = *rev(nn)
+		r = r[4:]
+		var Nonce uint32
+		core.BytesToInt(&Nonce, &nn)
+		fmt.Println("Nonce                   ", Nonce)
 
-		var value interface{}
-		r, value = sync.ExtractVarint(uint64(0), r)
-		fmt.Println("value", value.(uint64))
+		var txCount uint64
+		var txCountIface interface{}
+		r, txCountIface = ExtractCompactInt(txCount, r)
+		// txCount = txCountIface.(uint64)
+		fmt.Println("TxCount                 ", txCountIface)
 
-		fmt.Println("\nRest:\n", hex.EncodeToString(r))
+		rV := r[:4]
+		r = r[4:]
+		var tx0v uint32
+		core.BytesToInt(&tx0v, &rV)
+		fmt.Println("    tx version          ", tx0v)
+
+		// This is present when there is segwit, which there isn't
+		// fl := r[:2]
+		// fmt.Println(fl)
+		// var flg uint16
+		// core.BytesToInt(&flg, &fl)
+		// fmt.Printf("    flag                 %04x\n", flg)
+		// if flg == 1 {
+		// 	r = r[2:]
+		// }
+
+		var txV uint64
+		var txI interface{}
+		r, txI = ExtractCompactInt(txV, r)
+		txV = txI.(uint64)
+		fmt.Println("    in-counter          ", txV)
+
+		tx1pth := *rev(r[:32])
+		r = r[32:]
+		fmt.Println("    PrevTxHash          ", hx(tx1pth))
+
+		tx1txi := *rev(r[:4])
+		r = r[4:]
+		fmt.Printf("    Prev Txout Index     %08x\n", tx1txi)
+
+		r, txI = ExtractCompactInt(txV, r)
+		txV = txI.(uint64)
+		fmt.Println("    Txin script length  ", txV)
+
+		tx1scr := *rev(r[:txV])
+		r = r[txV:]
+		fmt.Println("    script              ", hx(tx1scr))
+
+		tx1seq := r[:4]
+		r = r[4:]
+		fmt.Println("    seq number          ", hx(tx1seq))
+
+		r, txI = ExtractCompactInt(txV, r)
+		txV = txI.(uint64)
+		fmt.Println("    out-counter         ", txV)
+
+		tx1val := r[:8]
+		r = r[8:]
+		var tx1V uint64
+		core.BytesToInt(&tx1V, &tx1val)
+		fmt.Println("    value               ", float64(tx1V)/core.COIN)
+
+		fmt.Println("\nRest:\n", hx(r))
 		fmt.Println()
 	}
-}
-
-func rev(in []byte) (out []byte) {
-	out = make([]byte, len(in))
-	for i := range in {
-		out[len(in)-i-1] = in[i]
-	}
-	return
 }

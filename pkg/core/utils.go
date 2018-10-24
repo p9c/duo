@@ -208,3 +208,13 @@ func Hash64(in *[]byte) *[]byte {
 	out := highwayhash.Sum64(*in, empty)
 	return IntToBytes(out)
 }
+
+// ReverseByteOrder converts little to big endian and vice versa
+func ReverseByteOrder(in []byte) (out []byte) {
+	l := len(in)
+	out = make([]byte, l)
+	for i := range in {
+		out[i] = in[l-1-i]
+	}
+	return
+}

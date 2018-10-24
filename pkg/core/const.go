@@ -20,3 +20,8 @@ type CommonErrors struct {
 var Errors = CommonErrors{
 	"nil receiver", "nil parameter", "nil buffer", "zero length parameter", "index out of bounds", "invalid type", "zero length buffer",
 }
+
+const (
+	COIN = 100000000
+	CENT = 1000000
+)
