@@ -2,6 +2,7 @@ package block
 
 // DecodeBlock reads a protocol serialised block and returns the raw block structure
 func DecodeBlock(in []byte) (out Raw) {
+
 	return
 }
 
