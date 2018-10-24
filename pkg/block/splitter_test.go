@@ -99,6 +99,8 @@ func TestGetRawBlock(t *testing.T) {
 		txc := int(txCount)
 		for txs := 0; txs < txc; txs++ {
 
+			fmt.Println("Transaction", txs)
+
 			rV := r[:4]
 			r = r[4:]
 			var tx0v uint32
@@ -119,9 +121,11 @@ func TestGetRawBlock(t *testing.T) {
 			var txI interface{}
 			r, txI = ExtractCompactInt(txV, r)
 			txiV := int(txI.(uint64))
-			fmt.Println("    in-counter          ", txV)
+			fmt.Println("in-counter              ", txiV)
 
 			for txis := 0; txis < txiV; txis++ {
+
+				fmt.Println("Txin", txis)
 
 				tx1pth := *rev(r[:32])
 				r = r[32:]
@@ -131,8 +135,9 @@ func TestGetRawBlock(t *testing.T) {
 				r = r[4:]
 				fmt.Printf("    Prev Txout Index     %08x\n", tx1txi)
 
-				r, txI = ExtractCompactInt(txV, r)
-				txV = txI.(uint64)
+				var txsl interface{}
+				r, txsl = ExtractCompactInt(txV, r)
+				txV = txsl.(uint64)
 				fmt.Println("    Txin script length  ", txV)
 
 				tx1scr := *rev(r[:txV])
@@ -145,11 +150,11 @@ func TestGetRawBlock(t *testing.T) {
 			}
 			r, txI = ExtractCompactInt(txV, r)
 			txoV := int(txI.(uint64))
-			fmt.Println("    out-counter         ", txV)
+			fmt.Println("out-counter             ", txoV)
 
 			for txos := 0; txos < txoV; txos++ {
 
-				// NEED FOR LOOP HERE
+				fmt.Println("Txout", txos)
 
 				tx1val := r[:8]
 				r = r[8:]
@@ -170,7 +175,7 @@ func TestGetRawBlock(t *testing.T) {
 			r = r[4:]
 			var lock uint32
 			core.BytesToInt(lock, &lockb)
-			fmt.Println("    locktime            ", lock)
+			fmt.Println("locktime                ", lock)
 		}
 		fmt.Println("\nRest:\n", hx(r))
 		fmt.Println()

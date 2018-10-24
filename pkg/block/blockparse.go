@@ -1,6 +1,11 @@
 package block
 
-// GetRawBlockParts takes a block and returns an array with the header in the first element and the rest afterwards
-func GetRawBlockParts(rawBlock []byte) [][]byte {
-	return nil
+// DecodeBlock reads a protocol serialised block and returns the raw block structure
+func DecodeBlock(in []byte) (out Raw) {
+	return
+}
+
+// EncodeBlock turns a completed block data structure into a serialised stream in protocol format
+func EncodeBlock(in Raw) (out []byte) {
+	return
 }
