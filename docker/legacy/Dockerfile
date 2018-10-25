@@ -57,6 +57,4 @@ VOLUME /data
 # CMD tail -f /dev/null
 
 RUN mkdir /root/.parallelcoin
-RUN echo "rpcuser=user">/root/.parallelcoin/parallelcoin.conf
-RUN echo "rpcpassword=pa55word">/root/.parallelcoin/parallelcoin.conf
-CMD /usr/local/bin/parallelcoind -rpcuser=user -rpcpassword=pa55word -port=11047 -rpcport=11048 -bind=0.0.0.0 -rpcbind=0.0.0.0 -listen -server
+CMD /usr/local/bin/parallelcoind 
