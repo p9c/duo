@@ -2,6 +2,7 @@ package block
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -127,11 +128,11 @@ func TestGetRawBlock(t *testing.T) {
 
 				fmt.Println("Txin", txis)
 
-				tx1pth := *rev(r[:32])
+				tx1pth := r[:32]
 				r = r[32:]
 				fmt.Println("    PrevTxHash          ", hx(tx1pth))
 
-				tx1txi := *rev(r[:4])
+				tx1txi := r[:4]
 				r = r[4:]
 				fmt.Printf("    Prev Txout Index     %08x\n", tx1txi)
 
@@ -140,7 +141,7 @@ func TestGetRawBlock(t *testing.T) {
 				txV = txsl.(uint64)
 				fmt.Println("    Txin script length  ", txV)
 
-				tx1scr := *rev(r[:txV])
+				tx1scr := r[:txV]
 				r = r[txV:]
 				fmt.Println("    script              ", hx(tx1scr))
 
@@ -166,12 +167,12 @@ func TestGetRawBlock(t *testing.T) {
 				txV = txI.(uint64)
 				fmt.Println("    Txout script length ", txV)
 
-				tx1scro := *rev(r[:txV])
+				tx1scro := r[:txV]
 				r = r[txV:]
 				fmt.Println("    script              ", hx(tx1scro))
 
 			}
-			lockb := *rev(r[:4])
+			lockb := r[:4]
 			r = r[4:]
 			var lock uint32
 			core.BytesToInt(lock, &lockb)
@@ -179,5 +180,29 @@ func TestGetRawBlock(t *testing.T) {
 		}
 		fmt.Println("\nRest:\n", hx(r))
 		fmt.Println()
+	}
+}
+
+func TestDecodeBlock(t *testing.T) {
+	b := make([]byte, 4)
+	node := sync.NewNode()
+	best := node.LegacyGetBestBlockHeight()
+	var B uint32
+	for i := 0; i < 10; i++ {
+
+		for {
+			rand.Read(b)
+			core.BytesToInt(&B, &b)
+			if B < best {
+				break
+			}
+		}
+		rb := node.GetRawBlock(uint64(B))
+		in := *rb
+
+		fmt.Println("\nblock", B)
+
+		j, _ := json.MarshalIndent(DecodeBlock(in), "", "  ")
+		fmt.Println(string(j))
 	}
 }
