@@ -38,7 +38,7 @@ type Tx struct {
 	Version  uint32
 	Ins      []TxIn
 	Outs     []TxOut
-	Locktime int64
+	Locktime uint32
 }
 
 type TxIn struct {
