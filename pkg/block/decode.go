@@ -4,14 +4,8 @@ import (
 	"github.com/parallelcointeam/duo/pkg/core"
 )
 
-func split(in []byte, pos int) (out []byte, piece []byte) {
-	out = in[pos:]
-	piece = in[:pos]
-	return
-}
-
-// DecodeBlock reads a protocol serialised block and returns the raw block structure
-func DecodeBlock(in []byte) (out Raw) {
+// Decode reads a protocol serialised block and returns the raw block structure
+func Decode(in []byte) (out Raw) {
 
 	in, t := split(in, 4)
 	core.BytesToInt(&out.Version, &t)
@@ -29,7 +23,7 @@ func DecodeBlock(in []byte) (out Raw) {
 	out.Bits = *rev(t)
 
 	in, t = split(in, 4)
-	core.BytesToInt(&out.Nonce, rev(t))
+	core.BytesToInt(&out.Nonce, &t)
 
 	var txCount uint64
 	var txCountIface interface{}
@@ -99,12 +93,6 @@ func DecodeBlock(in []byte) (out Raw) {
 		in, lockb = split(in, 4)
 		core.BytesToInt(out.Transactions[txs].Locktime, &lockb)
 	}
-
-	return
-}
-
-// EncodeBlock turns a completed block data structure into a serialised stream in protocol format
-func EncodeBlock(in Raw) (out []byte) {
 
 	return
 }

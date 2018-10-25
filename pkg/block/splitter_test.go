@@ -2,7 +2,6 @@ package block
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -183,13 +182,12 @@ func TestGetRawBlock(t *testing.T) {
 	}
 }
 
-func TestDecodeBlock(t *testing.T) {
+func TestDecodeEncodeBlock(t *testing.T) {
 	b := make([]byte, 4)
 	node := sync.NewNode()
 	best := node.LegacyGetBestBlockHeight()
 	var B uint32
 	for i := 0; i < 10; i++ {
-
 		for {
 			rand.Read(b)
 			core.BytesToInt(&B, &b)
@@ -199,10 +197,12 @@ func TestDecodeBlock(t *testing.T) {
 		}
 		rb := node.GetRawBlock(uint64(B))
 		in := *rb
-
 		fmt.Println("\nblock", B)
-
-		j, _ := json.MarshalIndent(DecodeBlock(in), "", "  ")
-		fmt.Println(string(j))
+		out := Decode(in)
+		// j, _ := json.MarshalIndent(out, "", "  ")
+		// fmt.Println(string(j))
+		re := Encode(out)
+		fmt.Println(hx(re))
+		fmt.Println(hx(in))
 	}
 }
