@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/anaskhan96/base58check"
 
@@ -39,7 +38,7 @@ func TestGetRawBlock(t *testing.T) {
 	best := node.LegacyGetBestBlockHeight()
 	var B uint32
 	b := make([]byte, 4)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		for {
 			rand.Read(b)
 			core.BytesToInt(&B, &b)
@@ -76,9 +75,9 @@ func TestGetRawBlock(t *testing.T) {
 		r = r[4:]
 		var t32 int32
 		core.BytesToInt(&t32, &ti)
-		BlockTime := int64(t32)
+		// BlockTime := int64(t32)
 		// fmt.Println("Unix timestamp         ", hx(ti))
-		fmt.Println("Time", time.Unix(BlockTime, 0))
+		// fmt.Println("Time", time.Unix(BlockTime, 0))
 
 		// Bits := *rev(r[:4])
 		r = r[4:]
@@ -132,7 +131,7 @@ func TestGetRawBlock(t *testing.T) {
 
 			for txis := 0; txis < txiV; txis++ {
 
-				tx1pth := r[:32]
+				tx1pth := *rev(r[:32])
 				r = r[32:]
 				// tx1txi := r[:4]
 				r = r[4:]
@@ -148,7 +147,11 @@ func TestGetRawBlock(t *testing.T) {
 				r = r[4:]
 				if bytes.Compare(make([]byte, 32), tx1pth) != 0 {
 					// fmt.Println("    Txin", txis)
-					fmt.Println("             PrevTxHash", hx(tx1pth))
+					// fmt.Println("             PrevTxHash", hx(tx1pth))
+
+					// GET VALUE OF PREVTX
+					value := uint64(node.GetTxValue(tx1pth) * float64(core.COIN))
+					// fmt.Println("                 value", value)
 
 					// fmt.Printf("       Prev Txout Index %08x\n", tx1txi)
 
@@ -161,7 +164,10 @@ func TestGetRawBlock(t *testing.T) {
 						if len(tx1scr) > len(p1)/2 {
 							rem := *rev(tx1scr[tx1scr[0]+2:])
 							k, _ := base58check.Encode(key.B58prefixes["mainnet"]["pubkey"], hx(*hash160.Sum(&rem)))
-							fmt.Println("                    <<<", k)
+
+							fmt.Printf("    %s -%012d\n", k, value)
+
+							// fmt.Println("                    <<<", k)
 							// fmt.Println("                    >>> Typical payment redemption")
 						}
 					}
@@ -183,7 +189,9 @@ func TestGetRawBlock(t *testing.T) {
 				r = r[8:]
 				var tx1V uint64
 				core.BytesToInt(&tx1V, &tx1val)
-				fmt.Printf("                  value %4.7f\n", float64(tx1V)/core.COIN)
+				value := uint64(0)
+				core.BytesToInt(&value, &tx1val)
+				// fmt.Printf("                  value %4.7f\n", float64(tx1V)/core.COIN)
 
 				r, txI = ExtractCompactInt(txV, r)
 				txV = txI.(uint64)
@@ -193,16 +201,22 @@ func TestGetRawBlock(t *testing.T) {
 				r = r[txV:]
 
 				str, _ := btc.ScriptToText(tx1scro)
+				fmt.Print("    ")
 				// fmt.Println("                       ", str)
 				if len(str) == 5 {
 					k, _ := base58check.Encode(key.B58prefixes["mainnet"]["pubkey"], str[2])
-					fmt.Println("                    >>>", k)
+					fmt.Printf("%s +%012d\n", k, value)
+
+					// fmt.Println("                    >>>", k)
 				} else {
 					// fmt.Println(">>>>>>>", hx(tx1scro[1:tx1scro[0]]))
 					k := tx1scro[1:tx1scro[0]]
 					// fmt.Println(hx(k))
 					K, _ := base58check.Encode(key.B58prefixes["mainnet"]["pubkey"], hx(*hash160.Sum(&k)))
-					fmt.Println("                    >>>", K)
+					// fmt.Println(K, "+", value)
+					fmt.Printf("%s +%012d\n", K, value)
+
+					// fmt.Println("                    >>>", K)
 					// fmt.Println("                 script", hx(tx1scro))
 				}
 
@@ -215,8 +229,8 @@ func TestGetRawBlock(t *testing.T) {
 				fmt.Println("    locktime", lock)
 			}
 		}
-		fmt.Println("Rest:\n", hx(r))
-		fmt.Println()
+		// fmt.Println("Rest:\n", hx(r))
+		// fmt.Println()
 	}
 }
 
