@@ -35,13 +35,15 @@ package block
 */
 
 type Tx struct {
-	Ins  []TxIn
-	Outs []TxOut
+	Version  uint32
+	Ins      []TxIn
+	Outs     []TxOut
+	Locktime uint32
 }
 
 type TxIn struct {
 	PrevTxHash     []byte
-	PrevTxoutIndex uint32
+	PrevTxoutIndex int32
 	Script         []byte
 	Sequence       uint32
 }
@@ -56,7 +58,7 @@ type Raw struct {
 	HashPrevBlock  []byte
 	HashMerkleRoot []byte
 	Time           uint32
-	Bits           uint32
+	Bits           []byte
 	Nonce          uint32
 	Transactions   []Tx
 }

@@ -57,3 +57,30 @@ func (r *Node) LegacyGetBlockHash(height uint32) (blockHash []byte) {
 	}
 	return
 }
+
+// GetTxValue gets the transaction based on a given tx hash
+func (r *Node) GetTxValue(txhash []byte) (out float64) {
+
+	intVerbose := 1
+	txS := hex.EncodeToString(txhash)
+	// fmt.Println("getrawtransaction", txS, 1)
+	txB, err := r.RPC.Call("getrawtransaction", []interface{}{txS, intVerbose})
+
+	// vb := 1
+	// txB, err := r.RPC.Call("getrawtransaction", []string{hex.EncodeToString(txhash)})
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		var I interface{}
+		json.Unmarshal(txB.Result, &I)
+		ii := I.(map[string]interface{})
+		// fmt.Println(ii["vout"])
+		iii := ii["vout"].([]interface{})[0].(map[string]interface{})
+		// j, _ := json.MarshalIndent(iii["value"], "", "  ")
+		// fmt.Println(uint64(iii["value"].(float64) * float64(core.COIN)))
+		out = iii["value"].(float64)
+		// .(map[string]interface{})["value"])
+		// fmt.Println(string(txB.Result))
+	}
+	return
+}

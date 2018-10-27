@@ -14,3 +14,9 @@ func rev(in []byte) (out *[]byte) {
 func hx(in []byte) string {
 	return hex.EncodeToString(in)
 }
+
+func split(in []byte, pos int) (out []byte, piece []byte) {
+	out = in[pos:]
+	piece = in[:pos]
+	return
+}
