@@ -2,9 +2,9 @@ package tac
 
 // TaC is the interface for a Telemetry and Control endpoint
 type TaC interface {
-	Update()
-	Start()
-	Stop()
+	Update() error
+	Start() error
+	Stop() error
 	Status() string
 	Configuration() []Configuration
 	Configure([]Configuration)
